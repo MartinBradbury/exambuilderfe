@@ -41,14 +41,17 @@ export const UserProvider = ({ children }) => {
 
     if (refreshToken && accessToken) {
       try {
-        await fetch("http://127.0.0.1:8000/accounts/logout/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ refresh: refreshToken }),
-        });
+        await fetch(
+          "https://exambuilder-efae14d59f03.herokuapp.com/accounts/logout/",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ refresh: refreshToken }),
+          }
+        );
       } catch (err) {
         console.error("Error blacklisting token:", err);
         // even if it fails, we still clear local state for safety

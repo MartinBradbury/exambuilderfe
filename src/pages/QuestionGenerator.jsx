@@ -35,7 +35,7 @@ export default function QuestionGenerator() {
     try {
       const accessToken = localStorage.getItem("accessToken");
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/generate-questions/",
+        "https://exambuilder-efae14d59f03.herokuapp.com/api/generate-questions/",
         {
           topic_id: selectedTopic,
           exam_board: examBoard,
@@ -77,7 +77,7 @@ export default function QuestionGenerator() {
     try {
       const accessToken = localStorage.getItem("accessToken");
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/mark-answer/",
+        "https://exambuilder-efae14d59f03.herokuapp.com/api/mark-answer/",
         {
           question,
           mark_scheme,
@@ -128,7 +128,7 @@ export default function QuestionGenerator() {
 
     try {
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/submit-question-session/",
+        "https://exambuilder-efae14d59f03.herokuapp.com/api/submit-question-session/",
         {
           session_id: sessionId,
           answers,
@@ -156,7 +156,7 @@ export default function QuestionGenerator() {
       try {
         const accessToken = localStorage.getItem("accessToken");
         const response = await axios.get(
-          "http://127.0.0.1:8000/api/biology-topics/",
+          "https://exambuilder-efae14d59f03.herokuapp.com/api/biology-topics/",
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
