@@ -10,8 +10,8 @@ import QuestionGenerator from "./pages/QuestionGenerator";
 function App() {
   return (
     <>
-      <NavBar />
       <BrowserRouter>
+        <NavBar />
         <Routes>
           <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
