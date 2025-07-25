@@ -21,6 +21,21 @@ export default function QuestionGenerator() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const navigate = useNavigate();
 
+  const handleGenerate = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/generate-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic, exam_board, number_of_questions }),
+      });
+      const data = await res.json();
+      setQuestions(data.questions);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -221,11 +236,18 @@ export default function QuestionGenerator() {
             </select>
           </div>
           <button
-            className="qg-button qg-button-primary "
+            className="qg-button qg-button-primary"
             type="submit"
             disabled={loading}
           >
-            {loading ? "Generating..." : "Generate Questions"}
+            {loading ? (
+              <>
+                Generating...
+                <span className="qg-spinner" />
+              </>
+            ) : (
+              "Generate Questions"
+            )}
           </button>
           {error && <p style={{ color: "red" }}>{error}</p>}
         </form>

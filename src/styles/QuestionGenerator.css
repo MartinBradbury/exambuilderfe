@@ -175,3 +175,31 @@
 .qg-feedback-modal li {
   margin-bottom: 0.3rem;
 }
+
+/* Spinner CSS while generating questions */
+
+.qg-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-left: 8px;
+  border: 2px solid #fff;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: qg-spin 0.8s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes qg-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.qg-button:disabled {
+  opacity: 0.6; /* looks faded */
+  cursor: not-allowed; /* shows disabled cursor */
+}
