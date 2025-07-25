@@ -22,21 +22,6 @@ export default function QuestionGenerator() {
   const navigate = useNavigate();
   const [answered, setAnswered] = useState({});
 
-  const handleGenerate = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/generate-questions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, exam_board, number_of_questions }),
-      });
-      const data = await res.json();
-      setQuestions(data.questions);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -66,7 +51,7 @@ export default function QuestionGenerator() {
       );
 
       setQuestions(response.data.questions);
-      setSessionId(response.data.session_id); // assuming backend returns session_id
+      setSessionId(response.data.session_id);
     } catch (err) {
       console.error(err);
       setError(
