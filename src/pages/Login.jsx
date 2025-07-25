@@ -34,7 +34,7 @@ export default function Login() {
     setIsLoading(true);
     try {
       const response = await axios.post(
-        "http://127.0.0.1:8000/accounts/login/",
+        "https://exambuilder.herokuapp.com/api/login/",
         formData
       );
 
