@@ -34,7 +34,7 @@ export default function Login() {
     setIsLoading(true);
     try {
       const response = await axios.post(
-        "https://exambuilder.herokuapp.com/api/login/",
+        "https://exambuilder.herokuapp.com/accounts/login/",
         formData
       );
 
