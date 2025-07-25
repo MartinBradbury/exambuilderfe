@@ -88,6 +88,8 @@ export default function QuestionGenerator() {
 
     if (!answer?.trim()) return;
 
+    setAnswered((prev) => ({ ...prev, [index]: true }));
+
     setMarking((prev) => ({ ...prev, [index]: true }));
 
     try {
@@ -107,7 +109,6 @@ export default function QuestionGenerator() {
           },
         }
       );
-      setAnswered((prev) => ({ ...prev, [index]: true }));
 
       setFeedback((prev) => ({ ...prev, [index]: response.data }));
     } catch (err) {
@@ -313,25 +314,20 @@ export default function QuestionGenerator() {
                     style={{ width: "100%", marginBottom: "0.5rem" }}
                   />
                   <button
+                    className="mark-button"
                     onClick={() => handleMarkAnswer(index)}
-                    disabled={marking[index] || answered[index]} // ✅ disable while marking or after answered
-                    style={{
-                      padding: "0.4rem 0.6rem",
-                      backgroundColor: "#007bff",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor:
-                        marking[index] || answered[index]
-                          ? "not-allowed"
-                          : "pointer",
-                      opacity: marking[index] || answered[index] ? 0.6 : 1,
-                    }}
+                    disabled={marking[index] || answered[index]}
                   >
-                    {marking[index] ? "Marking..." : "Check Answer"}
+                    {marking[index] ? (
+                      <>
+                        Marking...
+                        <span className="qg-spinner" />
+                      </>
+                    ) : (
+                      "Check Answer"
+                    )}
                   </button>
                 </div>
-
                 {feedback[index] && (
                   <div style={{ marginTop: "0.75rem" }}>
                     {feedback[index].error ? (

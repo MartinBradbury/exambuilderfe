@@ -203,3 +203,44 @@
   opacity: 0.6; /* looks faded */
   cursor: not-allowed; /* shows disabled cursor */
 }
+
+/* Marking button base style */
+.mark-button {
+  padding: 0.4rem 0.6rem;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  display: inline-flex; /* align text and spinner */
+  align-items: center;
+  gap: 6px; /* space between text and spinner */
+  cursor: pointer;
+  font-size: 14px;
+  transition: opacity 0.2s ease;
+}
+
+/* Disabled state */
+.mark-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Spinner reused from before */
+.qg-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: qg-spin 0.8s linear infinite;
+}
+
+@keyframes qg-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
