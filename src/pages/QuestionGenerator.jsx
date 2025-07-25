@@ -20,6 +20,7 @@ export default function QuestionGenerator() {
   const [isSubmittingAll, setIsSubmittingAll] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const navigate = useNavigate();
+  const [answered, setAnswered] = useState({});
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -106,6 +107,7 @@ export default function QuestionGenerator() {
           },
         }
       );
+      setAnswered((prev) => ({ ...prev, [index]: true }));
 
       setFeedback((prev) => ({ ...prev, [index]: response.data }));
     } catch (err) {
@@ -307,18 +309,23 @@ export default function QuestionGenerator() {
                     rows={4}
                     value={userAnswers[index] || ""}
                     onChange={(e) => handleAnswerChange(index, e.target.value)}
+                    disabled={answered[index]} // ✅ disable after marking
                     style={{ width: "100%", marginBottom: "0.5rem" }}
                   />
                   <button
                     onClick={() => handleMarkAnswer(index)}
-                    disabled={marking[index]}
+                    disabled={marking[index] || answered[index]} // ✅ disable while marking or after answered
                     style={{
                       padding: "0.4rem 0.6rem",
                       backgroundColor: "#007bff",
                       color: "#fff",
                       border: "none",
                       borderRadius: "4px",
-                      cursor: "pointer",
+                      cursor:
+                        marking[index] || answered[index]
+                          ? "not-allowed"
+                          : "pointer",
+                      opacity: marking[index] || answered[index] ? 0.6 : 1,
                     }}
                   >
                     {marking[index] ? "Marking..." : "Check Answer"}
