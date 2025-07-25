@@ -1,0 +1,68 @@
+.site-navbar {
+  background: #0a3508;
+  padding: 10px 0;
+}
+
+.site-navbar .navbar-brand {
+  color: #fff !important;
+  font-weight: bold;
+  font-size: 1.5rem;
+  margin-left: 20px;
+}
+
+.site-navbar .navbar-brand:hover {
+  color: #f1f1f1 !important;
+  text-decoration: none;
+}
+
+.site-navbar .nav-link {
+  color: #fff !important;
+  font-weight: 500;
+  margin-right: 15px;
+  transition: color 0.3s ease;
+}
+
+.site-navbar .nav-link:hover {
+  color: #e0f2e9 !important;
+  text-decoration: underline;
+}
+
+.site-navbar h2 {
+  color: #fff;
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 500;
+  margin-right: 20px;
+}
+
+.btn-logout {
+  display: inline-block;
+  background-color: #28a745; /* match green accent */
+  color: #fff !important;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  text-decoration: none;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  margin-left: 10px;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-logout:hover {
+  background-color: #218838; /* darker green on hover */
+  transform: translateY(-1px); /* subtle lift on hover */
+  text-decoration: none;
+}
+
+.btn-logout:active {
+  background-color: #1e7e34;
+  transform: translateY(0); /* reset on active */
+}
+
+@media (max-width: 991px) {
+  /* Center greeting in collapsed menu */
+  .site-navbar h2 {
+    margin-top: 10px;
+  }
+}
