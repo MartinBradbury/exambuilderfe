@@ -53,103 +53,176 @@ export default function Home() {
   ];
 
   return (
-    <div className="homepage">
-      <header className="hero">
-        <div className="hero-content">
-          <h1>A‑Level Biology Exam Question Generator</h1>
+    <>
+      <div>
+        <h2 className="construction-card">
+          THIS IS STILL IN A BUILD PHASE, MANY FEATURES ARE NOT AVAILABLE YET
+        </h2>
+      </div>
+      <div className="homepage">
+        <header className="hero">
+          <div className="hero-content">
+            <h1>A‑Level Biology Exam Question Generator</h1>
 
+            <p>
+              Generate custom exam questions, practice answering them, and get
+              instant feedback to boost your grades.
+            </p>
+
+            <div className="hero-buttons">
+              {user ? (
+                <a href="/question-generator" className="btn btn-primary">
+                  Get Started
+                </a>
+              ) : (
+                <a href="/login" className="btn btn-secondary">
+                  Login
+                </a>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* Specification Info Section */}
+        <section className="specification-info">
+          <h2>OCR Science Specifications</h2>
+
+          <div className="spec-grid">
+            {/* A-Level Specs */}
+            <div className="spec-card">
+              <h3>OCR A-Level Biology (A)</h3>
+              <p>
+                Covers biological molecules, cells, enzymes, nucleic acids,
+                transport, disease, biodiversity, evolution, communication
+                systems, and gene technologies.
+              </p>
+              <p>
+                <a
+                  href="https://www.ocr.org.uk/qualifications/as-and-a-level/biology-a-h020-h420-from-2015/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View Full Specification →
+                </a>
+              </p>
+            </div>
+
+            <div className="spec-card">
+              <h3>OCR A-Level Chemistry (A)</h3>
+              <p>
+                Includes atomic structure, bonding, periodic table, quantitative
+                chemistry, organic chemistry, energetics, redox, and analytical
+                techniques.
+              </p>
+              <p>
+                <a
+                  href="https://www.ocr.org.uk/qualifications/as-and-a-level/chemistry-a-h032-h432-from-2015/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View Full Specification →
+                </a>
+              </p>
+            </div>
+
+            <div className="spec-card">
+              <h3>OCR A-Level Physics (A)</h3>
+              <p>
+                Covers mechanics, materials, waves, electricity, motion, thermal
+                physics, quantum phenomena, fields, and nuclear physics.
+              </p>
+              <p>
+                <a
+                  href="https://www.ocr.org.uk/qualifications/as-and-a-level/physics-a-h156-h556-from-2015/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View Full Specification →
+                </a>
+              </p>
+            </div>
+
+            {/* GCSE Specs */}
+            <div className="spec-card">
+              <h3>OCR GCSE Biology (Gateway Science A)</h3>
+              <p>
+                Topics include cells, enzymes, genetics, health, ecosystems,
+                evolution, disease, and photosynthesis.
+              </p>
+              <p>
+                <a
+                  href="https://www.ocr.org.uk/qualifications/gcse/biology-a-gateway-j247-from-2016/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View Full Specification →
+                </a>
+              </p>
+            </div>
+
+            <div className="spec-card">
+              <h3>OCR GCSE Chemistry (Gateway Science A)</h3>
+              <p>
+                Includes atomic structure, periodic table, bonding, chemical
+                reactions, rates, equilibrium, and energy changes.
+              </p>
+              <p>
+                <a
+                  href="https://www.ocr.org.uk/qualifications/gcse/chemistry-a-gateway-j248-from-2016/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View Full Specification →
+                </a>
+              </p>
+            </div>
+
+            <div className="spec-card">
+              <h3>OCR GCSE Physics (Gateway Science A)</h3>
+              <p>
+                Covers motion, forces, energy, waves, electricity, magnetism,
+                space, and particle model of matter.
+              </p>
+              <p>
+                <a
+                  href="https://www.ocr.org.uk/qualifications/gcse/physics-a-gateway-j249-from-2016/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View Full Specification →
+                </a>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Carousel Section */}
+
+        <section className="subject-carousel-section">
+          <h2 className="section-title">Explore Subjects</h2>
+
+          <div className="carousel-grid">
+            <div className="carousel-card alevel-card">
+              <h3 className="carousel-heading">A Level</h3>
+
+              <SubjectCarousel items={bioChemPhysAlevel} />
+            </div>
+
+            <div className="carousel-card alevel-card">
+              <h3 className="carousel-heading">GCSE</h3>
+
+              <SubjectCarousel items={bioChemPhysGcse} />
+            </div>
+          </div>
+        </section>
+
+        <footer className="footer">
           <p>
-            Generate custom exam questions, practice answering them, and get
-            instant feedback to boost your grades.
+            © {new Date().getFullYear()} A‑Level Bio Questions. All rights
+            reserved.
           </p>
-
-          <div className="hero-buttons">
-            {user ? (
-              <a href="/question-generator" className="btn btn-primary">
-                Get Started
-              </a>
-            ) : (
-              <a href="/login" className="btn btn-secondary">
-                Login
-              </a>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Specification Info Section */}
-      <section className="specification-info">
-        <h2>OCR Biology Specifications</h2>
-
-        <div className="spec-grid">
-          <div className="spec-card">
-            <h3>OCR A-Level Biology (A)</h3>
-            <p>
-              The A-Level Biology A specification includes topics such as:
-              biological molecules, cells, nucleic acids, enzymes, exchange and
-              transport, biodiversity, evolution, disease, and genetics. It
-              promotes practical skills through required practicals and develops
-              scientific thinking with a synoptic approach across all topics.
-            </p>
-            <p>
-              <a
-                href="https://www.ocr.org.uk/qualifications/as-and-a-level/biology-a-h020-h420-from-2015/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View Full Specification →
-              </a>
-            </p>
-          </div>
-
-          <div className="spec-card">
-            <h3>OCR GCSE Biology</h3>
-            <p>
-              The GCSE specification covers cell biology, organisation,
-              infection and response, bioenergetics, homeostasis, inheritance,
-              evolution, and ecology. It encourages students to explore
-              scientific concepts with hands-on experiments and develops
-              scientific literacy.
-            </p>
-            <p>
-              <a
-                href="https://www.ocr.org.uk/qualifications/gcse/biology-a-gateway-j247-from-2016/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View Full Specification →
-              </a>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Carousel Section */}
-
-      <section className="subject-carousel-section">
-        <h2 className="section-title">Explore Subjects</h2>
-
-        <div className="carousel-grid">
-          <div className="carousel-card alevel-card">
-            <h3 className="carousel-heading">A Level</h3>
-
-            <SubjectCarousel items={bioChemPhysAlevel} />
-          </div>
-
-          <div className="carousel-card alevel-card">
-            <h3 className="carousel-heading">GCSE</h3>
-
-            <SubjectCarousel items={bioChemPhysGcse} />
-          </div>
-        </div>
-      </section>
-
-      <footer className="footer">
-        <p>
-          © {new Date().getFullYear()} A‑Level Bio Questions. All rights
-          reserved.
-        </p>
-      </footer>
-    </div>
+        </footer>
+      </div>
+    </>
   );
 }
