@@ -77,6 +77,53 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Specification Info Section */}
+      <section className="specification-info">
+        <h2>OCR Biology Specifications</h2>
+
+        <div className="spec-grid">
+          <div className="spec-card">
+            <h3>OCR A-Level Biology (A)</h3>
+            <p>
+              The A-Level Biology A specification includes topics such as:
+              biological molecules, cells, nucleic acids, enzymes, exchange and
+              transport, biodiversity, evolution, disease, and genetics. It
+              promotes practical skills through required practicals and develops
+              scientific thinking with a synoptic approach across all topics.
+            </p>
+            <p>
+              <a
+                href="https://www.ocr.org.uk/qualifications/as-and-a-level/biology-a-h020-h420-from-2015/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View Full Specification →
+              </a>
+            </p>
+          </div>
+
+          <div className="spec-card">
+            <h3>OCR GCSE Biology</h3>
+            <p>
+              The GCSE specification covers cell biology, organisation,
+              infection and response, bioenergetics, homeostasis, inheritance,
+              evolution, and ecology. It encourages students to explore
+              scientific concepts with hands-on experiments and develops
+              scientific literacy.
+            </p>
+            <p>
+              <a
+                href="https://www.ocr.org.uk/qualifications/gcse/biology-a-gateway-j247-from-2016/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View Full Specification →
+              </a>
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Carousel Section */}
 
       <section className="subject-carousel-section">

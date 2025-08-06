@@ -280,3 +280,55 @@
     transform: scale(1.05);
   }
 }
+
+/* Specification Info Section */
+.specification-info {
+  padding: 60px 20px;
+  background-color: #ffffff;
+  text-align: center;
+}
+
+.specification-info h2 {
+  font-size: 2rem;
+  margin-bottom: 40px;
+  color: #333;
+}
+
+.spec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 40px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.spec-card {
+  background: #f9f9f9;
+  padding: 30px 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  text-align: left;
+}
+
+.spec-card h3 {
+  font-size: 1.4rem;
+  color: #4caf50;
+  margin-bottom: 15px;
+}
+
+.spec-card p {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #444;
+  margin-bottom: 12px;
+}
+
+.spec-card a {
+  color: #4caf50;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.spec-card a:hover {
+  text-decoration: underline;
+}
