@@ -33,7 +33,7 @@ function Register() {
     setIsLoading(true);
     try {
       const response = await axios.post(
-        "https://exambuilder-efae14d59f03.herokuapp.com/accounts/register/",
+        "http://127.0.0.1:8000/accounts/register/",
         formData
       );
       console.log("success", response.data);
