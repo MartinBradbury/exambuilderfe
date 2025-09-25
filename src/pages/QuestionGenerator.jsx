@@ -42,9 +42,7 @@ export default function QuestionGenerator() {
           },
         });
         setTopics(data);
-        if (data.length > 0 && !selectedTopic) {
-          setSelectedTopic(String(data[0].id));
-        }
+        setSelectedTopic("");
       } catch (err) {
         console.error("Failed to fetch topics:", err);
       }
@@ -70,11 +68,7 @@ export default function QuestionGenerator() {
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         setSubtopics(data);
-        if (data.length > 0) {
-          setSelectedSubtopic(String(data[0].id));
-        } else {
-          setSelectedSubtopic("");
-        }
+        setSelectedSubtopic("");   // reset subtopic selection to "Please Select"
         setSubcategories([]);
         setSelectedSubcategory("");
       } catch (e) {
@@ -103,11 +97,8 @@ export default function QuestionGenerator() {
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         setSubcategories(data);
-        if (data.length > 0) {
-          setSelectedSubcategory(String(data[0].id));
-        } else {
-          setSelectedSubcategory("");
-        }
+        setSelectedSubcategory(""); 
+
       } catch (e) {
         console.error("Failed to fetch subcategories:", e);
         setSubcategories([]);
@@ -265,6 +256,7 @@ export default function QuestionGenerator() {
               style={{ width: "100%", marginBottom: "1rem" }}
               required
             >
+              <option value="">-- Please Select --</option>
               {topics.map((topic) => (
                 <option key={topic.id} value={topic.id}>
                   {topic.topic}
@@ -274,6 +266,7 @@ export default function QuestionGenerator() {
           </div>
 
           {/* SubTopic */}
+          {subtopics.length > 0 && (
           <div>
             <label>SubTopic:</label>
             <select
@@ -282,7 +275,7 @@ export default function QuestionGenerator() {
               style={{ width: "100%", marginBottom: "1rem" }}
               disabled={!subtopics.length}
             >
-              <option value="">-- optional --</option>
+              <option value="">-- Please Select --</option>
               {subtopics.map((st) => (
                 <option key={st.id} value={st.id}>
                   {st.title}
@@ -290,8 +283,10 @@ export default function QuestionGenerator() {
               ))}
             </select>
           </div>
+          )}
 
           {/* SubCategory */}
+          {subcategories.length > 0 && (
           <div>
             <label>SubCategory:</label>
             <select
@@ -308,6 +303,7 @@ export default function QuestionGenerator() {
               ))}
             </select>
           </div>
+          )}
 
           {/* Exam board + number */}
           <div>
