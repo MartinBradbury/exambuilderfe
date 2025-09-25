@@ -1,3 +1,4 @@
+// src/components/QuestionGenerator.jsx
 import { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/QuestionGenerator.css";
@@ -6,6 +7,11 @@ import { useNavigate } from "react-router-dom";
 export default function QuestionGenerator() {
   const [topics, setTopics] = useState([]);
   const [selectedTopic, setSelectedTopic] = useState("");
+  const [subtopics, setSubtopics] = useState([]);
+  const [selectedSubtopic, setSelectedSubtopic] = useState("");
+  const [subcategories, setSubcategories] = useState([]);
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
+
   const [examBoard, setExamBoard] = useState("AQA");
   const [numberOfQuestions, setNumberOfQuestions] = useState("3");
   const [loading, setLoading] = useState(false);
@@ -19,8 +25,97 @@ export default function QuestionGenerator() {
   const [finalFeedback, setFinalFeedback] = useState("");
   const [isSubmittingAll, setIsSubmittingAll] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const navigate = useNavigate();
   const [answered, setAnswered] = useState({});
+  const navigate = useNavigate();
+
+  const API = "http://127.0.0.1:8000/api";
+
+  // 1) Fetch topics on mount
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        const accessToken = localStorage.getItem("accessToken");
+        const { data } = await axios.get(`${API}/biology-topics/`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+        setTopics(data);
+        if (data.length > 0 && !selectedTopic) {
+          setSelectedTopic(String(data[0].id));
+        }
+      } catch (err) {
+        console.error("Failed to fetch topics:", err);
+      }
+    };
+    fetchTopics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 2) Fetch subtopics when topic changes
+  useEffect(() => {
+    const run = async () => {
+      if (!selectedTopic) {
+        setSubtopics([]);
+        setSelectedSubtopic("");
+        setSubcategories([]);
+        setSelectedSubcategory("");
+        return;
+      }
+      try {
+        const accessToken = localStorage.getItem("accessToken");
+        const { data } = await axios.get(
+          `${API}/biology-subtopics/?topic_id=${selectedTopic}`,
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        setSubtopics(data);
+        if (data.length > 0) {
+          setSelectedSubtopic(String(data[0].id));
+        } else {
+          setSelectedSubtopic("");
+        }
+        setSubcategories([]);
+        setSelectedSubcategory("");
+      } catch (e) {
+        console.error("Failed to fetch subtopics:", e);
+        setSubtopics([]);
+        setSelectedSubtopic("");
+        setSubcategories([]);
+        setSelectedSubcategory("");
+      }
+    };
+    run();
+  }, [selectedTopic]);
+
+  // 3) Fetch subcategories when subtopic changes
+  useEffect(() => {
+    const run = async () => {
+      if (!selectedSubtopic) {
+        setSubcategories([]);
+        setSelectedSubcategory("");
+        return;
+      }
+      try {
+        const accessToken = localStorage.getItem("accessToken");
+        const { data } = await axios.get(
+          `${API}/biology-subcategories/?subtopic_id=${selectedSubtopic}`,
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        setSubcategories(data);
+        if (data.length > 0) {
+          setSelectedSubcategory(String(data[0].id));
+        } else {
+          setSelectedSubcategory("");
+        }
+      } catch (e) {
+        console.error("Failed to fetch subcategories:", e);
+        setSubcategories([]);
+        setSelectedSubcategory("");
+      }
+    };
+    run();
+  }, [selectedSubtopic]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,13 +130,17 @@ export default function QuestionGenerator() {
 
     try {
       const accessToken = localStorage.getItem("accessToken");
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/generate-questions/",
-        {
-          topic_id: selectedTopic,
-          exam_board: examBoard,
-          number_of_questions: parseInt(numberOfQuestions),
-        },
+      const payload = {
+        topic_id: Number(selectedTopic),
+        subtopic_id: selectedSubtopic ? Number(selectedSubtopic) : null,
+        subcategory_id: selectedSubcategory ? Number(selectedSubcategory) : null,
+        exam_board: examBoard,
+        number_of_questions: parseInt(numberOfQuestions, 10),
+      };
+
+      const { data } = await axios.post(
+        `${API}/generate-questions/`,
+        payload,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -50,8 +149,8 @@ export default function QuestionGenerator() {
         }
       );
 
-      setQuestions(response.data.questions);
-      setSessionId(response.data.session_id);
+      setQuestions(data.questions);
+      setSessionId(data.session_id);
     } catch (err) {
       console.error(err);
       setError(
@@ -74,13 +173,12 @@ export default function QuestionGenerator() {
     if (!answer?.trim()) return;
 
     setAnswered((prev) => ({ ...prev, [index]: true }));
-
     setMarking((prev) => ({ ...prev, [index]: true }));
 
     try {
       const accessToken = localStorage.getItem("accessToken");
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/mark-answer/",
+      const { data } = await axios.post(
+        `${API}/mark-answer/`,
         {
           question,
           mark_scheme,
@@ -95,7 +193,7 @@ export default function QuestionGenerator() {
         }
       );
 
-      setFeedback((prev) => ({ ...prev, [index]: response.data }));
+      setFeedback((prev) => ({ ...prev, [index]: data }));
     } catch (err) {
       console.error(err);
       setFeedback((prev) => ({
@@ -119,7 +217,6 @@ export default function QuestionGenerator() {
     if (!confirmed) return;
 
     setIsSubmittingAll(true);
-
     const accessToken = localStorage.getItem("accessToken");
 
     const answers = questions.map((q, index) => ({
@@ -130,8 +227,8 @@ export default function QuestionGenerator() {
     }));
 
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/submit-question-session/",
+      const { data } = await axios.post(
+        `${API}/submit-question-session/`,
         {
           session_id: sessionId,
           answers,
@@ -145,48 +242,23 @@ export default function QuestionGenerator() {
         }
       );
 
-      setFinalFeedback(response.data.feedback);
-      setHasSubmitted(true); // ✅ mark as submitted
+      setFinalFeedback(data.feedback);
+      setHasSubmitted(true);
     } catch (err) {
       console.error(err);
       alert("Failed to submit session.");
-      setIsSubmittingAll(false); // allow retry
+      setIsSubmittingAll(false);
     }
   };
-
-  useEffect(() => {
-    const fetchTopics = async () => {
-      try {
-        const accessToken = localStorage.getItem("accessToken");
-        const response = await axios.get(
-          "http://127.0.0.1:8000/api/biology-topics/",
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        setTopics(response.data);
-        // Optional: auto-select the first topic if none selected
-        if (response.data.length > 0 && !selectedTopic) {
-          setSelectedTopic(response.data[0].id);
-        }
-      } catch (err) {
-        console.error("Failed to fetch topics:", err);
-      }
-    };
-
-    fetchTopics();
-  }, []);
 
   return (
     <div className="question-generator-page">
       <h2>Generated Exam Questions</h2>
       {!questions && (
         <form onSubmit={handleSubmit}>
+          {/* Topic */}
           <div>
-            <label>Topic:</label>
+            <label>Topic (Module):</label>
             <select
               value={selectedTopic}
               onChange={(e) => setSelectedTopic(e.target.value)}
@@ -200,6 +272,44 @@ export default function QuestionGenerator() {
               ))}
             </select>
           </div>
+
+          {/* SubTopic */}
+          <div>
+            <label>SubTopic:</label>
+            <select
+              value={selectedSubtopic}
+              onChange={(e) => setSelectedSubtopic(e.target.value)}
+              style={{ width: "100%", marginBottom: "1rem" }}
+              disabled={!subtopics.length}
+            >
+              <option value="">-- optional --</option>
+              {subtopics.map((st) => (
+                <option key={st.id} value={st.id}>
+                  {st.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* SubCategory */}
+          <div>
+            <label>SubCategory:</label>
+            <select
+              value={selectedSubcategory}
+              onChange={(e) => setSelectedSubcategory(e.target.value)}
+              style={{ width: "100%", marginBottom: "1rem" }}
+              disabled={!subcategories.length}
+            >
+              <option value="">-- optional --</option>
+              {subcategories.map((sc) => (
+                <option key={sc.id} value={sc.id}>
+                  {sc.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Exam board + number */}
           <div>
             <label>Exam Board:</label>
             <select
@@ -211,6 +321,7 @@ export default function QuestionGenerator() {
               <option value="OCR">OCR</option>
             </select>
           </div>
+
           <div>
             <label>Number of Questions:</label>
             <select
@@ -219,12 +330,14 @@ export default function QuestionGenerator() {
               style={{ width: "100%", marginBottom: "1rem" }}
             >
               <option value="2">2</option>
+              <option value="3">3</option>
               <option value="4">4</option>
               <option value="6">6</option>
               <option value="8">8</option>
               <option value="10">10</option>
             </select>
           </div>
+
           <button
             className="qg-button qg-button-primary"
             type="submit"
@@ -243,6 +356,7 @@ export default function QuestionGenerator() {
         </form>
       )}
 
+      {/* Questions */}
       {questions && (
         <div style={{ marginTop: "2rem" }}>
           <h3>Generated Questions</h3>
@@ -297,7 +411,7 @@ export default function QuestionGenerator() {
                     rows={4}
                     value={userAnswers[index] || ""}
                     onChange={(e) => handleAnswerChange(index, e.target.value)}
-                    disabled={answered[index]} // ✅ disable after marking
+                    disabled={answered[index]}
                     style={{ width: "100%", marginBottom: "0.5rem" }}
                   />
                   <button
@@ -315,6 +429,7 @@ export default function QuestionGenerator() {
                     )}
                   </button>
                 </div>
+
                 {feedback[index] && (
                   <div style={{ marginTop: "0.75rem" }}>
                     {feedback[index].error ? (
@@ -339,14 +454,11 @@ export default function QuestionGenerator() {
           <div style={{ textAlign: "center", marginTop: "2rem" }}>
             <button
               onClick={handleSubmitAll}
-              disabled={isSubmittingAll || hasSubmitted} // ✅ disable after submit
+              disabled={isSubmittingAll || hasSubmitted}
               style={{
                 padding: "0.6rem 1rem",
-                backgroundColor: hasSubmitted
-                  ? "#6c757d" // grey when submitted
-                  : isSubmittingAll
-                  ? "#6c757d" // grey when submitting
-                  : "#28a745",
+                backgroundColor:
+                  isSubmittingAll || hasSubmitted ? "#6c757d" : "#28a745",
                 color: "#fff",
                 border: "none",
                 borderRadius: "4px",
@@ -366,8 +478,7 @@ export default function QuestionGenerator() {
             <div className="qg-feedback-overlay">
               <div className="qg-feedback-modal">
                 <h4>Strengths</h4>
-                {finalFeedback.strengths &&
-                finalFeedback.strengths.length > 0 ? (
+                {finalFeedback.strengths?.length ? (
                   <ul>
                     {finalFeedback.strengths.map((item, idx) => (
                       <li key={`strength-${idx}`}>{item}</li>
@@ -378,8 +489,7 @@ export default function QuestionGenerator() {
                 )}
 
                 <h4>Improvements</h4>
-                {finalFeedback.improvements &&
-                finalFeedback.improvements.length > 0 ? (
+                {finalFeedback.improvements?.length ? (
                   <ul>
                     {finalFeedback.improvements.map((item, idx) => (
                       <li key={`improvement-${idx}`}>{item}</li>
