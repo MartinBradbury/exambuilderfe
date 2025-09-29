@@ -1,5 +1,5 @@
 // src/components/QuestionGenerator.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "../styles/QuestionGenerator.css";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +12,7 @@ export default function QuestionGenerator() {
   const [subcategories, setSubcategories] = useState([]);
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
 
-  const [examBoard, setExamBoard] = useState("AQA");
+  const [examBoard, setExamBoard] = useState("OCR");
   const [numberOfQuestions, setNumberOfQuestions] = useState("3");
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState(null);
@@ -26,8 +26,17 @@ export default function QuestionGenerator() {
   const [isSubmittingAll, setIsSubmittingAll] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [answered, setAnswered] = useState({});
-  const navigate = useNavigate();
 
+  // One-at-a-time navigation
+  const [currentIndex, setCurrentIndex] = useState(0);
+  // NEW: track furthest question the user has reached (inclusive)
+  const [maxSeenIndex, setMaxSeenIndex] = useState(0);
+
+  // Progress bar state + interval ref
+  const [progress, setProgress] = useState(0);
+  const progressIntervalRef = useRef(null);
+
+  const navigate = useNavigate();
   const API = "http://127.0.0.1:8000/api";
 
   // 1) Fetch topics on mount
@@ -68,7 +77,7 @@ export default function QuestionGenerator() {
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         setSubtopics(data);
-        setSelectedSubtopic("");   // reset subtopic selection to "Please Select"
+        setSelectedSubtopic("");
         setSubcategories([]);
         setSelectedSubcategory("");
       } catch (e) {
@@ -97,8 +106,7 @@ export default function QuestionGenerator() {
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         setSubcategories(data);
-        setSelectedSubcategory(""); 
-
+        setSelectedSubcategory("");
       } catch (e) {
         console.error("Failed to fetch subcategories:", e);
         setSubcategories([]);
@@ -107,6 +115,30 @@ export default function QuestionGenerator() {
     };
     run();
   }, [selectedSubtopic]);
+
+  const startProgress = () => {
+    setProgress(0);
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    progressIntervalRef.current = setInterval(() => {
+      setProgress((old) => {
+        if (old >= 95) return old;
+        const increment = old < 40 ? 7 : old < 70 ? 5 : 3;
+        return Math.min(95, old + increment);
+      });
+    }, 300);
+  };
+
+  const stopProgress = () => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    setProgress(100);
+    setTimeout(() => {
+      setLoading(false);
+      setProgress(0);
+    }, 500);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -118,6 +150,11 @@ export default function QuestionGenerator() {
     setFeedback({});
     setMarking({});
     setFinalFeedback("");
+    setAnswered({});
+    setCurrentIndex(0);
+    setMaxSeenIndex(0); // NEW: reset seen tracker
+
+    startProgress();
 
     try {
       const accessToken = localStorage.getItem("accessToken");
@@ -129,16 +166,12 @@ export default function QuestionGenerator() {
         number_of_questions: parseInt(numberOfQuestions, 10),
       };
 
-      const { data } = await axios.post(
-        `${API}/generate-questions/`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const { data } = await axios.post(`${API}/generate-questions/`, payload, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       setQuestions(data.questions);
       setSessionId(data.session_id);
@@ -148,7 +181,7 @@ export default function QuestionGenerator() {
         err.response?.data?.error || "Something went wrong. Please try again."
       );
     } finally {
-      setLoading(false);
+      stopProgress();
     }
   };
 
@@ -242,9 +275,36 @@ export default function QuestionGenerator() {
     }
   };
 
+  // Navigation helpers
+  const canPrev = currentIndex > 0;
+  const canNext = questions ? currentIndex < questions.length - 1 : false;
+
+  const goPrev = () => {
+    setCurrentIndex((i) => Math.max(0, i - 1));
+    // maxSeenIndex unchanged when moving back
+  };
+
+  const goNext = () => {
+    if (!questions) return;
+    setCurrentIndex((i) => {
+      const next = Math.min(questions.length - 1, i + 1);
+      setMaxSeenIndex((m) => Math.max(m, next)); // update seen furthest
+      return next;
+    });
+  };
+
+  const jumpTo = (i) => {
+    // Only allow jumping to indices that are already seen
+    setCurrentIndex((curr) => {
+      if (i <= maxSeenIndex) return i;
+      return curr; // ignore if trying to jump forward past seen
+    });
+  };
+
   return (
     <div className="question-generator-page">
       <h2>Generated Exam Questions</h2>
+
       {!questions && (
         <form onSubmit={handleSubmit}>
           {/* Topic */}
@@ -267,42 +327,42 @@ export default function QuestionGenerator() {
 
           {/* SubTopic */}
           {subtopics.length > 0 && (
-          <div>
-            <label>SubTopic:</label>
-            <select
-              value={selectedSubtopic}
-              onChange={(e) => setSelectedSubtopic(e.target.value)}
-              style={{ width: "100%", marginBottom: "1rem" }}
-              disabled={!subtopics.length}
-            >
-              <option value="">-- Please Select --</option>
-              {subtopics.map((st) => (
-                <option key={st.id} value={st.id}>
-                  {st.title}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div>
+              <label>SubTopic:</label>
+              <select
+                value={selectedSubtopic}
+                onChange={(e) => setSelectedSubtopic(e.target.value)}
+                style={{ width: "100%", marginBottom: "1rem" }}
+                disabled={!subtopics.length}
+              >
+                <option value="">-- Please Select --</option>
+                {subtopics.map((st) => (
+                  <option key={st.id} value={st.id}>
+                    {st.title}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
 
           {/* SubCategory */}
           {subcategories.length > 0 && (
-          <div>
-            <label>SubCategory:</label>
-            <select
-              value={selectedSubcategory}
-              onChange={(e) => setSelectedSubcategory(e.target.value)}
-              style={{ width: "100%", marginBottom: "1rem" }}
-              disabled={!subcategories.length}
-            >
-              <option value="">-- optional --</option>
-              {subcategories.map((sc) => (
-                <option key={sc.id} value={sc.id}>
-                  {sc.title}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div>
+              <label>SubCategory:</label>
+              <select
+                value={selectedSubcategory}
+                onChange={(e) => setSelectedSubcategory(e.target.value)}
+                style={{ width: "100%", marginBottom: "1rem" }}
+                disabled={!subcategories.length}
+              >
+                <option value="">-- optional --</option>
+                {subcategories.map((sc) => (
+                  <option key={sc.id} value={sc.id}>
+                    {sc.title}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
 
           {/* Exam board + number */}
@@ -313,7 +373,7 @@ export default function QuestionGenerator() {
               onChange={(e) => setExamBoard(e.target.value)}
               style={{ width: "100%", marginBottom: "1rem" }}
             >
-              <option value="AQA">AQA</option>
+              <option value="AQA" disabled>AQA - Specific spec coming soon</option>
               <option value="OCR">OCR</option>
             </select>
           </div>
@@ -338,36 +398,78 @@ export default function QuestionGenerator() {
             className="qg-button qg-button-primary"
             type="submit"
             disabled={loading}
+            style={{
+              position: "relative",
+              overflow: "hidden",
+              width: "100%",
+              display: "block",
+            }}
           >
             {loading ? (
-              <>
-                Generating...
-                <span className="qg-spinner" />
-              </>
+              <div style={{ width: "100%" }}>
+                <div
+                  style={{
+                    height: "6px",
+                    width: "100%",
+                    background: "#e9ecef",
+                    borderRadius: "4px",
+                    marginBottom: "6px",
+                  }}
+                >
+                  <div
+                    style={{
+                      height: "100%",
+                      width: `${progress}%`,
+                      transition: "width 0.3s ease",
+                      background: "#007bff",
+                      borderRadius: "4px",
+                    }}
+                  />
+                </div>
+                <span style={{ fontSize: "0.9rem" }}>Generating...</span>
+              </div>
             ) : (
               "Generate Questions"
             )}
           </button>
+
           {error && <p style={{ color: "red" }}>{error}</p>}
         </form>
       )}
 
-      {/* Questions */}
+      {/* One-at-a-time question view */}
       {questions && (
         <div style={{ marginTop: "2rem" }}>
-          <h3>Generated Questions</h3>
-          {questions.map((q, index) => {
-            const isOpen = openIndexes[index] || false;
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "1rem",
+            }}
+          >
+            <h3 style={{ margin: 0 }}>
+              Question {currentIndex + 1} of {questions.length}
+            </h3>
+            <div style={{ fontStyle: "italic" }}>
+              {Math.round(((currentIndex + 1) / questions.length) * 100)}% viewed
+            </div>
+          </div>
+
+          {/* Current question */}
+          {(() => {
+            const q = questions[currentIndex];
+            const isOpen = openIndexes[currentIndex] || false;
             const toggle = () => {
               setOpenIndexes((prev) => ({
                 ...prev,
-                [index]: !prev[index],
+                [currentIndex]: !prev[currentIndex],
               }));
             };
 
             return (
               <div
-                key={index}
+                key={currentIndex}
                 style={{
                   marginBottom: "2rem",
                   borderBottom: "1px solid #ccc",
@@ -375,7 +477,7 @@ export default function QuestionGenerator() {
                 }}
               >
                 <p>
-                  <strong>Q{index + 1}:</strong> {q.question}
+                  <strong>Q{currentIndex + 1}:</strong> {q.question}
                 </p>
 
                 <button
@@ -405,17 +507,19 @@ export default function QuestionGenerator() {
                   <label>Your Answer:</label>
                   <textarea
                     rows={4}
-                    value={userAnswers[index] || ""}
-                    onChange={(e) => handleAnswerChange(index, e.target.value)}
-                    disabled={answered[index]}
+                    value={userAnswers[currentIndex] || ""}
+                    onChange={(e) =>
+                      handleAnswerChange(currentIndex, e.target.value)
+                    }
+                    disabled={answered[currentIndex]}
                     style={{ width: "100%", marginBottom: "0.5rem" }}
                   />
                   <button
                     className="mark-button"
-                    onClick={() => handleMarkAnswer(index)}
-                    disabled={marking[index] || answered[index]}
+                    onClick={() => handleMarkAnswer(currentIndex)}
+                    disabled={marking[currentIndex] || answered[currentIndex]}
                   >
-                    {marking[index] ? (
+                    {marking[currentIndex] ? (
                       <>
                         Marking...
                         <span className="qg-spinner" />
@@ -426,18 +530,22 @@ export default function QuestionGenerator() {
                   </button>
                 </div>
 
-                {feedback[index] && (
+                {feedback[currentIndex] && (
                   <div style={{ marginTop: "0.75rem" }}>
-                    {feedback[index].error ? (
-                      <p style={{ color: "red" }}>{feedback[index].error}</p>
+                    {feedback[currentIndex].error ? (
+                      <p style={{ color: "red" }}>
+                        {feedback[currentIndex].error}
+                      </p>
                     ) : (
                       <>
                         <p>
-                          <strong>Score:</strong> {feedback[index].score} /{" "}
-                          {feedback[index].out_of}
+                          <strong>Score:</strong>{" "}
+                          {feedback[currentIndex].score} /{" "}
+                          {feedback[currentIndex].out_of}
                         </p>
                         <p>
-                          <strong>Feedback:</strong> {feedback[index].feedback}
+                          <strong>Feedback:</strong>{" "}
+                          {feedback[currentIndex].feedback}
                         </p>
                       </>
                     )}
@@ -445,8 +553,69 @@ export default function QuestionGenerator() {
                 )}
               </div>
             );
-          })}
+          })()}
 
+          {/* Navigation */}
+          <div
+            style={{
+              display: "flex",
+              gap: "0.5rem",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <button
+              type="button"
+              onClick={goPrev}
+              disabled={!canPrev}
+              className="qg-button"
+              style={{
+                opacity: canPrev ? 1 : 0.6,
+                cursor: canPrev ? "pointer" : "not-allowed",
+              }}
+            >
+              ← Previous
+            </button>
+
+            <div style={{ flex: 1, textAlign: "center" }}>
+              <small>
+                Jump to:{" "}
+                {/* Only render buttons for seen questions (0..maxSeenIndex) */}
+                {Array.from({ length: maxSeenIndex + 1 }).map((_, i) => (
+                  <button
+                    key={`jump-${i}`}
+                    onClick={() => jumpTo(i)}
+                    className="qg-button"
+                    style={{
+                      padding: "0.2rem 0.5rem",
+                      margin: "0 0.2rem",
+                      border:
+                        i === currentIndex
+                          ? "2px solid #007bff"
+                          : "1px solid #ccc",
+                    }}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </small>
+            </div>
+
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={!canNext}
+              className="qg-button qg-button-primary"
+              style={{
+                opacity: canNext ? 1 : 0.6,
+                cursor: canNext ? "pointer" : "not-allowed",
+              }}
+            >
+              Next →
+            </button>
+          </div>
+
+          {/* Submit all */}
           <div style={{ textAlign: "center", marginTop: "2rem" }}>
             <button
               onClick={handleSubmitAll}
