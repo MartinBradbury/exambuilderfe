@@ -18,7 +18,7 @@ export default function Navbar() {
       }
       try {
         const { data } = await axios.get(
-          "http://127.0.0.1:8000/accounts/user/",
+          "https://exambuilder-efae14d59f03.herokuapp.com/accounts/user/",
           {
             headers: { Authorization: `Bearer ${token}` },
           }

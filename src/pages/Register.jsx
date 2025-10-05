@@ -32,7 +32,7 @@ export default function Register() {
     try {
       // 1) Register -> { refresh, access }
       const { data } = await axios.post(
-        "http://127.0.0.1:8000/accounts/register/",
+        "https://exambuilder-efae14d59f03.herokuapp.com/accounts/register/",
         formData
       );
       const { access, refresh } = data || {};
