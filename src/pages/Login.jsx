@@ -30,7 +30,7 @@ export default function Login() {
     try {
       // POST /accounts/login/ expects { email, password } per your serializer
       const { data } = await axios.post(
-        "https://aybwacnxziviviztyhdt.supabase.co/accounts/login/",
+        "https://exambuilder-efae14d59f03.herokuapp.com/accounts/login/",
         formData
       );
 
