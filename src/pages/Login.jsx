@@ -30,7 +30,7 @@ export default function Login() {
     try {
       // POST /accounts/login/ expects { email, password } per your serializer
       const { data } = await axios.post(
-        "http://127.0.0.1:8000/accounts/login/",
+        "https://aybwacnxziviviztyhdt.supabase.co/accounts/login/",
         formData
       );
 
