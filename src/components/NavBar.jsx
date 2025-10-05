@@ -1,7 +1,7 @@
 import { useState, useContext, useEffect, useMemo } from "react";
 import { Link, NavLink } from "react-router-dom";
 import axios from "axios";
-import "../styles/Navbar.modern.css";
+import "../styles/NavBar.modern.css";
 import { UserContext } from "../context/UserContext";
 
 export default function Navbar() {
