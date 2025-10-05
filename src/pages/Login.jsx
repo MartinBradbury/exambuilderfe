@@ -1,30 +1,23 @@
-import Button from "react-bootstrap/Button";
-import Col from "react-bootstrap/Col";
-import Form from "react-bootstrap/Form";
-import Row from "react-bootstrap/Row";
 import { useState, useContext } from "react";
 import axios from "axios";
-import { UserContext } from "../context/UserContext"; // 👈 import context
-import "../styles/Login.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { UserContext } from "../context/UserContext";
+import "../styles/Login.modern.css";
 
 export default function Login() {
-  const { login } = useContext(UserContext); // 👈 get login from context
+  const { login } = useContext(UserContext) || {};
   const navigate = useNavigate();
 
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [errorMessage, setErrorMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData((s) => ({ ...s, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
@@ -32,98 +25,116 @@ export default function Login() {
     if (isLoading) return;
 
     setIsLoading(true);
+    setErrorMessage(null);
+
     try {
-      const response = await axios.post(
+      // POST /accounts/login/ expects { email, password } per your serializer
+      const { data } = await axios.post(
         "http://127.0.0.1:8000/accounts/login/",
         formData
       );
 
-      console.log("success", response.data);
-      setSuccessMessage("Login Successful");
-      setErrorMessage(null);
+      // Backend returns: { user, refresh, access }
+      const { access, refresh, user } = data || {};
+      if (!access || !refresh) throw new Error("Login failed (no tokens).");
 
-      // store tokens in local storage
-      localStorage.setItem("accessToken", response.data.access);
-      localStorage.setItem("refreshToken", response.data.refresh);
+      // Persist tokens and set axios default header for this tab
+      localStorage.setItem("accessToken", access);
+      localStorage.setItem("refreshToken", refresh);
+      axios.defaults.headers.common.Authorization = `Bearer ${access}`;
 
-      // 👇 tell context about login (decode token + set user)
-      login(response.data.access);
+      // Optional: cache user so UI can show name immediately
+      if (user) localStorage.setItem("user", JSON.stringify(user));
+
+      // Tell context we're logged in (decodes JWT inside)
+      login?.(access);
+
+      // Go home
       navigate("/");
-
-      setIsLoading(false);
     } catch (error) {
-      console.log("error", error.response?.data);
-      if (error.response && error.response.data) {
-        Object.keys(error.response.data).forEach((field) => {
-          const errorMessages = error.response.data[field];
-          if (errorMessages && errorMessages.length > 0) {
-            setErrorMessage(errorMessages[0]);
-          }
-        });
+      // DRF-style error extraction
+      let msg = "Invalid email or password.";
+      if (error.response?.data) {
+        const payload = error.response.data;
+        const firstKey = Object.keys(payload)[0];
+        const firstVal = payload[firstKey];
+        if (Array.isArray(firstVal) && firstVal.length > 0) msg = firstVal[0];
+        else if (typeof firstVal === "string") msg = firstVal;
+      } else if (error.message) {
+        msg = error.message;
       }
+      setErrorMessage(msg);
+    } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <h2>Login to Your Account</h2>
+    <div className="login-root">
+      <div className="container">
+        <div className="login-card">
+          <header className="login-header">
+            <h1>Welcome back</h1>
+            <p className="muted">
+              Log in to generate questions and track your progress.
+            </p>
+          </header>
 
-        {errorMessage && (
-          <p className="alert-message alert-error">{errorMessage}</p>
-        )}
-        {successMessage && (
-          <p className="alert-message alert-success">{successMessage}</p>
-        )}
+          {errorMessage && (
+            <p className="login-alert login-alert--error" role="alert">
+              {errorMessage}
+            </p>
+          )}
 
-        <Form onSubmit={handleSubmit}>
-          <Form.Group as={Row} className="mb-3" controlId="formHorizontalEmail">
-            <Form.Label column sm={3}>
-              Email
-            </Form.Label>
-            <Col sm={9}>
-              <Form.Control
-                type="email"
-                placeholder="Email"
+          <form className="login-form" onSubmit={handleSubmit} noValidate>
+            <div className="login-field">
+              <label htmlFor="email" className="login-label">
+                Email
+              </label>
+              <input
+                id="email"
                 name="email"
+                type="email"
+                className="login-input"
+                placeholder="you@example.com"
                 value={formData.email}
                 onChange={handleChange}
+                required
               />
-            </Col>
-          </Form.Group>
+            </div>
 
-          <Form.Group
-            as={Row}
-            className="mb-3"
-            controlId="formHorizontalPassword"
-          >
-            <Form.Label column sm={3}>
-              Password
-            </Form.Label>
-            <Col sm={9}>
-              <Form.Control
-                type="password"
-                placeholder="Password"
+            <div className="login-field">
+              <label htmlFor="password" className="login-label">
+                Password
+              </label>
+              <input
+                id="password"
                 name="password"
+                type="password"
+                className="login-input"
+                placeholder="Your password"
                 value={formData.password}
                 onChange={handleChange}
+                required
               />
-            </Col>
-          </Form.Group>
+            </div>
 
-          <Form.Group as={Row} className="mb-3">
-            <Col sm={{ span: 9, offset: 3 }}>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="btn-primary"
-              >
-                {isLoading ? "Logging in..." : "Login"}
-              </Button>
-            </Col>
-          </Form.Group>
-        </Form>
+            <button
+              className="btn btn--primary login-submit"
+              type="submit"
+              disabled={isLoading}
+            >
+              {isLoading ? "Logging in…" : "Log in"}
+            </button>
+          </form>
+
+          <div className="login-footer">
+            <span className="muted">Don't have an account?</span>{" "}
+            <Link to="/register" className="link">
+              Create one
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

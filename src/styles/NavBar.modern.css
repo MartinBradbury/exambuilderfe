@@ -1,0 +1,245 @@
+/* Uses :root variables from Home.modern.css */
+
+.site-navbarV2 {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: saturate(140%) blur(8px);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.02)
+  );
+  border-bottom: 1px solid var(--outline);
+}
+@media (prefers-color-scheme: light) {
+  .site-navbarV2 {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.85),
+      rgba(255, 255, 255, 0.75)
+    );
+  }
+}
+
+.nav-inner {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 64px;
+}
+
+/* Brand */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  text-decoration: none;
+  color: var(--text);
+}
+.brand:hover {
+  opacity: 0.9;
+}
+.brand-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 0 5px rgba(73, 209, 125, 0.18);
+}
+
+/* Desktop links */
+.nav-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-link {
+  padding: 8px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--text);
+  border: 1px solid transparent;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+.nav-link.is-active {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(73, 209, 125, 0.25);
+}
+
+/* Actions (right) */
+.nav-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* --- user info chip always visible on desktop --- */
+.user-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  padding: 4px 10px 4px 4px;
+}
+.username {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.95rem;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #0b2717;
+  font-weight: 700;
+}
+
+/* Buttons (shared) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--outline);
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0);
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--ring);
+}
+.btn--primary {
+  background: var(--brand);
+  color: #0b2717;
+  border-color: transparent;
+}
+.btn--primary:hover {
+  background: var(--brand-600);
+}
+.btn--ghost {
+  background: transparent;
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.btn--ghost:hover {
+  background: rgba(73, 209, 125, 0.1);
+}
+.logout {
+  height: 36px;
+}
+
+/* Hamburger */
+.hamburger {
+  display: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--outline);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.hamburger span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+}
+.hamburger:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+/* Mobile drawer */
+.mobile-drawer {
+  display: none;
+  border-top: 1px solid var(--outline);
+  background: var(--card);
+}
+.mobile-links {
+  display: grid;
+  gap: 8px;
+  padding: 12px 0 14px;
+  width: min(1100px, 92%);
+  margin-inline: auto;
+}
+.mobile-link {
+  padding: 12px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--text);
+  border: 1px solid transparent;
+}
+.mobile-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.mobile-actions {
+  display: grid;
+  gap: 10px;
+  padding-top: 6px;
+}
+.mobile-user {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+}
+.mobile-identity strong {
+  display: block;
+}
+.mobile-identity small {
+  display: block;
+}
+
+/* Responsive behavior */
+@media (max-width: 900px) {
+  .nav-links {
+    display: none;
+  }
+  .nav-actions {
+    display: none;
+  } /* hidden on small screens; username shows in drawer */
+  .hamburger {
+    display: inline-flex;
+  }
+  .site-navbarV2.is-open .mobile-drawer {
+    display: block;
+  }
+  .nav-inner {
+    grid-template-columns: auto 1fr auto;
+  }
+}

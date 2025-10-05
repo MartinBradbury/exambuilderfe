@@ -1,0 +1,159 @@
+/* Uses :root variables from Home.modern.css */
+
+.container {
+  width: min(1100px, 92%);
+  margin-inline: auto;
+}
+.muted {
+  color: var(--muted);
+}
+.link {
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 700;
+}
+.link:hover {
+  text-decoration: underline;
+}
+
+/* Page layout */
+.reg-root {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  padding: 40px 0;
+  background: var(--bg);
+}
+
+/* Card */
+.reg-card {
+  width: min(640px, 100%);
+  margin: 0 auto;
+  background: var(--card);
+  border: 1px solid var(--outline);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+}
+
+.reg-header h1 {
+  margin: 0 0 6px;
+  font-size: clamp(22px, 4.5vw, 28px);
+}
+.reg-header .muted {
+  margin: 0 0 14px;
+}
+
+/* Form */
+.reg-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.reg-field {
+  display: grid;
+  gap: 8px;
+}
+.reg-label {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.reg-input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--outline);
+  color: var(--text);
+  background: #0d141c;
+  outline: none;
+}
+.reg-input::placeholder {
+  color: rgba(230, 237, 243, 0.55);
+}
+.reg-input:focus {
+  box-shadow: 0 0 0 4px var(--ring);
+  border-color: transparent;
+}
+
+@media (prefers-color-scheme: light) {
+  .reg-input {
+    background: #fff;
+    color: #0e1726;
+  }
+  .reg-input::placeholder {
+    color: rgba(14, 23, 38, 0.55);
+  }
+}
+
+/* Button (same language as other pages) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px solid var(--outline);
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0);
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--ring);
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--brand);
+  color: #0b2717;
+  border-color: transparent;
+}
+.btn--primary:hover {
+  background: var(--brand-600);
+}
+
+.reg-submit {
+  width: 100%;
+  margin-top: 6px;
+}
+
+/* Alerts */
+.reg-alert {
+  margin: 8px 0 12px;
+  font-weight: 700;
+  text-align: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--outline);
+}
+.reg-alert--error {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.06);
+}
+.reg-alert--success {
+  color: #2fb765;
+  background: rgba(47, 183, 101, 0.1);
+}
+
+/* Footer */
+.reg-footer {
+  margin-top: 12px;
+  text-align: center;
+}

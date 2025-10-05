@@ -1,158 +1,174 @@
-import Button from "react-bootstrap/Button";
-import Col from "react-bootstrap/Col";
-import Form from "react-bootstrap/Form";
-import Row from "react-bootstrap/Row";
-import { useState } from "react";
+// src/pages/Register.jsx
+import { useState, useContext } from "react";
 import axios from "axios";
-import "../styles/Register.css";
+import { useNavigate, Link } from "react-router-dom";
+import { UserContext } from "../context/UserContext";
+import "../styles/Register.modern.css";
 
-function Register() {
-  const [successMessage, setSuccessMessage] = useState(null);
+export default function Register() {
+  const navigate = useNavigate();
+  const { login } = useContext(UserContext) || {};
+
   const [errorMessage, setErrorMessage] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     username: "",
-    email: "email",
-    password1: "password1",
-    password2: "password2",
+    email: "",
+    password1: "",
+    password2: "",
   });
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData((s) => ({ ...s, [e.target.name]: e.target.value }));
   };
-
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isLoading) {
-      return;
-    }
+    if (isLoading) return;
     setIsLoading(true);
+    setErrorMessage(null);
+
     try {
-      const response = await axios.post(
+      // 1) Register -> { refresh, access }
+      const { data } = await axios.post(
         "http://127.0.0.1:8000/accounts/register/",
         formData
       );
-      console.log("success", response.data);
-      setSuccessMessage("Registration Successful");
-      setErrorMessage(null);
+      const { access, refresh } = data || {};
+      if (!access || !refresh) throw new Error("Missing tokens from register.");
+
+      // 2) Persist tokens
+      localStorage.setItem("accessToken", access);
+      localStorage.setItem("refreshToken", refresh);
+
+      // 3) Tell UserContext we're logged in (decodes JWT internally)
+      if (login) login(access);
+
+      // 4) (Optional) set axios default header for this tab
+      axios.defaults.headers.common.Authorization = `Bearer ${access}`;
+
+      // 5) Go home logged in
+      navigate("/");
     } catch (error) {
-      console.log("error", error.response?.data);
-      if (error.response && error.response.data) {
-        Object.keys(error.response.data).forEach((field) => {
-          const errorMessages = error.response.data[field];
-          if (errorMessages && errorMessages.length > 0) {
-            setErrorMessage(errorMessages[0]);
-          }
-        });
+      let msg = "Something went wrong. Please try again.";
+      if (error.response?.data) {
+        const payload = error.response.data;
+        const firstKey = Object.keys(payload)[0];
+        const firstVal = payload[firstKey];
+        if (Array.isArray(firstVal) && firstVal.length > 0) msg = firstVal[0];
+        else if (typeof firstVal === "string") msg = firstVal;
+      } else if (error.message) {
+        msg = error.message;
       }
+      setErrorMessage(msg);
+
+      // Clean up partial tokens
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      delete axios.defaults.headers.common.Authorization;
+    } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="register-page">
-      <div className="register-card">
-        <h2>Create Your Account</h2>
+    <div className="reg-root">
+      <div className="container">
+        <div className="reg-card">
+          <header className="reg-header">
+            <h1>Create your account</h1>
+            <p className="muted">
+              Generate questions, get marking, track results.
+            </p>
+          </header>
 
-        {errorMessage && (
-          <p className="alert-message alert-error">{errorMessage}</p>
-        )}
-        {successMessage && (
-          <p className="alert-message alert-success">{successMessage}</p>
-        )}
+          {errorMessage && (
+            <p className="reg-alert reg-alert--error">{errorMessage}</p>
+          )}
 
-        <Form onSubmit={handleSubmit}>
-          <Form.Group
-            as={Row}
-            className="mb-3"
-            controlId="formHorizontalUsername"
-          >
-            <Form.Label column sm={3}>
-              Username
-            </Form.Label>
-            <Col sm={9}>
-              <Form.Control
-                type="text"
-                placeholder="Username"
+          <form onSubmit={handleSubmit} className="reg-form" noValidate>
+            <div className="reg-field">
+              <label htmlFor="username" className="reg-label">
+                Username
+              </label>
+              <input
+                id="username"
                 name="username"
+                type="text"
+                className="reg-input"
+                placeholder="Choose a unique username"
                 value={formData.username}
                 onChange={handleChange}
+                required
               />
-            </Col>
-          </Form.Group>
+            </div>
 
-          <Form.Group as={Row} className="mb-3" controlId="formHorizontalEmail">
-            <Form.Label column sm={3}>
-              Email
-            </Form.Label>
-            <Col sm={9}>
-              <Form.Control
-                type="email"
-                placeholder="Email"
+            <div className="reg-field">
+              <label htmlFor="email" className="reg-label">
+                Email
+              </label>
+              <input
+                id="email"
                 name="email"
+                type="email"
+                className="reg-input"
+                placeholder="you@example.com"
                 value={formData.email}
                 onChange={handleChange}
+                required
               />
-            </Col>
-          </Form.Group>
+            </div>
 
-          <Form.Group
-            as={Row}
-            className="mb-3"
-            controlId="formHorizontalPassword1"
-          >
-            <Form.Label column sm={3}>
-              Password
-            </Form.Label>
-            <Col sm={9}>
-              <Form.Control
-                type="password"
-                placeholder="Password"
+            <div className="reg-field">
+              <label htmlFor="password1" className="reg-label">
+                Password
+              </label>
+              <input
+                id="password1"
                 name="password1"
+                type="password"
+                className="reg-input"
+                placeholder="Create a strong password (8+ chars)"
                 value={formData.password1}
                 onChange={handleChange}
+                required
               />
-            </Col>
-          </Form.Group>
+            </div>
 
-          <Form.Group
-            as={Row}
-            className="mb-3"
-            controlId="formHorizontalPassword2"
-          >
-            <Form.Label column sm={3}>
-              Repeat Password
-            </Form.Label>
-            <Col sm={9}>
-              <Form.Control
-                type="password"
-                placeholder="Repeat Password"
+            <div className="reg-field">
+              <label htmlFor="password2" className="reg-label">
+                Repeat Password
+              </label>
+              <input
+                id="password2"
                 name="password2"
+                type="password"
+                className="reg-input"
+                placeholder="Repeat the password"
                 value={formData.password2}
                 onChange={handleChange}
+                required
               />
-            </Col>
-          </Form.Group>
+            </div>
 
-          <Form.Group as={Row} className="mb-3">
-            <Col sm={{ span: 9, offset: 3 }}>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="btn-primary"
-              >
-                {isLoading ? "Registering..." : "Register"}
-              </Button>
-            </Col>
-          </Form.Group>
-        </Form>
+            <button
+              className="btn btn--primary reg-submit"
+              type="submit"
+              disabled={isLoading}
+            >
+              {isLoading ? "Registering…" : "Register"}
+            </button>
+          </form>
+
+          <div className="reg-footer">
+            <span className="muted">Already have an account?</span>{" "}
+            <Link to="/login" className="link">
+              Log in
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
-
-export default Register;
