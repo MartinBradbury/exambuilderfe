@@ -35,7 +35,7 @@ export default function QuestionGenerator() {
   const progressIntervalRef = useRef(null);
 
   const navigate = useNavigate();
-  const API = "http://127.0.0.1:8000/api";
+  const API = "https://exambuilder-efae14d59f03.herokuapp.com/api";
 
   useEffect(() => {
     const fetchTopics = async () => {
