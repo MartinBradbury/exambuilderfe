@@ -37,27 +37,41 @@ export default function QuestionGenerator() {
   const navigate = useNavigate();
   const API = "https://exambuilder-efae14d59f03.herokuapp.com/api";
 
+  // --- Fetch topics when examBoard changes (and pass ?exam_board=...)
   useEffect(() => {
     const fetchTopics = async () => {
       try {
         const accessToken = localStorage.getItem("accessToken");
-        const { data } = await axios.get(`${API}/biology-topics/`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        });
+        const { data } = await axios.get(
+          `${API}/biology-topics/?exam_board=${encodeURIComponent(examBoard)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
         setTopics(data || []);
+        // Clear cascading selections on board change
         setSelectedTopic("");
+        setSubtopics([]);
+        setSelectedSubtopic("");
+        setSubcategories([]);
+        setSelectedSubcategory("");
       } catch (err) {
         console.error("Failed to fetch topics:", err);
         setTopics([]);
+        setSelectedTopic("");
+        setSubtopics([]);
+        setSelectedSubtopic("");
+        setSubcategories([]);
+        setSelectedSubcategory("");
       }
     };
     fetchTopics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [examBoard]); // IMPORTANT
 
+  // --- Fetch subtopics when selectedTopic OR examBoard changes
   useEffect(() => {
     const run = async () => {
       if (!selectedTopic) {
@@ -70,7 +84,7 @@ export default function QuestionGenerator() {
       try {
         const accessToken = localStorage.getItem("accessToken");
         const { data } = await axios.get(
-          `${API}/biology-subtopics/?topic_id=${selectedTopic}`,
+          `${API}/biology-subtopics/?topic_id=${selectedTopic}&exam_board=${encodeURIComponent(examBoard)}`,
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         setSubtopics(data || []);
@@ -86,8 +100,9 @@ export default function QuestionGenerator() {
       }
     };
     run();
-  }, [selectedTopic]);
+  }, [selectedTopic, examBoard]); // IMPORTANT
 
+  // --- Fetch subcategories when selectedSubtopic OR examBoard changes
   useEffect(() => {
     const run = async () => {
       if (!selectedSubtopic) {
@@ -98,7 +113,7 @@ export default function QuestionGenerator() {
       try {
         const accessToken = localStorage.getItem("accessToken");
         const { data } = await axios.get(
-          `${API}/biology-subcategories/?subtopic_id=${selectedSubtopic}`,
+          `${API}/biology-subcategories/?subtopic_id=${selectedSubtopic}&exam_board=${encodeURIComponent(examBoard)}`,
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         setSubcategories(data || []);
@@ -110,7 +125,7 @@ export default function QuestionGenerator() {
       }
     };
     run();
-  }, [selectedSubtopic]);
+  }, [selectedSubtopic, examBoard]); // IMPORTANT
 
   const startProgress = () => {
     setProgress(0);
@@ -157,9 +172,7 @@ export default function QuestionGenerator() {
       const payload = {
         topic_id: Number(selectedTopic),
         subtopic_id: selectedSubtopic ? Number(selectedSubtopic) : null,
-        subcategory_id: selectedSubcategory
-          ? Number(selectedSubcategory)
-          : null,
+        subcategory_id: selectedSubcategory ? Number(selectedSubcategory) : null,
         exam_board: examBoard,
         number_of_questions: parseInt(numberOfQuestions, 10),
       };
@@ -231,9 +244,7 @@ export default function QuestionGenerator() {
       alert("No session ID available.");
       return;
     }
-    const confirmed = window.confirm(
-      "Are you sure you want to submit all answers?"
-    );
+    const confirmed = window.confirm("Are you sure you want to submit all answers?");
     if (!confirmed) return;
 
     setIsSubmittingAll(true);
@@ -282,16 +293,14 @@ export default function QuestionGenerator() {
       return next;
     });
   };
-  const jumpTo = (i) =>
-    setCurrentIndex((curr) => (i <= maxSeenIndex ? i : curr));
+  const jumpTo = (i) => setCurrentIndex((curr) => (i <= maxSeenIndex ? i : curr));
 
   return (
     <div className="qg-root container">
       <header className="qg-header">
         <h1>Generate Questions</h1>
         <p className="muted">
-          Choose your scope, generate questions, answer one-by-one, and get
-          instant marking.
+          Choose your scope, generate questions, answer one-by-one, and get instant marking.
         </p>
       </header>
 
@@ -305,14 +314,21 @@ export default function QuestionGenerator() {
               <select
                 className="qg-input"
                 value={examBoard}
-                onChange={(e) => setExamBoard(e.target.value)}
+                onChange={(e) => {
+                  setExamBoard(e.target.value);
+                  // immediate defensive reset (the fetch also clears)
+                  setSelectedTopic("");
+                  setSubtopics([]);
+                  setSelectedSubtopic("");
+                  setSubcategories([]);
+                  setSelectedSubcategory("");
+                }}
               >
-                <option value="AQA">
-                  AQA
-                </option>
+                <option value="AQA">AQA</option>
                 <option value="OCR">OCR</option>
               </select>
             </div>
+
             {/* Topic */}
             {topics.length > 0 ? (
               <div className="qg-field">
@@ -338,7 +354,7 @@ export default function QuestionGenerator() {
               </div>
             )}
 
-            {/* Optional refinements only appear when available */}
+            {/* Subtopics (optional) */}
             {subtopics.length > 0 && (
               <div className="qg-field">
                 <label className="qg-label">SubTopic (Optional)</label>
@@ -357,6 +373,7 @@ export default function QuestionGenerator() {
               </div>
             )}
 
+            {/* Subcategories (optional) */}
             {subcategories.length > 0 && (
               <div className="qg-field">
                 <label className="qg-label">SubCategory (Optional)</label>
@@ -403,10 +420,7 @@ export default function QuestionGenerator() {
 
           {loading && (
             <div className="qg-progress" aria-live="polite">
-              <div
-                className="qg-progress-bar"
-                style={{ width: `${progress}%` }}
-              />
+              <div className="qg-progress-bar" style={{ width: `${progress}%` }} />
             </div>
           )}
 
@@ -421,8 +435,7 @@ export default function QuestionGenerator() {
               Question {currentIndex + 1} of {questions.length}
             </h2>
             <span className="muted">
-              {Math.round(((currentIndex + 1) / questions.length) * 100)}%
-              viewed
+              {Math.round(((currentIndex + 1) / questions.length) * 100)}% viewed
             </span>
           </div>
 
@@ -441,11 +454,7 @@ export default function QuestionGenerator() {
                   <strong>Q{currentIndex + 1}.</strong> {q.question}
                 </p>
 
-                <button
-                  type="button"
-                  onClick={toggle}
-                  className="btn btn--subtle"
-                >
+                <button type="button" onClick={toggle} className="btn btn--subtle">
                   {isOpen ? "Hide Mark Scheme" : "Show Mark Scheme"}
                 </button>
 
@@ -463,9 +472,7 @@ export default function QuestionGenerator() {
                     rows={6}
                     className="qg-input"
                     value={userAnswers[currentIndex] || ""}
-                    onChange={(e) =>
-                      handleAnswerChange(currentIndex, e.target.value)
-                    }
+                    onChange={(e) => handleAnswerChange(currentIndex, e.target.value)}
                     disabled={answered[currentIndex]}
                   />
                   <button
@@ -490,12 +497,11 @@ export default function QuestionGenerator() {
                     ) : (
                       <>
                         <p>
-                          <strong>Score:</strong> {feedback[currentIndex].score}{" "}
-                          / {feedback[currentIndex].out_of}
+                          <strong>Score:</strong> {feedback[currentIndex].score} /{" "}
+                          {feedback[currentIndex].out_of}
                         </p>
                         <p>
-                          <strong>Feedback:</strong>{" "}
-                          {feedback[currentIndex].feedback}
+                          <strong>Feedback:</strong> {feedback[currentIndex].feedback}
                         </p>
                       </>
                     )}
@@ -506,12 +512,7 @@ export default function QuestionGenerator() {
           })()}
 
           <div className="qg-nav">
-            <button
-              type="button"
-              onClick={goPrev}
-              disabled={!canPrev}
-              className="btn"
-            >
+            <button type="button" onClick={goPrev} disabled={!canPrev} className="btn">
               ← Previous
             </button>
 
@@ -528,12 +529,7 @@ export default function QuestionGenerator() {
               ))}
             </div>
 
-            <button
-              type="button"
-              onClick={goNext}
-              disabled={!canNext}
-              className="btn btn--primary"
-            >
+            <button type="button" onClick={goNext} disabled={!canNext} className="btn btn--primary">
               Next →
             </button>
           </div>
@@ -544,11 +540,7 @@ export default function QuestionGenerator() {
               disabled={isSubmittingAll || hasSubmitted}
               className="btn btn--primary qg-submit-all"
             >
-              {hasSubmitted
-                ? "Submitted ✅"
-                : isSubmittingAll
-                ? "Submitting…"
-                : "Submit All Answers"}
+              {hasSubmitted ? "Submitted ✅" : isSubmittingAll ? "Submitting…" : "Submit All Answers"}
             </button>
           </div>
 
