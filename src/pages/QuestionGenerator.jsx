@@ -299,6 +299,20 @@ export default function QuestionGenerator() {
         <form onSubmit={handleSubmit} className="qg-card">
           {/* Vertically stacked essentials */}
           <div className="qg-vert">
+            {/* Exam board */}
+            <div className="qg-field">
+              <label className="qg-label">Exam Board</label>
+              <select
+                className="qg-input"
+                value={examBoard}
+                onChange={(e) => setExamBoard(e.target.value)}
+              >
+                <option value="AQA">
+                  AQA
+                </option>
+                <option value="OCR">OCR</option>
+              </select>
+            </div>
             {/* Topic */}
             {topics.length > 0 ? (
               <div className="qg-field">
@@ -360,21 +374,6 @@ export default function QuestionGenerator() {
                 </select>
               </div>
             )}
-
-            {/* Exam board */}
-            <div className="qg-field">
-              <label className="qg-label">Exam Board</label>
-              <select
-                className="qg-input"
-                value={examBoard}
-                onChange={(e) => setExamBoard(e.target.value)}
-              >
-                <option value="AQA">
-                  AQA
-                </option>
-                <option value="OCR">OCR</option>
-              </select>
-            </div>
 
             {/* Number of questions */}
             <div className="qg-field">
