@@ -5,6 +5,7 @@ import bioAlevel from "../assets/home/alevelbio.jpg";
 import chemAlevel from "../assets/home/alevelchem.jpg";
 import physicsAlevel from "../assets/home/alevelphysics.jpg";
 import SubjectCarousel from "../components/Carousel";
+import DevNotes from "../components/DevNotes";
 
 export default function Home() {
   const { user } = useContext(UserContext);
@@ -73,8 +74,15 @@ export default function Home() {
         </div>
       </header>
 
+      <div>
+        <DevNotes />
+      </div>
+
       {/* Features Section */}
-      <section className="featuresV2 container" aria-labelledby="features-title">
+      <section
+        className="featuresV2 container"
+        aria-labelledby="features-title"
+      >
         <h2 id="features-title">Why Students Love This</h2>
         <div className="featureGrid">
           <article className="featureCard">
