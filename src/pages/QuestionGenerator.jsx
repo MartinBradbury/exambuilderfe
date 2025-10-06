@@ -369,8 +369,8 @@ export default function QuestionGenerator() {
                 value={examBoard}
                 onChange={(e) => setExamBoard(e.target.value)}
               >
-                <option value="AQA" disabled>
-                  AQA — Specific spec coming soon
+                <option value="AQA">
+                  AQA
                 </option>
                 <option value="OCR">OCR</option>
               </select>

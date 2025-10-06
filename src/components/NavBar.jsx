@@ -60,7 +60,7 @@ export default function Navbar() {
         {/* Brand */}
         <Link to="/" className="brand" onClick={closeMenu}>
           <span className="brand-dot" aria-hidden="true" />
-          A-Level Bio
+          Exam Builder
         </Link>
 
         {/* Desktop nav */}
