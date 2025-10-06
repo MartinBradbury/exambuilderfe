@@ -31,7 +31,7 @@ export default function Home() {
     <div className="home-root">
       {/* Under Construction Banner */}
       <div className="announcement" role="status" aria-live="polite">
-        <span className="badge">Beta</span>
+        <span className="badge">Alpha v1.0</span>
         <span>
           This site is still under construction — features are rolling out
           gradually.
