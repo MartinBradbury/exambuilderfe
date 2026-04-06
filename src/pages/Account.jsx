@@ -188,13 +188,28 @@ export default function Account() {
     const cancelUrl = `${window.location.origin}/account?checkout=cancelled`;
 
     try {
-      const { data } = await api.post(
-        "/accounts/billing/create-checkout-session/",
-        {
-          success_url: successUrl,
-          cancel_url: cancelUrl,
-        },
-      );
+      let data;
+
+      try {
+        const response = await api.post(
+          "/accounts/billing/create-checkout-session/",
+          {
+            success_url: successUrl,
+            cancel_url: cancelUrl,
+          },
+        );
+        data = response.data;
+      } catch (error) {
+        if (error.response?.status !== 500) {
+          throw error;
+        }
+
+        const fallbackResponse = await api.post(
+          "/accounts/billing/create-checkout-session/",
+          {},
+        );
+        data = fallbackResponse.data;
+      }
 
       if (!data?.checkout_url) {
         throw new Error("Unable to start checkout.");
