@@ -6,6 +6,8 @@ import Register from "./pages/Register";
 import ViewResults from "./pages/ViewResults";
 import NavBar from "./components/NavBar";
 import QuestionGenerator from "./pages/QuestionGenerator";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
         <Routes>
           <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
           <Route path="register" element={<Register />} />
           <Route path="question-generator" element={<QuestionGenerator />} />
           <Route path="/my-results" element={<ViewResults />} />

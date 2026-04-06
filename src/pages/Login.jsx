@@ -1,5 +1,5 @@
 import { useState, useContext } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
 import "../styles/Login.modern.css";
@@ -7,9 +7,11 @@ import "../styles/Login.modern.css";
 export default function Login() {
   const { login } = useContext(UserContext) || {};
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
+  const successMessage = location.state?.message || "";
 
   const [formData, setFormData] = useState({
     email: "",
@@ -65,6 +67,12 @@ export default function Login() {
             </p>
           </header>
 
+          {successMessage && (
+            <p className="login-alert login-alert--success" role="status">
+              {successMessage}
+            </p>
+          )}
+
           {errorMessage && (
             <p className="login-alert login-alert--error" role="alert">
               {errorMessage}
@@ -102,6 +110,12 @@ export default function Login() {
                 onChange={handleChange}
                 required
               />
+            </div>
+
+            <div className="login-meta-row">
+              <Link to="/forgot-password" className="link">
+                Forgot your password?
+              </Link>
             </div>
 
             <button

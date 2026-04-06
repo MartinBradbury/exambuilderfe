@@ -50,6 +50,12 @@
   gap: 14px;
   margin-top: 8px;
 }
+
+.login-state-block {
+  display: grid;
+  gap: 14px;
+}
+
 .login-field {
   display: grid;
   gap: 8px;
@@ -99,7 +105,10 @@
   text-decoration: none;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease,
+  transition:
+    transform 0.15s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
     box-shadow 0.2s ease;
   color: var(--text);
   background: rgba(255, 255, 255, 0.04);
@@ -133,6 +142,12 @@
   margin-top: 6px;
 }
 
+.login-meta-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -2px;
+}
+
 /* Alerts */
 .login-alert {
   margin: 8px 0 12px;
@@ -147,8 +162,48 @@
   background: rgba(255, 107, 107, 0.06);
 }
 
+.login-alert--success {
+  color: var(--brand);
+  background: rgba(73, 209, 125, 0.08);
+}
+
+.login-helper-text {
+  margin: 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+.login-helper-text--error {
+  color: #ff6b6b;
+  text-align: left;
+}
+
 /* Footer */
 .login-footer {
   margin-top: 12px;
   text-align: center;
+}
+
+.login-footer--split {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.login-secondary-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .login-footer--split,
+  .login-secondary-actions {
+    flex-direction: column;
+  }
+
+  .login-secondary-actions .btn {
+    width: 100%;
+  }
 }
