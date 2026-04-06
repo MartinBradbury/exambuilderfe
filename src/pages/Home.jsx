@@ -16,17 +16,20 @@ export default function Home() {
     {
       src: bioAlevel,
       title: "Biology",
-      description: "Cell biology, transport, disease, biodiversity, and genetics.",
+      description:
+        "Cell biology, transport, disease, biodiversity, and genetics.",
     },
     {
       src: chemAlevel,
       title: "Chemistry",
-      description: "Bonding, energetics, redox, organic chemistry, and analysis.",
+      description:
+        "Bonding, energetics, redox, organic chemistry, and analysis.",
     },
     {
       src: physicsAlevel,
       title: "Physics",
-      description: "Mechanics, electricity, waves, thermal physics, and modern topics.",
+      description:
+        "Mechanics, electricity, waves, thermal physics, and modern topics.",
     },
   ];
 
@@ -59,8 +62,8 @@ export default function Home() {
               Revision built around real exam practice
             </p>
             <h1>
-              Generate science questions, write your answer, and see exactly
-              how you would score.
+              Generate science questions, write your answer, and see exactly how
+              you would score.
             </h1>
             <p className="lead">
               Exam Builder helps OCR and AQA students practise topic-specific,
@@ -142,7 +145,9 @@ export default function Home() {
               <ul className="heroPanel__points">
                 <li>Large surface area from many alveoli</li>
                 <li>Thin walls create a short diffusion path</li>
-                <li>Rich capillary network maintains concentration gradients</li>
+                <li>
+                  Rich capillary network maintains concentration gradients
+                </li>
               </ul>
             </div>
 
@@ -198,7 +203,8 @@ export default function Home() {
           </h2>
           <p>
             The core loop is simple: pick a topic, answer a realistic question,
-            compare against the mark scheme, then review saved performance later.
+            compare against the mark scheme, then review saved performance
+            later.
           </p>
         </div>
 
@@ -293,7 +299,10 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="audienceV2 container" aria-labelledby="audience-title">
+      <section
+        className="audienceV2 container"
+        aria-labelledby="audience-title"
+      >
         <div className="sectionHeading">
           <p className="sectionEyebrow">Who this is for</p>
           <h2 id="audience-title">Built for students revising with purpose</h2>
