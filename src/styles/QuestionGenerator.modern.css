@@ -107,7 +107,9 @@
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--outline);
   border-radius: 999px;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 .qg-slider::after {
   content: "";
@@ -119,7 +121,9 @@
   height: 20px;
   border-radius: 50%;
   background: var(--muted);
-  transition: left 0.2s ease, background 0.2s ease;
+  transition:
+    left 0.2s ease,
+    background 0.2s ease;
 }
 .qg-switch input:checked + .qg-slider {
   background: rgba(73, 209, 125, 0.15);
@@ -142,7 +146,10 @@
   text-decoration: none;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease,
+  transition:
+    transform 0.15s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
     box-shadow 0.2s ease;
   color: var(--text);
   background: rgba(255, 255, 255, 0.04);

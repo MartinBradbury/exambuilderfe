@@ -45,15 +45,13 @@ export default function QuestionGenerator() {
   const navigate = useNavigate();
 
   const numericRemaining =
-    questionsRemainingToday == null
-      ? null
-      : Number(questionsRemainingToday);
+    questionsRemainingToday == null ? null : Number(questionsRemainingToday);
   const effectivePlanType = user?.plan_type || null;
   const isFreePlan = effectivePlanType === "free" && !hasUnlimitedAccess;
   const generationBlocked = !hasUnlimitedAccess && numericRemaining === 0;
   const questionCountOptions = useMemo(
     () => (isFreePlan ? [1] : [1, 2, 3, 4, 6, 8, 10]),
-    [isFreePlan]
+    [isFreePlan],
   );
 
   const applyEntitlementUpdate = (payload) => {
@@ -224,7 +222,9 @@ export default function QuestionGenerator() {
       const payload = {
         topic_id: Number(selectedTopic),
         subtopic_id: selectedSubtopic ? Number(selectedSubtopic) : null,
-        subcategory_id: selectedSubcategory ? Number(selectedSubcategory) : null,
+        subcategory_id: selectedSubcategory
+          ? Number(selectedSubcategory)
+          : null,
         exam_board: examBoard,
         number_of_questions: parseInt(numberOfQuestions, 10),
       };
@@ -250,7 +250,7 @@ export default function QuestionGenerator() {
       } else {
         setError(
           err.response?.data?.error ||
-            "Something went wrong. Please try again."
+            "Something went wrong. Please try again.",
         );
       }
     } finally {
@@ -273,15 +273,12 @@ export default function QuestionGenerator() {
     setMarking((prev) => ({ ...prev, [index]: true }));
 
     try {
-      const { data } = await api.post(
-        "/api/mark-answer/",
-        {
-          question,
-          mark_scheme,
-          user_answer: answer,
-          exam_board: examBoard,
-        }
-      );
+      const { data } = await api.post("/api/mark-answer/", {
+        question,
+        mark_scheme,
+        user_answer: answer,
+        exam_board: examBoard,
+      });
       setFeedback((prev) => ({ ...prev, [index]: data }));
     } catch (err) {
       console.error(err);
@@ -299,7 +296,9 @@ export default function QuestionGenerator() {
       alert("No session ID available.");
       return;
     }
-    const confirmed = window.confirm("Are you sure you want to submit all answers?");
+    const confirmed = window.confirm(
+      "Are you sure you want to submit all answers?",
+    );
     if (!confirmed) return;
 
     setIsSubmittingAll(true);
@@ -312,14 +311,11 @@ export default function QuestionGenerator() {
     }));
 
     try {
-      const { data } = await api.post(
-        "/api/submit-question-session/",
-        {
-          session_id: sessionId,
-          answers,
-          feedback: finalFeedback,
-        }
-      );
+      const { data } = await api.post("/api/submit-question-session/", {
+        session_id: sessionId,
+        answers,
+        feedback: finalFeedback,
+      });
       setFinalFeedback(data.feedback);
       setHasSubmitted(true);
     } catch (err) {
@@ -341,19 +337,23 @@ export default function QuestionGenerator() {
       return next;
     });
   };
-  const jumpTo = (i) => setCurrentIndex((curr) => (i <= maxSeenIndex ? i : curr));
+  const jumpTo = (i) =>
+    setCurrentIndex((curr) => (i <= maxSeenIndex ? i : curr));
 
   return (
     <div className="qg-root container">
       <header className="qg-header">
         <h1>Generate Questions</h1>
         <p className="muted">
-          Choose your scope, generate questions, answer one-by-one, and get instant marking.
+          Choose your scope, generate questions, answer one-by-one, and get
+          instant marking.
         </p>
         {user && (
           <div className="qg-access-summary" aria-live="polite">
             <span className="qg-access-pill">
-              {hasUnlimitedAccess ? "Lifetime access" : `${effectivePlanType || "free"} plan`}
+              {hasUnlimitedAccess
+                ? "Lifetime access"
+                : `${effectivePlanType || "free"} plan`}
             </span>
             <span className="qg-access-copy">
               {hasUnlimitedAccess || numericRemaining == null
@@ -369,8 +369,8 @@ export default function QuestionGenerator() {
           <h2>Daily limit reached</h2>
           <p>{upgradeState.error}</p>
           <p>
-            Free access currently includes 1 generated question per day. Unlimited
-            access will be handled through the lifetime plan.
+            Free access currently includes 1 generated question per day.
+            Unlimited access will be handled through the lifetime plan.
           </p>
           <div className="qg-upgrade-actions">
             <Link to="/my-results" className="btn btn--ghost">
@@ -487,7 +487,8 @@ export default function QuestionGenerator() {
               </select>
               {isFreePlan && (
                 <p className="qg-hint">
-                  Free accounts are currently limited to 1 generated question per day.
+                  Free accounts are currently limited to 1 generated question
+                  per day.
                 </p>
               )}
             </div>
@@ -508,7 +509,10 @@ export default function QuestionGenerator() {
 
           {loading && (
             <div className="qg-progress" aria-live="polite">
-              <div className="qg-progress-bar" style={{ width: `${progress}%` }} />
+              <div
+                className="qg-progress-bar"
+                style={{ width: `${progress}%` }}
+              />
             </div>
           )}
 
@@ -523,7 +527,8 @@ export default function QuestionGenerator() {
               Question {currentIndex + 1} of {questions.length}
             </h2>
             <span className="muted">
-              {Math.round(((currentIndex + 1) / questions.length) * 100)}% viewed
+              {Math.round(((currentIndex + 1) / questions.length) * 100)}%
+              viewed
             </span>
           </div>
 
@@ -542,7 +547,11 @@ export default function QuestionGenerator() {
                   <strong>Q{currentIndex + 1}.</strong> {q.question}
                 </p>
 
-                <button type="button" onClick={toggle} className="btn btn--subtle">
+                <button
+                  type="button"
+                  onClick={toggle}
+                  className="btn btn--subtle"
+                >
                   {isOpen ? "Hide Mark Scheme" : "Show Mark Scheme"}
                 </button>
 
@@ -560,7 +569,9 @@ export default function QuestionGenerator() {
                     rows={6}
                     className="qg-input"
                     value={userAnswers[currentIndex] || ""}
-                    onChange={(e) => handleAnswerChange(currentIndex, e.target.value)}
+                    onChange={(e) =>
+                      handleAnswerChange(currentIndex, e.target.value)
+                    }
                     disabled={answered[currentIndex]}
                   />
                   <button
@@ -585,11 +596,12 @@ export default function QuestionGenerator() {
                     ) : (
                       <>
                         <p>
-                          <strong>Score:</strong> {feedback[currentIndex].score} /{" "}
-                          {feedback[currentIndex].out_of}
+                          <strong>Score:</strong> {feedback[currentIndex].score}{" "}
+                          / {feedback[currentIndex].out_of}
                         </p>
                         <p>
-                          <strong>Feedback:</strong> {feedback[currentIndex].feedback}
+                          <strong>Feedback:</strong>{" "}
+                          {feedback[currentIndex].feedback}
                         </p>
                       </>
                     )}
@@ -600,7 +612,12 @@ export default function QuestionGenerator() {
           })()}
 
           <div className="qg-nav">
-            <button type="button" onClick={goPrev} disabled={!canPrev} className="btn">
+            <button
+              type="button"
+              onClick={goPrev}
+              disabled={!canPrev}
+              className="btn"
+            >
               ← Previous
             </button>
 
@@ -617,7 +634,12 @@ export default function QuestionGenerator() {
               ))}
             </div>
 
-            <button type="button" onClick={goNext} disabled={!canNext} className="btn btn--primary">
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={!canNext}
+              className="btn btn--primary"
+            >
               Next →
             </button>
           </div>
@@ -628,7 +650,11 @@ export default function QuestionGenerator() {
               disabled={isSubmittingAll || hasSubmitted}
               className="btn btn--primary qg-submit-all"
             >
-              {hasSubmitted ? "Submitted ✅" : isSubmittingAll ? "Submitting…" : "Submit All Answers"}
+              {hasSubmitted
+                ? "Submitted ✅"
+                : isSubmittingAll
+                  ? "Submitting…"
+                  : "Submit All Answers"}
             </button>
           </div>
 

@@ -94,7 +94,7 @@ export const UserProvider = ({ children }) => {
         setAuthReady(true);
       }
     },
-    [refreshCurrentUser]
+    [refreshCurrentUser],
   );
 
   const updateEntitlement = useCallback((updates) => {
@@ -126,8 +126,8 @@ export const UserProvider = ({ children }) => {
     const planType = user?.plan_type ?? null;
     const hasUnlimitedAccess = Boolean(
       user?.has_unlimited_access ||
-        user?.lifetime_unlocked ||
-        planType === "lifetime"
+      user?.lifetime_unlocked ||
+      planType === "lifetime",
     );
 
     return {
@@ -144,8 +144,6 @@ export const UserProvider = ({ children }) => {
   }, [authReady, login, logout, refreshCurrentUser, updateEntitlement, user]);
 
   return (
-    <UserContext.Provider value={contextValue}>
-      {children}
-    </UserContext.Provider>
+    <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
   );
 };

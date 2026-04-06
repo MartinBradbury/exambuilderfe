@@ -69,7 +69,7 @@ api.interceptors.response.use(
               headers: {
                 "Content-Type": "application/json",
               },
-            }
+            },
           )
           .then(({ data }) => data)
           .finally(() => {
@@ -92,5 +92,5 @@ api.interceptors.response.use(
       window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
       throw refreshError;
     }
-  }
+  },
 );
