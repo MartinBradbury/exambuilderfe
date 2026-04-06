@@ -8,22 +8,22 @@ const RETRY_DELAYS_MS = [1500, 3000];
 
 const getPlanLabel = (planType, hasUnlimitedAccess) => {
   if (hasUnlimitedAccess && planType === "lifetime") {
-    return "Lifetime";
+    return "Lifetime plan";
   }
 
   if (hasUnlimitedAccess && planType === "paid") {
-    return "Paid";
+    return "Paid plan";
   }
 
   if (hasUnlimitedAccess) {
-    return "Unlimited";
+    return "Paid plan";
   }
 
   if (!planType) {
-    return "Free";
+    return "Free plan";
   }
 
-  return planType.charAt(0).toUpperCase() + planType.slice(1);
+  return `${planType.charAt(0).toUpperCase() + planType.slice(1)} plan`;
 };
 
 export default function Account() {
@@ -102,7 +102,7 @@ export default function Account() {
 
         if (paidAfterRefresh) {
           setStatusBanner(
-            "Payment received. Your account has been upgraded and unlimited access is now active.",
+            "Payment received. Your account has been upgraded to the paid plan and unlimited access is now active.",
           );
           return;
         }
@@ -128,7 +128,7 @@ export default function Account() {
 
               if (paidAfterRetry && isActive) {
                 setStatusBanner(
-                  "Payment received. Your account has been upgraded and unlimited access is now active.",
+                  "Payment received. Your account has been upgraded to the paid plan and unlimited access is now active.",
                 );
               }
             } catch (error) {
@@ -188,28 +188,13 @@ export default function Account() {
     const cancelUrl = `${window.location.origin}/account?checkout=cancelled`;
 
     try {
-      let data;
-
-      try {
-        const response = await api.post(
-          "/accounts/billing/create-checkout-session/",
-          {
-            success_url: successUrl,
-            cancel_url: cancelUrl,
-          },
-        );
-        data = response.data;
-      } catch (error) {
-        if (error.response?.status !== 500) {
-          throw error;
-        }
-
-        const fallbackResponse = await api.post(
-          "/accounts/billing/create-checkout-session/",
-          {},
-        );
-        data = fallbackResponse.data;
-      }
+      const { data } = await api.post(
+        "/accounts/billing/create-checkout-session/",
+        {
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+        },
+      );
 
       if (!data?.checkout_url) {
         throw new Error("Unable to start checkout.");
@@ -274,7 +259,7 @@ export default function Account() {
               status after returning from checkout.
             </p>
           </div>
-          <div className="account-plan-chip">{planLabel} plan</div>
+          <div className="account-plan-chip">{planLabel}</div>
         </header>
 
         {statusBanner && (
@@ -315,7 +300,7 @@ export default function Account() {
                 <dt>Daily quota</dt>
                 <dd>
                   {hasUnlimitedAccess || numericRemaining == null
-                    ? "Unlimited"
+                    ? "Unlimited on current plan"
                     : `${numericRemaining} question${numericRemaining === 1 ? "" : "s"} remaining today`}
                 </dd>
               </div>
@@ -339,12 +324,16 @@ export default function Account() {
           <article className="account-card account-card--accent">
             <h2>
               {hasUnlimitedAccess
-                ? "Unlimited access active"
+                ? planType === "lifetime"
+                  ? "Lifetime plan active"
+                  : "Paid plan active"
                 : "Upgrade to paid"}
             </h2>
             <p className="account-muted">
               {hasUnlimitedAccess
-                ? "Your account already has unlimited question generation."
+                ? planType === "lifetime"
+                  ? "Your account is on the lifetime plan with unlimited question generation."
+                  : "Your account is on the paid plan with unlimited question generation."
                 : "Free accounts are limited to one generated question per day. Upgrade through Stripe Checkout for unlimited access."}
             </p>
 

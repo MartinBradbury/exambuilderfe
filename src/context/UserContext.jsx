@@ -127,6 +127,7 @@ export const UserProvider = ({ children }) => {
     const hasUnlimitedAccess = Boolean(
       user?.has_unlimited_access ||
       user?.lifetime_unlocked ||
+      planType === "paid" ||
       planType === "lifetime",
     );
 

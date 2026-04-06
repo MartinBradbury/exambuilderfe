@@ -354,8 +354,8 @@ export default function QuestionGenerator() {
               <span className="qg-access-pill">
                 {hasUnlimitedAccess
                   ? effectivePlanType === "paid"
-                    ? "Paid access"
-                    : "Lifetime access"
+                    ? "Paid plan"
+                    : "Lifetime plan"
                   : `${effectivePlanType || "free"} plan`}
               </span>
               <span className="qg-access-copy">
