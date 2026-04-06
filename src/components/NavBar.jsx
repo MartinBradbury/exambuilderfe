@@ -4,7 +4,8 @@ import "../styles/NavBar.modern.css";
 import { UserContext } from "../context/UserContextObject";
 
 export default function Navbar() {
-  const { user, logout } = useContext(UserContext) || {};
+  const { user, logout, hasUnlimitedAccess } = useContext(UserContext) || {};
+  const showUpgradeCta = Boolean(user) && !hasUnlimitedAccess;
 
   const displayName = useMemo(() => {
     if (user?.username) return user.username;
@@ -54,12 +55,12 @@ export default function Navbar() {
             Results
           </NavLink>
           <NavLink
-            to="/about"
+            to="/account"
             className={({ isActive }) =>
               isActive ? "nav-link is-active" : "nav-link"
             }
           >
-            About
+            Account
           </NavLink>
         </nav>
 
@@ -67,6 +68,11 @@ export default function Navbar() {
         <div className="nav-actions">
           {user ? (
             <>
+              {showUpgradeCta && (
+                <NavLink to="/account" className="btn btn--primary nav-upgrade">
+                  Upgrade
+                </NavLink>
+              )}
               <div className="user-info" title={displayName}>
                 <div className="avatar">{initials}</div>
                 <span className="username">{displayName}</span>
@@ -113,8 +119,8 @@ export default function Navbar() {
           <NavLink to="/my-results" className="mobile-link" onClick={closeMenu}>
             Results
           </NavLink>
-          <NavLink to="/about" className="mobile-link" onClick={closeMenu}>
-            About
+          <NavLink to="/account" className="mobile-link" onClick={closeMenu}>
+            Account
           </NavLink>
 
           <div className="mobile-actions">
@@ -127,6 +133,15 @@ export default function Navbar() {
                     {/* If you also want email here: <small className="muted">{user?.email}</small> */}
                   </div>
                 </div>
+                {showUpgradeCta && (
+                  <NavLink
+                    to="/account"
+                    className="btn btn--primary"
+                    onClick={closeMenu}
+                  >
+                    Upgrade
+                  </NavLink>
+                )}
                 <button
                   className="btn btn--ghost logout"
                   onClick={() => {

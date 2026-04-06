@@ -350,16 +350,25 @@ export default function QuestionGenerator() {
         </p>
         {user && (
           <div className="qg-access-summary" aria-live="polite">
-            <span className="qg-access-pill">
-              {hasUnlimitedAccess
-                ? "Lifetime access"
-                : `${effectivePlanType || "free"} plan`}
-            </span>
-            <span className="qg-access-copy">
-              {hasUnlimitedAccess || numericRemaining == null
-                ? "Unlimited question generation available."
-                : `${numericRemaining} question${numericRemaining === 1 ? "" : "s"} remaining today.`}
-            </span>
+            <div className="qg-access-main">
+              <span className="qg-access-pill">
+                {hasUnlimitedAccess
+                  ? effectivePlanType === "paid"
+                    ? "Paid access"
+                    : "Lifetime access"
+                  : `${effectivePlanType || "free"} plan`}
+              </span>
+              <span className="qg-access-copy">
+                {hasUnlimitedAccess || numericRemaining == null
+                  ? "Unlimited question generation available."
+                  : `${numericRemaining} question${numericRemaining === 1 ? "" : "s"} remaining today.`}
+              </span>
+            </div>
+            {!hasUnlimitedAccess && (
+              <Link to="/account" className="btn btn--primary qg-upgrade-btn">
+                Upgrade
+              </Link>
+            )}
           </div>
         )}
       </header>
@@ -369,14 +378,18 @@ export default function QuestionGenerator() {
           <h2>Daily limit reached</h2>
           <p>{upgradeState.error}</p>
           <p>
-            Free access currently includes 1 generated question per day.
-            Unlimited access will be handled through the lifetime plan.
+            Free access currently includes 1 generated question per day. Upgrade
+            through Stripe Checkout to remove the daily limit after the payment
+            webhook confirms your account.
           </p>
           <div className="qg-upgrade-actions">
+            <Link to="/account" className="btn btn--primary">
+              Upgrade now
+            </Link>
             <Link to="/my-results" className="btn btn--ghost">
               View saved results
             </Link>
-            <Link to="/" className="btn btn--primary">
+            <Link to="/" className="btn btn--subtle">
               Back to home
             </Link>
           </div>

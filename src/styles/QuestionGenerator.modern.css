@@ -23,9 +23,17 @@
 .qg-access-summary {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 18px;
+}
+
+.qg-access-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .qg-access-pill {
@@ -41,6 +49,10 @@
 
 .qg-access-copy {
   color: var(--muted);
+}
+
+.qg-upgrade-btn {
+  min-width: 120px;
 }
 
 .qg-card {
@@ -385,6 +397,11 @@ form.qg-card .qg-field {
   .qg-access-summary {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .qg-access-main,
+  .qg-upgrade-btn {
+    width: 100%;
   }
 
   .qg-upgrade-actions {

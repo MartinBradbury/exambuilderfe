@@ -1,4 +1,5 @@
 import { useContext } from "react";
+import { Link } from "react-router-dom";
 import "../styles/Home.modern.css"; // ⬅️ New modern stylesheet
 import { UserContext } from "../context/UserContextObject";
 import bioAlevel from "../assets/home/alevelbio.jpg";
@@ -8,7 +9,7 @@ import SubjectCarousel from "../components/Carousel";
 import DevNotes from "../components/DevNotes";
 
 export default function Home() {
-  const { user } = useContext(UserContext);
+  const { user, hasUnlimitedAccess } = useContext(UserContext);
 
   const bioChemPhysAlevel = [
     {
@@ -53,17 +54,22 @@ export default function Home() {
             </p>
             <div className="ctaRow">
               {user ? (
-                <a href="/question-generator" className="btn btn--primary">
+                <Link to="/question-generator" className="btn btn--primary">
                   Get Started
-                </a>
+                </Link>
               ) : (
-                <a href="/login" className="btn btn--ghost">
+                <Link to="/login" className="btn btn--ghost">
                   Log In to Begin
-                </a>
+                </Link>
               )}
               <a href="#specs" className="btn btn--subtle">
                 View Specs
               </a>
+              {user && !hasUnlimitedAccess && (
+                <Link to="/account" className="btn btn--ghost">
+                  Upgrade Plan
+                </Link>
+              )}
             </div>
             <ul className="heroV2__highlights">
               <li>OCR A specifications available</li>
@@ -193,13 +199,13 @@ export default function Home() {
               Specs
             </a>
             {user ? (
-              <a className="link" href="/profile">
-                Profile
-              </a>
+              <Link className="link" to="/account">
+                Account
+              </Link>
             ) : (
-              <a className="link" href="/login">
+              <Link className="link" to="/login">
                 Login
-              </a>
+              </Link>
             )}
           </nav>
         </div>
