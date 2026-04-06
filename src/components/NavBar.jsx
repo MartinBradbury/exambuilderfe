@@ -1,45 +1,17 @@
-import { useState, useContext, useEffect, useMemo } from "react";
+import { useState, useContext, useMemo } from "react";
 import { Link, NavLink } from "react-router-dom";
-import axios from "axios";
 import "../styles/NavBar.modern.css";
-import { UserContext } from "../context/UserContext";
+import { UserContext } from "../context/UserContextObject";
 
 export default function Navbar() {
   const { user, logout } = useContext(UserContext) || {};
-  const [username, setUsername] = useState("");
 
-  // === Pull username the same way your old navbar did ===
-  useEffect(() => {
-    const fetchUser = async () => {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        setUsername("");
-        return;
-      }
-      try {
-        const { data } = await axios.get(
-          "https://exambuilder-efae14d59f03.herokuapp.com/accounts/user/",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setUsername(data?.username || "");
-      } catch (err) {
-        console.error("Error fetching user:", err);
-        setUsername("");
-      }
-    };
-    fetchUser();
-  }, [user]); // re-fetch if context user changes (login/logout)
-
-  // Fallbacks if username is empty for any reason
   const displayName = useMemo(() => {
-    if (username) return username;
     if (user?.username) return user.username;
     if (user?.name) return user.name;
     if (user?.email) return user.email.split("@")[0];
     return "User";
-  }, [username, user]);
+  }, [user]);
 
   const initials = useMemo(() => {
     const src = displayName || "U";

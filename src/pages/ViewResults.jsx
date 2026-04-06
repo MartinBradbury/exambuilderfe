@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "../lib/api";
 
 export default function ViewResults() {
   const [sessions, setSessions] = useState([]);
@@ -9,16 +9,7 @@ export default function ViewResults() {
   useEffect(() => {
     const fetchSessions = async () => {
       try {
-        const accessToken = localStorage.getItem("accessToken");
-        const response = await axios.get(
-          "https://exambuilder-efae14d59f03.herokuapp.com/api/user-sessions/",
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        const response = await api.get("/api/user-sessions/");
         setSessions(response.data);
       } catch (err) {
         console.error(err);
@@ -47,7 +38,7 @@ export default function ViewResults() {
         if (typeof parsedFeedback === "string") {
           try {
             parsedFeedback = JSON.parse(parsedFeedback);
-          } catch (err) {
+          } catch {
             // If not JSON, keep as raw string
             parsedFeedback = { raw: session.feedback };
           }

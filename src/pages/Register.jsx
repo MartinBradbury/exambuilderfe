@@ -1,8 +1,8 @@
 // src/pages/Register.jsx
 import { useState, useContext } from "react";
-import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { UserContext } from "../context/UserContext";
+import { UserContext } from "../context/UserContextObject";
+import { api } from "../lib/api";
 import "../styles/Register.modern.css";
 
 export default function Register() {
@@ -31,24 +31,11 @@ export default function Register() {
 
     try {
       // 1) Register -> { refresh, access }
-      const { data } = await axios.post(
-        "https://exambuilder-efae14d59f03.herokuapp.com/accounts/register/",
-        formData
-      );
+      const { data } = await api.post("/accounts/register/", formData);
       const { access, refresh } = data || {};
       if (!access || !refresh) throw new Error("Missing tokens from register.");
 
-      // 2) Persist tokens
-      localStorage.setItem("accessToken", access);
-      localStorage.setItem("refreshToken", refresh);
-
-      // 3) Tell UserContext we're logged in (decodes JWT internally)
-      if (login) login(access);
-
-      // 4) (Optional) set axios default header for this tab
-      axios.defaults.headers.common.Authorization = `Bearer ${access}`;
-
-      // 5) Go home logged in
+      await login?.(access, refresh);
       navigate("/");
     } catch (error) {
       let msg = "Something went wrong. Please try again.";
@@ -66,7 +53,6 @@ export default function Register() {
       // Clean up partial tokens
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-      delete axios.defaults.headers.common.Authorization;
     } finally {
       setIsLoading(false);
     }

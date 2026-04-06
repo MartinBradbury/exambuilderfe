@@ -1,7 +1,7 @@
 import { useState, useContext } from "react";
-import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { UserContext } from "../context/UserContext";
+import { UserContext } from "../context/UserContextObject";
+import { api } from "../lib/api";
 import "../styles/Login.modern.css";
 
 export default function Login() {
@@ -29,27 +29,12 @@ export default function Login() {
 
     try {
       // POST /accounts/login/ expects { email, password } per your serializer
-      const { data } = await axios.post(
-        "https://exambuilder-efae14d59f03.herokuapp.com/accounts/login/",
-        formData
-      );
+      const { data } = await api.post("/accounts/login/", formData);
 
-      // Backend returns: { user, refresh, access }
-      const { access, refresh, user } = data || {};
+      const { access, refresh } = data || {};
       if (!access || !refresh) throw new Error("Login failed (no tokens).");
 
-      // Persist tokens and set axios default header for this tab
-      localStorage.setItem("accessToken", access);
-      localStorage.setItem("refreshToken", refresh);
-      axios.defaults.headers.common.Authorization = `Bearer ${access}`;
-
-      // Optional: cache user so UI can show name immediately
-      if (user) localStorage.setItem("user", JSON.stringify(user));
-
-      // Tell context we're logged in (decodes JWT inside)
-      login?.(access);
-
-      // Go home
+      await login?.(access, refresh);
       navigate("/");
     } catch (error) {
       // DRF-style error extraction

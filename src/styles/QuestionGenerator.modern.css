@@ -20,6 +20,29 @@
   margin: 0 0 18px;
 }
 
+.qg-access-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.qg-access-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(73, 209, 125, 0.12);
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.qg-access-copy {
+  color: var(--muted);
+}
+
 .qg-card {
   background: var(--card);
   border: 1px solid var(--outline);
@@ -227,6 +250,39 @@
   margin-top: 10px;
 }
 
+.qg-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.qg-upgrade {
+  margin-bottom: 18px;
+  background: linear-gradient(
+    180deg,
+    rgba(73, 209, 125, 0.1),
+    rgba(73, 209, 125, 0.04)
+  );
+  border: 1px solid rgba(73, 209, 125, 0.25);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.qg-upgrade h2 {
+  margin: 0 0 8px;
+}
+
+.qg-upgrade p {
+  margin: 0 0 8px;
+}
+
+.qg-upgrade-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
 /* Navigation */
 .qg-nav {
   display: grid;
@@ -316,6 +372,21 @@ form.qg-card .qg-field {
   flex-direction: column;
   align-items: center; /* centers the label + select */
   margin-bottom: 20px; /* adds spacing between fields */
+}
+
+@media (max-width: 700px) {
+  .qg-access-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .qg-upgrade-actions {
+    flex-direction: column;
+  }
+
+  .qg-upgrade-actions .btn {
+    width: 100%;
+  }
 }
 
 form.qg-card .qg-label {

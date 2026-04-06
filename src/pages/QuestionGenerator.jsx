@@ -1,10 +1,17 @@
-// src/components/QuestionGenerator.jsx
-import { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import { useState, useEffect, useRef, useContext, useMemo } from "react";
 import "../styles/QuestionGenerator.modern.css";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { UserContext } from "../context/UserContextObject";
+import { api } from "../lib/api";
 
 export default function QuestionGenerator() {
+  const {
+    user,
+    hasUnlimitedAccess,
+    questionsRemainingToday,
+    updateEntitlement,
+    authReady,
+  } = useContext(UserContext) || {};
   const [topics, setTopics] = useState([]);
   const [selectedTopic, setSelectedTopic] = useState("");
   const [subtopics, setSubtopics] = useState([]);
@@ -33,26 +40,61 @@ export default function QuestionGenerator() {
 
   const [progress, setProgress] = useState(0);
   const progressIntervalRef = useRef(null);
+  const [upgradeState, setUpgradeState] = useState(null);
 
   const navigate = useNavigate();
-  const API = "https://exambuilder-efae14d59f03.herokuapp.com/api";
+
+  const numericRemaining =
+    questionsRemainingToday == null
+      ? null
+      : Number(questionsRemainingToday);
+  const effectivePlanType = user?.plan_type || null;
+  const isFreePlan = effectivePlanType === "free" && !hasUnlimitedAccess;
+  const generationBlocked = !hasUnlimitedAccess && numericRemaining === 0;
+  const questionCountOptions = useMemo(
+    () => (isFreePlan ? [1] : [1, 2, 3, 4, 6, 8, 10]),
+    [isFreePlan]
+  );
+
+  const applyEntitlementUpdate = (payload) => {
+    if (!payload || !updateEntitlement) {
+      return;
+    }
+
+    const nextEntitlement = {};
+
+    if (payload.plan_type !== undefined) {
+      nextEntitlement.plan_type = payload.plan_type;
+    }
+
+    if (payload.questions_remaining_today !== undefined) {
+      nextEntitlement.questions_remaining_today =
+        payload.questions_remaining_today;
+    }
+
+    if (Object.keys(nextEntitlement).length > 0) {
+      updateEntitlement(nextEntitlement);
+    }
+  };
+
+  useEffect(() => {
+    if (isFreePlan && numberOfQuestions !== "1") {
+      setNumberOfQuestions("1");
+    }
+  }, [isFreePlan, numberOfQuestions]);
 
   // --- Fetch topics when examBoard changes (and pass ?exam_board=...)
   useEffect(() => {
     const fetchTopics = async () => {
+      if (!authReady) {
+        return;
+      }
+
       try {
-        const accessToken = localStorage.getItem("accessToken");
-        const { data } = await axios.get(
-          `${API}/biology-topics/?exam_board=${encodeURIComponent(examBoard)}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        const { data } = await api.get("/api/biology-topics/", {
+          params: { exam_board: examBoard },
+        });
         setTopics(data || []);
-        // Clear cascading selections on board change
         setSelectedTopic("");
         setSubtopics([]);
         setSelectedSubtopic("");
@@ -69,9 +111,8 @@ export default function QuestionGenerator() {
       }
     };
     fetchTopics();
-  }, [examBoard]); // IMPORTANT
+  }, [authReady, examBoard]);
 
-  // --- Fetch subtopics when selectedTopic OR examBoard changes
   useEffect(() => {
     const run = async () => {
       if (!selectedTopic) {
@@ -82,11 +123,12 @@ export default function QuestionGenerator() {
         return;
       }
       try {
-        const accessToken = localStorage.getItem("accessToken");
-        const { data } = await axios.get(
-          `${API}/biology-subtopics/?topic_id=${selectedTopic}&exam_board=${encodeURIComponent(examBoard)}`,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
+        const { data } = await api.get("/api/biology-subtopics/", {
+          params: {
+            topic_id: selectedTopic,
+            exam_board: examBoard,
+          },
+        });
         setSubtopics(data || []);
         setSelectedSubtopic("");
         setSubcategories([]);
@@ -100,9 +142,8 @@ export default function QuestionGenerator() {
       }
     };
     run();
-  }, [selectedTopic, examBoard]); // IMPORTANT
+  }, [examBoard, selectedTopic]);
 
-  // --- Fetch subcategories when selectedSubtopic OR examBoard changes
   useEffect(() => {
     const run = async () => {
       if (!selectedSubtopic) {
@@ -111,11 +152,12 @@ export default function QuestionGenerator() {
         return;
       }
       try {
-        const accessToken = localStorage.getItem("accessToken");
-        const { data } = await axios.get(
-          `${API}/biology-subcategories/?subtopic_id=${selectedSubtopic}&exam_board=${encodeURIComponent(examBoard)}`,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
+        const { data } = await api.get("/api/biology-subcategories/", {
+          params: {
+            subtopic_id: selectedSubtopic,
+            exam_board: examBoard,
+          },
+        });
         setSubcategories(data || []);
         setSelectedSubcategory("");
       } catch (e) {
@@ -125,7 +167,7 @@ export default function QuestionGenerator() {
       }
     };
     run();
-  }, [selectedSubtopic, examBoard]); // IMPORTANT
+  }, [examBoard, selectedSubtopic]);
 
   const startProgress = () => {
     setProgress(0);
@@ -153,8 +195,19 @@ export default function QuestionGenerator() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (generationBlocked) {
+      setUpgradeState({
+        error: "You have already used your free question for today.",
+        plan_type: effectivePlanType,
+        questions_remaining_today: numericRemaining,
+      });
+      return;
+    }
+
     setLoading(true);
     setError("");
+    setUpgradeState(null);
     setQuestions(null);
     setOpenIndexes({});
     setUserAnswers({});
@@ -168,7 +221,6 @@ export default function QuestionGenerator() {
     startProgress();
 
     try {
-      const accessToken = localStorage.getItem("accessToken");
       const payload = {
         topic_id: Number(selectedTopic),
         subtopic_id: selectedSubtopic ? Number(selectedSubtopic) : null,
@@ -177,20 +229,30 @@ export default function QuestionGenerator() {
         number_of_questions: parseInt(numberOfQuestions, 10),
       };
 
-      const { data } = await axios.post(`${API}/generate-questions/`, payload, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const { data } = await api.post("/api/generate-questions/", payload);
 
       setQuestions(data.questions);
       setSessionId(data.session_id);
+      applyEntitlementUpdate(data);
     } catch (err) {
       console.error(err);
-      setError(
-        err.response?.data?.error || "Something went wrong. Please try again."
-      );
+
+      if (err.response?.status === 403) {
+        const payload = err.response.data || {};
+        applyEntitlementUpdate(payload);
+        setUpgradeState({
+          error:
+            payload.error || "Your free daily question limit has been reached.",
+          plan_type: payload.plan_type || effectivePlanType,
+          questions_remaining_today:
+            payload.questions_remaining_today ?? numericRemaining,
+        });
+      } else {
+        setError(
+          err.response?.data?.error ||
+            "Something went wrong. Please try again."
+        );
+      }
     } finally {
       stopProgress();
     }
@@ -211,20 +273,13 @@ export default function QuestionGenerator() {
     setMarking((prev) => ({ ...prev, [index]: true }));
 
     try {
-      const accessToken = localStorage.getItem("accessToken");
-      const { data } = await axios.post(
-        `${API}/mark-answer/`,
+      const { data } = await api.post(
+        "/api/mark-answer/",
         {
           question,
           mark_scheme,
           user_answer: answer,
           exam_board: examBoard,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
         }
       );
       setFeedback((prev) => ({ ...prev, [index]: data }));
@@ -248,7 +303,6 @@ export default function QuestionGenerator() {
     if (!confirmed) return;
 
     setIsSubmittingAll(true);
-    const accessToken = localStorage.getItem("accessToken");
 
     const answers = questions.map((q, index) => ({
       question: q.question,
@@ -258,18 +312,12 @@ export default function QuestionGenerator() {
     }));
 
     try {
-      const { data } = await axios.post(
-        `${API}/submit-question-session/`,
+      const { data } = await api.post(
+        "/api/submit-question-session/",
         {
           session_id: sessionId,
           answers,
           feedback: finalFeedback,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
         }
       );
       setFinalFeedback(data.feedback);
@@ -302,7 +350,38 @@ export default function QuestionGenerator() {
         <p className="muted">
           Choose your scope, generate questions, answer one-by-one, and get instant marking.
         </p>
+        {user && (
+          <div className="qg-access-summary" aria-live="polite">
+            <span className="qg-access-pill">
+              {hasUnlimitedAccess ? "Lifetime access" : `${effectivePlanType || "free"} plan`}
+            </span>
+            <span className="qg-access-copy">
+              {hasUnlimitedAccess || numericRemaining == null
+                ? "Unlimited question generation available."
+                : `${numericRemaining} question${numericRemaining === 1 ? "" : "s"} remaining today.`}
+            </span>
+          </div>
+        )}
       </header>
+
+      {upgradeState && (
+        <section className="qg-upgrade" aria-live="assertive">
+          <h2>Daily limit reached</h2>
+          <p>{upgradeState.error}</p>
+          <p>
+            Free access currently includes 1 generated question per day. Unlimited
+            access will be handled through the lifetime plan.
+          </p>
+          <div className="qg-upgrade-actions">
+            <Link to="/my-results" className="btn btn--ghost">
+              View saved results
+            </Link>
+            <Link to="/" className="btn btn--primary">
+              Back to home
+            </Link>
+          </div>
+        </section>
+      )}
 
       {!questions && (
         <form onSubmit={handleSubmit} className="qg-card">
@@ -400,20 +479,29 @@ export default function QuestionGenerator() {
                 value={numberOfQuestions}
                 onChange={(e) => setNumberOfQuestions(e.target.value)}
               >
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="6">6</option>
-                <option value="8">8</option>
-                <option value="10">10</option>
+                {questionCountOptions.map((count) => (
+                  <option key={count} value={count}>
+                    {count}
+                  </option>
+                ))}
               </select>
+              {isFreePlan && (
+                <p className="qg-hint">
+                  Free accounts are currently limited to 1 generated question per day.
+                </p>
+              )}
             </div>
           </div>
 
           <button
             className="btn btn--primary qg-generate"
             type="submit"
-            disabled={loading || topics.length === 0 || !selectedTopic}
+            disabled={
+              loading ||
+              topics.length === 0 ||
+              !selectedTopic ||
+              generationBlocked
+            }
           >
             {loading ? "Generating…" : "Generate Questions"}
           </button>
