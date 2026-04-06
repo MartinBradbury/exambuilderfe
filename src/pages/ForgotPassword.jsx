@@ -20,7 +20,11 @@ export default function ForgotPassword() {
     setErrorMessage("");
 
     try {
-      const { data } = await api.post("/accounts/password-reset/", { email });
+      const { data } = await api.post(
+        "/accounts/password-reset/",
+        { email },
+        { skipAuth: true },
+      );
       setConfirmationMessage(data?.detail || GENERIC_CONFIRMATION_MESSAGE);
     } catch (error) {
       let message =

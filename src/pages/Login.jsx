@@ -31,7 +31,9 @@ export default function Login() {
 
     try {
       // POST /accounts/login/ expects { email, password } per your serializer
-      const { data } = await api.post("/accounts/login/", formData);
+      const { data } = await api.post("/accounts/login/", formData, {
+        skipAuth: true,
+      });
 
       const { access, refresh } = data || {};
       if (!access || !refresh) throw new Error("Login failed (no tokens).");

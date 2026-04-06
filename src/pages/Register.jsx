@@ -31,7 +31,9 @@ export default function Register() {
 
     try {
       // 1) Register -> { refresh, access }
-      const { data } = await api.post("/accounts/register/", formData);
+      const { data } = await api.post("/accounts/register/", formData, {
+        skipAuth: true,
+      });
       const { access, refresh } = data || {};
       if (!access || !refresh) throw new Error("Missing tokens from register.");
 

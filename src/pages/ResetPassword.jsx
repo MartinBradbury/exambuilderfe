@@ -85,12 +85,16 @@ export default function ResetPassword() {
     setIsLoading(true);
 
     try {
-      await api.post("/accounts/password-reset/confirm/", {
-        uid,
-        token,
-        password1: formData.password1,
-        password2: formData.password2,
-      });
+      await api.post(
+        "/accounts/password-reset/confirm/",
+        {
+          uid,
+          token,
+          password1: formData.password1,
+          password2: formData.password2,
+        },
+        { skipAuth: true },
+      );
 
       navigate("/login", {
         replace: true,

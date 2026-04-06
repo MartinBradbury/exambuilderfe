@@ -23,6 +23,10 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  if (config.skipAuth) {
+    return config;
+  }
+
   const accessToken = localStorage.getItem("accessToken");
 
   if (accessToken) {
@@ -44,6 +48,7 @@ api.interceptors.response.use(
 
     if (
       !originalRequest ||
+      originalRequest.skipAuth ||
       statusCode !== 401 ||
       originalRequest._retry ||
       isRefreshRequest
