@@ -340,6 +340,47 @@
   min-width: 240px;
 }
 
+.qg-summary {
+  margin-top: 22px;
+  padding: 18px;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  background: linear-gradient(
+    180deg,
+    rgba(73, 209, 125, 0.08),
+    rgba(255, 255, 255, 0.02)
+  );
+}
+
+.qg-summary h3,
+.qg-summary h4 {
+  margin-top: 0;
+}
+
+.qg-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.qg-summary-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--outline);
+}
+
+.qg-summary-card ul {
+  margin: 8px 0 0 18px;
+}
+
+.qg-summary-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
 /* Modal */
 .qg-modal-backdrop {
   position: fixed;

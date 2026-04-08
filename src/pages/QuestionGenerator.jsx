@@ -32,6 +32,7 @@ export default function QuestionGenerator() {
   const [sessionId, setSessionId] = useState(null);
   const [finalFeedback, setFinalFeedback] = useState("");
   const [isSubmittingAll, setIsSubmittingAll] = useState(false);
+  const [markedAnswers, setMarkedAnswers] = useState([]);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [answered, setAnswered] = useState({});
 
@@ -212,6 +213,7 @@ export default function QuestionGenerator() {
     setFeedback({});
     setIsBatchMarking(false);
     setFinalFeedback("");
+    setMarkedAnswers([]);
     setAnswered({});
     setCurrentIndex(0);
     setMaxSeenIndex(0);
@@ -267,9 +269,7 @@ export default function QuestionGenerator() {
       alert("No session ID available.");
       return;
     }
-    const confirmed = window.confirm(
-      "Are you sure you want to submit all answers?",
-    );
+    const confirmed = window.confirm("Mark all answers now?");
     if (!confirmed) return;
 
     const answersToMark = questions.map((questionItem, index) => ({
@@ -278,7 +278,6 @@ export default function QuestionGenerator() {
       user_answer: userAnswers[index] || "",
     }));
 
-    setIsSubmittingAll(true);
     setIsBatchMarking(true);
 
     try {
@@ -333,24 +332,38 @@ export default function QuestionGenerator() {
         feedback: nextFeedback[index]?.feedback || "",
       }));
 
-      const { data } = await api.post("/api/submit-question-session/", {
-        session_id: sessionId,
-        answers: scoredAnswers,
-        feedback: summaryFeedback,
-      });
-
-      setFinalFeedback(
-        data?.feedback && typeof data.feedback === "object"
-          ? data.feedback
-          : summaryFeedback,
-      );
-      setHasSubmitted(true);
+      setMarkedAnswers(scoredAnswers);
+      setFinalFeedback(summaryFeedback);
     } catch (err) {
       console.error(err);
-      alert("Failed to submit session.");
+      alert("Failed to mark answers.");
+    } finally {
+      setIsBatchMarking(false);
+    }
+  };
+
+  const handleCompleteSession = async () => {
+    if (!sessionId || !finalFeedback || typeof finalFeedback !== "object") {
+      alert("Mark all answers before completing the session.");
+      return;
+    }
+
+    setIsSubmittingAll(true);
+
+    try {
+      await api.post("/api/submit-question-session/", {
+        session_id: sessionId,
+        answers: markedAnswers,
+        feedback: finalFeedback,
+      });
+
+      setHasSubmitted(true);
+      navigate("/my-results");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save session.");
     } finally {
       setIsSubmittingAll(false);
-      setIsBatchMarking(false);
     }
   };
 
@@ -375,7 +388,7 @@ export default function QuestionGenerator() {
         <h1>Generate Questions</h1>
         <p className="muted">
           Choose your scope, generate questions, answer the full set, and get
-          one batch-marked feedback pass when you submit.
+          one batch-marked feedback pass when you mark all answers.
         </p>
         {user && (
           <div className="qg-access-summary" aria-live="polite">
@@ -614,12 +627,13 @@ export default function QuestionGenerator() {
                     onChange={(e) =>
                       handleAnswerChange(currentIndex, e.target.value)
                     }
-                    disabled={hasSubmitted || isBatchMarking}
+                    disabled={
+                      answered[currentIndex] || hasSubmitted || isBatchMarking
+                    }
                   />
                   {!feedback[currentIndex] && (
                     <p className="qg-hint">
-                      Answers are marked together when you submit the full
-                      question set.
+                      Answers are marked together when you use Mark All Answers.
                     </p>
                   )}
                 </div>
@@ -682,53 +696,72 @@ export default function QuestionGenerator() {
           <div className="qg-submit-wrap">
             <button
               onClick={handleSubmitAll}
-              disabled={isSubmittingAll || hasSubmitted || isBatchMarking}
+              disabled={
+                isSubmittingAll ||
+                hasSubmitted ||
+                isBatchMarking ||
+                (finalFeedback && typeof finalFeedback === "object")
+              }
               className="btn btn--primary qg-submit-all"
             >
-              {hasSubmitted
-                ? "Submitted ✅"
-                : isBatchMarking || isSubmittingAll
-                  ? "Marking and submitting…"
-                  : "Mark and Submit All Answers"}
+              {hasSubmitted ? (
+                "Submitted ✅"
+              ) : isBatchMarking ? (
+                <>
+                  Marking answers… <span className="qg-spinner" />
+                </>
+              ) : finalFeedback && typeof finalFeedback === "object" ? (
+                "Answers Marked"
+              ) : (
+                "Mark All Answers"
+              )}
             </button>
           </div>
 
           {finalFeedback && typeof finalFeedback === "object" && (
-            <div className="qg-modal-backdrop">
-              <div className="qg-modal">
-                <h3>Strengths</h3>
-                {finalFeedback.strengths?.length ? (
-                  <ul>
-                    {finalFeedback.strengths.map((item, idx) => (
-                      <li key={`strength-${idx}`}>{item}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="muted">No strengths provided.</p>
-                )}
+            <section className="qg-summary" aria-live="polite">
+              <h3>Overall Summary</h3>
 
-                <h3>Improvements</h3>
-                {finalFeedback.improvements?.length ? (
-                  <ul>
-                    {finalFeedback.improvements.map((item, idx) => (
-                      <li key={`improvement-${idx}`}>{item}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="muted">No improvements provided.</p>
-                )}
+              <div className="qg-summary-grid">
+                <div className="qg-summary-card">
+                  <h4>Strengths</h4>
+                  {finalFeedback.strengths?.length ? (
+                    <ul>
+                      {finalFeedback.strengths.map((item, idx) => (
+                        <li key={`strength-${idx}`}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="muted">No strengths provided.</p>
+                  )}
+                </div>
 
+                <div className="qg-summary-card">
+                  <h4>Improvements</h4>
+                  {finalFeedback.improvements?.length ? (
+                    <ul>
+                      {finalFeedback.improvements.map((item, idx) => (
+                        <li key={`improvement-${idx}`}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="muted">No improvements provided.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="qg-summary-actions">
                 <button
                   className="btn btn--primary"
-                  onClick={() => {
-                    setFinalFeedback("");
-                    navigate("/my-results");
-                  }}
+                  onClick={handleCompleteSession}
+                  disabled={isSubmittingAll || hasSubmitted}
                 >
-                  Close
+                  {isSubmittingAll
+                    ? "Completing…"
+                    : "Complete and View Results"}
                 </button>
               </div>
-            </div>
+            </section>
           )}
         </section>
       )}
