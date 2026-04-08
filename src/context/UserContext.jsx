@@ -124,6 +124,7 @@ export const UserProvider = ({ children }) => {
 
   const contextValue = useMemo(() => {
     const planType = user?.plan_type ?? null;
+    const emailVerified = Boolean(user?.email_verified);
     const hasUnlimitedAccess = Boolean(
       user?.has_unlimited_access ||
       user?.lifetime_unlocked ||
@@ -139,6 +140,8 @@ export const UserProvider = ({ children }) => {
       refreshCurrentUser,
       updateEntitlement,
       planType,
+      emailVerified,
+      emailVerifiedAt: user?.email_verified_at ?? null,
       hasUnlimitedAccess,
       questionsRemainingToday: user?.questions_remaining_today ?? null,
     };

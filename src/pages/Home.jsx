@@ -1,5 +1,6 @@
 import { useContext } from "react";
 import { Link } from "react-router-dom";
+import EmailVerificationNotice from "../components/EmailVerificationNotice";
 import "../styles/Home.modern.css";
 import { UserContext } from "../context/UserContextObject";
 import bioAlevel from "../assets/home/alevelbio.jpg";
@@ -9,9 +10,15 @@ import SubjectCarousel from "../components/Carousel";
 import DevNotes from "../components/DevNotes";
 
 export default function Home() {
-  const { user, hasUnlimitedAccess, planType, questionsRemainingToday } =
-    useContext(UserContext);
-  const canUpgrade = Boolean(user) && !hasUnlimitedAccess;
+  const {
+    user,
+    hasUnlimitedAccess,
+    planType,
+    questionsRemainingToday,
+    emailVerified,
+  } = useContext(UserContext);
+  const needsEmailVerification = Boolean(user) && !emailVerified;
+  const canUpgrade = Boolean(user) && !hasUnlimitedAccess && emailVerified;
 
   const bioChemPhysAlevel = [
     {
@@ -90,6 +97,10 @@ export default function Home() {
                   <Link to="/account" className="btn btn--ghost">
                     Upgrade Plan
                   </Link>
+                ) : needsEmailVerification ? (
+                  <Link to="/account" className="btn btn--ghost">
+                    Verify Email to Upgrade
+                  </Link>
                 ) : (
                   <span
                     className="planStatusPill"
@@ -107,6 +118,14 @@ export default function Home() {
                 </Link>
               )}
             </div>
+
+            {needsEmailVerification && (
+              <EmailVerificationNotice
+                className="home-verification-notice"
+                title="Billing is locked until you verify your email"
+                description="Your free account is active now. Verify your email to unlock paid checkout and unlimited access upgrades."
+              />
+            )}
 
             <div className="heroV2__flow" aria-label="How it works">
               <span>1. Choose topic</span>
@@ -440,7 +459,9 @@ export default function Home() {
           <div>
             <p className="sectionEyebrow">Start revising smarter</p>
             <h2>
-              {canUpgrade
+              {needsEmailVerification
+                ? "Verify your email first, then upgrade when you are ready for unlimited access."
+                : canUpgrade
                 ? "Use one question to diagnose a weak spot, or use the paid plan to drill properly."
                 : hasUnlimitedAccess
                   ? "Unlimited access is already active on this account."
@@ -453,7 +474,11 @@ export default function Home() {
                 <Link to="/question-generator" className="btn btn--primary">
                   Go to Generator
                 </Link>
-                {!hasUnlimitedAccess && (
+                {needsEmailVerification ? (
+                  <Link to="/account" className="btn btn--ghost">
+                    Verify Email
+                  </Link>
+                ) : !hasUnlimitedAccess && (
                   <Link to="/account" className="btn btn--ghost">
                     Upgrade to Paid Plan
                   </Link>

@@ -197,6 +197,10 @@ body {
   font-weight: 700;
 }
 
+.home-verification-notice {
+  margin: 0 0 22px;
+}
+
 .heroV2__flow {
   display: flex;
   gap: 10px;

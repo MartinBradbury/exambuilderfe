@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import EmailVerificationNotice from "../components/EmailVerificationNotice";
 import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
 import "../styles/Account.modern.css";
@@ -32,6 +33,7 @@ export default function Account() {
     authReady,
     refreshCurrentUser,
     planType,
+    emailVerified,
     hasUnlimitedAccess,
     questionsRemainingToday,
   } = useContext(UserContext) || {};
@@ -49,7 +51,8 @@ export default function Account() {
     () => getPlanLabel(planType, hasUnlimitedAccess),
     [hasUnlimitedAccess, planType],
   );
-  const canUpgrade = Boolean(user) && !hasUnlimitedAccess;
+  const needsEmailVerification = isLoggedIn && !emailVerified;
+  const canUpgrade = Boolean(user) && !hasUnlimitedAccess && emailVerified;
   const numericRemaining =
     questionsRemainingToday == null ? null : Number(questionsRemainingToday);
 
@@ -179,7 +182,9 @@ export default function Account() {
 
   const handleUpgrade = async () => {
     if (isCreatingCheckout || !canUpgrade) {
-      if (!canUpgrade) {
+      if (needsEmailVerification) {
+        setCheckoutError("Please verify your email before starting checkout.");
+      } else if (!canUpgrade) {
         setCheckoutError("This account already has unlimited access.");
       }
       return;
@@ -218,6 +223,25 @@ export default function Account() {
         } catch (refreshError) {
           console.error(
             "Unable to refresh account after checkout conflict",
+            refreshError,
+          );
+        }
+
+        setIsCreatingCheckout(false);
+        return;
+      }
+
+      if (error.response?.status === 403) {
+        setCheckoutError(
+          error.response?.data?.detail ||
+            "Please verify your email before starting checkout.",
+        );
+
+        try {
+          await refreshCurrentUser?.();
+        } catch (refreshError) {
+          console.error(
+            "Unable to refresh account after checkout verification block",
             refreshError,
           );
         }
@@ -298,6 +322,10 @@ export default function Account() {
           </section>
         )}
 
+        {needsEmailVerification && (
+          <EmailVerificationNotice className="account-verification-notice" />
+        )}
+
         {checkoutError && (
           <section
             className="account-banner account-banner--error"
@@ -318,6 +346,10 @@ export default function Account() {
               <div>
                 <dt>Unlimited access</dt>
                 <dd>{hasUnlimitedAccess ? "Enabled" : "Not yet"}</dd>
+              </div>
+              <div>
+                <dt>Email verification</dt>
+                <dd>{emailVerified ? "Verified" : "Pending"}</dd>
               </div>
               <div>
                 <dt>Daily quota</dt>
@@ -346,7 +378,9 @@ export default function Account() {
 
           <article className="account-card account-card--accent">
             <h2>
-              {canUpgrade
+              {needsEmailVerification
+                ? "Verify your email to upgrade"
+                : canUpgrade
                 ? "Upgrade to paid"
                 : hasUnlimitedAccess
                   ? planType === "lifetime"
@@ -355,7 +389,9 @@ export default function Account() {
                   : "Current plan"}
             </h2>
             <p className="account-muted">
-              {canUpgrade
+              {needsEmailVerification
+                ? "Your free plan is active, but billing is locked until you verify your email address."
+                : canUpgrade
                 ? "You are on the free plan. Upgrade for unlimited questions."
                 : hasUnlimitedAccess
                   ? planType === "lifetime"
@@ -364,7 +400,12 @@ export default function Account() {
                   : "Your current plan status is shown above."}
             </p>
 
-            {canUpgrade ? (
+            {needsEmailVerification ? (
+              <p className="account-note">
+                Check your inbox, then use the resend action above if you need
+                a fresh verification email.
+              </p>
+            ) : canUpgrade ? (
               <div className="account-actions">
                 <button
                   type="button"
