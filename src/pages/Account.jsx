@@ -49,6 +49,7 @@ export default function Account() {
     () => getPlanLabel(planType, hasUnlimitedAccess),
     [hasUnlimitedAccess, planType],
   );
+  const canUpgrade = Boolean(user) && !hasUnlimitedAccess;
   const numericRemaining =
     questionsRemainingToday == null ? null : Number(questionsRemainingToday);
 
@@ -177,7 +178,10 @@ export default function Account() {
   };
 
   const handleUpgrade = async () => {
-    if (isCreatingCheckout) {
+    if (isCreatingCheckout || !canUpgrade) {
+      if (!canUpgrade) {
+        setCheckoutError("This account already has unlimited access.");
+      }
       return;
     }
 
@@ -203,6 +207,25 @@ export default function Account() {
       window.location.assign(data.checkout_url);
     } catch (error) {
       console.error("Unable to create checkout session", error);
+      if (error.response?.status === 409) {
+        setCheckoutError(
+          error.response?.data?.detail ||
+            "This account already has unlimited access.",
+        );
+
+        try {
+          await refreshCurrentUser?.();
+        } catch (refreshError) {
+          console.error(
+            "Unable to refresh account after checkout conflict",
+            refreshError,
+          );
+        }
+
+        setIsCreatingCheckout(false);
+        return;
+      }
+
       setCheckoutError(
         error.response?.data?.detail ||
           "Unable to start payment setup right now. Please try again.",
@@ -255,8 +278,8 @@ export default function Account() {
             <p className="account-eyebrow">Billing</p>
             <h1>Account</h1>
             <p className="account-muted">
-              Manage your plan, start Stripe checkout, and confirm payment
-              status after returning from checkout.
+              Manage your plan and confirm billing status after returning from
+              checkout.
             </p>
           </div>
           <div className="account-plan-chip">{planLabel}</div>
@@ -323,21 +346,25 @@ export default function Account() {
 
           <article className="account-card account-card--accent">
             <h2>
-              {hasUnlimitedAccess
-                ? planType === "lifetime"
-                  ? "Lifetime plan active"
-                  : "Paid plan active"
-                : "Upgrade to paid"}
+              {canUpgrade
+                ? "Upgrade to paid"
+                : hasUnlimitedAccess
+                  ? planType === "lifetime"
+                    ? "Lifetime plan active"
+                    : "Paid plan active"
+                  : "Current plan"}
             </h2>
             <p className="account-muted">
-              {hasUnlimitedAccess
-                ? planType === "lifetime"
-                  ? "Your account is on the lifetime plan with unlimited question generation."
-                  : "Your account is on the paid plan with unlimited question generation."
-                : "Free accounts are limited to one generated question per day. Upgrade through Stripe Checkout for unlimited access."}
+              {canUpgrade
+                ? "You are on the free plan. Upgrade for unlimited questions."
+                : hasUnlimitedAccess
+                  ? planType === "lifetime"
+                    ? "You have lifetime access. Unlimited questions unlocked."
+                    : "You are on the paid plan. Unlimited questions unlocked."
+                  : "Your current plan status is shown above."}
             </p>
 
-            {!hasUnlimitedAccess ? (
+            {canUpgrade ? (
               <div className="account-actions">
                 <button
                   type="button"
@@ -352,10 +379,14 @@ export default function Account() {
                   only after the backend webhook confirms payment.
                 </p>
               </div>
+            ) : hasUnlimitedAccess ? (
+              <p className="account-note">
+                This account already has unlimited access. No upgrade is
+                required.
+              </p>
             ) : (
               <p className="account-note">
-                Stripe redirects are no longer needed for this account unless
-                you want to test the checkout flow with a different free user.
+                Refresh your account status if your plan was updated recently.
               </p>
             )}
           </article>

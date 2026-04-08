@@ -185,6 +185,18 @@ body {
   background: rgba(255, 255, 255, 0.1);
 }
 
+.planStatusPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0.8rem 1.2rem;
+  border-radius: 12px;
+  border: 1px solid rgba(73, 209, 125, 0.24);
+  background: rgba(73, 209, 125, 0.12);
+  color: var(--brand);
+  font-weight: 700;
+}
+
 .heroV2__flow {
   display: flex;
   gap: 10px;

@@ -11,6 +11,7 @@ import DevNotes from "../components/DevNotes";
 export default function Home() {
   const { user, hasUnlimitedAccess, planType, questionsRemainingToday } =
     useContext(UserContext);
+  const canUpgrade = Boolean(user) && !hasUnlimitedAccess;
 
   const bioChemPhysAlevel = [
     {
@@ -85,9 +86,21 @@ export default function Home() {
                 See Product Preview
               </a>
               {user ? (
-                <Link to="/account" className="btn btn--ghost">
-                  {hasUnlimitedAccess ? "View Plan" : "Upgrade Plan"}
-                </Link>
+                canUpgrade ? (
+                  <Link to="/account" className="btn btn--ghost">
+                    Upgrade Plan
+                  </Link>
+                ) : (
+                  <span
+                    className="planStatusPill"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {planType === "lifetime"
+                      ? "Lifetime access active"
+                      : "Unlimited access active"}
+                  </span>
+                )
               ) : (
                 <Link to="/login" className="btn btn--ghost">
                   Log In
@@ -427,8 +440,11 @@ export default function Home() {
           <div>
             <p className="sectionEyebrow">Start revising smarter</p>
             <h2>
-              Use one question to diagnose a weak spot, or use the paid plan to
-              drill properly.
+              {canUpgrade
+                ? "Use one question to diagnose a weak spot, or use the paid plan to drill properly."
+                : hasUnlimitedAccess
+                  ? "Unlimited access is already active on this account."
+                  : "Use one question to diagnose a weak spot before you upgrade."}
             </h2>
           </div>
           <div className="closingCta__actions">
