@@ -381,29 +381,29 @@ export default function Account() {
               {needsEmailVerification
                 ? "Verify your email to upgrade"
                 : canUpgrade
-                ? "Upgrade to paid"
-                : hasUnlimitedAccess
-                  ? planType === "lifetime"
-                    ? "Lifetime plan active"
-                    : "Paid plan active"
-                  : "Current plan"}
+                  ? "Upgrade to paid"
+                  : hasUnlimitedAccess
+                    ? planType === "lifetime"
+                      ? "Lifetime plan active"
+                      : "Paid plan active"
+                    : "Current plan"}
             </h2>
             <p className="account-muted">
               {needsEmailVerification
                 ? "Your free plan is active, but billing is locked until you verify your email address."
                 : canUpgrade
-                ? "You are on the free plan. Upgrade for unlimited questions."
-                : hasUnlimitedAccess
-                  ? planType === "lifetime"
-                    ? "You have lifetime access. Unlimited questions unlocked."
-                    : "You are on the paid plan. Unlimited questions unlocked."
-                  : "Your current plan status is shown above."}
+                  ? "You are on the free plan. Upgrade for unlimited questions."
+                  : hasUnlimitedAccess
+                    ? planType === "lifetime"
+                      ? "You have lifetime access. Unlimited questions unlocked."
+                      : "You are on the paid plan. Unlimited questions unlocked."
+                    : "Your current plan status is shown above."}
             </p>
 
             {needsEmailVerification ? (
               <p className="account-note">
-                Check your inbox, then use the resend action above if you need
-                a fresh verification email.
+                Check your inbox, then use the resend action above if you need a
+                fresh verification email.
               </p>
             ) : canUpgrade ? (
               <div className="account-actions">

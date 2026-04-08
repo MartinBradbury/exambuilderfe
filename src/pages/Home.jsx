@@ -462,10 +462,10 @@ export default function Home() {
               {needsEmailVerification
                 ? "Verify your email first, then upgrade when you are ready for unlimited access."
                 : canUpgrade
-                ? "Use one question to diagnose a weak spot, or use the paid plan to drill properly."
-                : hasUnlimitedAccess
-                  ? "Unlimited access is already active on this account."
-                  : "Use one question to diagnose a weak spot before you upgrade."}
+                  ? "Use one question to diagnose a weak spot, or use the paid plan to drill properly."
+                  : hasUnlimitedAccess
+                    ? "Unlimited access is already active on this account."
+                    : "Use one question to diagnose a weak spot before you upgrade."}
             </h2>
           </div>
           <div className="closingCta__actions">
@@ -478,10 +478,12 @@ export default function Home() {
                   <Link to="/account" className="btn btn--ghost">
                     Verify Email
                   </Link>
-                ) : !hasUnlimitedAccess && (
-                  <Link to="/account" className="btn btn--ghost">
-                    Upgrade to Paid Plan
-                  </Link>
+                ) : (
+                  !hasUnlimitedAccess && (
+                    <Link to="/account" className="btn btn--ghost">
+                      Upgrade to Paid Plan
+                    </Link>
+                  )
                 )}
               </>
             ) : (
