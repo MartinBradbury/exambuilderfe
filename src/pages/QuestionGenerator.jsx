@@ -28,7 +28,7 @@ export default function QuestionGenerator() {
   const [openIndexes, setOpenIndexes] = useState({});
   const [userAnswers, setUserAnswers] = useState({});
   const [feedback, setFeedback] = useState({});
-  const [marking, setMarking] = useState({});
+  const [isBatchMarking, setIsBatchMarking] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [finalFeedback, setFinalFeedback] = useState("");
   const [isSubmittingAll, setIsSubmittingAll] = useState(false);
@@ -210,7 +210,7 @@ export default function QuestionGenerator() {
     setOpenIndexes({});
     setUserAnswers({});
     setFeedback({});
-    setMarking({});
+    setIsBatchMarking(false);
     setFinalFeedback("");
     setAnswered({});
     setCurrentIndex(0);
@@ -262,35 +262,6 @@ export default function QuestionGenerator() {
     setUserAnswers((prev) => ({ ...prev, [index]: value }));
   };
 
-  const handleMarkAnswer = async (index) => {
-    const answer = userAnswers[index];
-    const question = questions[index].question;
-    const mark_scheme = questions[index].mark_scheme;
-
-    if (!answer?.trim()) return;
-
-    setAnswered((prev) => ({ ...prev, [index]: true }));
-    setMarking((prev) => ({ ...prev, [index]: true }));
-
-    try {
-      const { data } = await api.post("/api/mark-answer/", {
-        question,
-        mark_scheme,
-        user_answer: answer,
-        exam_board: examBoard,
-      });
-      setFeedback((prev) => ({ ...prev, [index]: data }));
-    } catch (err) {
-      console.error(err);
-      setFeedback((prev) => ({
-        ...prev,
-        [index]: { error: "Marking failed. Please try again." },
-      }));
-    } finally {
-      setMarking((prev) => ({ ...prev, [index]: false }));
-    }
-  };
-
   const handleSubmitAll = async () => {
     if (!sessionId) {
       alert("No session ID available.");
@@ -301,27 +272,85 @@ export default function QuestionGenerator() {
     );
     if (!confirmed) return;
 
-    setIsSubmittingAll(true);
-
-    const answers = questions.map((q, index) => ({
-      question: q.question,
+    const answersToMark = questions.map((questionItem, index) => ({
+      question: questionItem.question,
+      mark_scheme: questionItem.mark_scheme,
       user_answer: userAnswers[index] || "",
-      mark_scheme: q.mark_scheme,
-      score: feedback[index]?.score || 0,
     }));
 
+    setIsSubmittingAll(true);
+    setIsBatchMarking(true);
+
     try {
+      const { data: markingData } = await api.post("/api/mark-answer/", {
+        exam_board: examBoard,
+        answers: answersToMark,
+      });
+
+      const nextFeedback = {};
+      const results = Array.isArray(markingData?.results)
+        ? markingData.results
+        : [];
+
+      results.forEach((result, resultIndex) => {
+        const candidateIndex = Number(result?.index);
+        const mappedIndex = Number.isInteger(candidateIndex)
+          ? Math.min(
+              questions.length - 1,
+              Math.max(
+                0,
+                candidateIndex > 0 ? candidateIndex - 1 : candidateIndex,
+              ),
+            )
+          : resultIndex;
+
+        nextFeedback[mappedIndex] = {
+          score: result?.score ?? 0,
+          out_of: result?.out_of ?? 0,
+          feedback: result?.feedback || "",
+        };
+      });
+
+      setFeedback(nextFeedback);
+      setAnswered(
+        Object.fromEntries(questions.map((_, index) => [index, true])),
+      );
+
+      const summaryFeedback = {
+        strengths: Array.isArray(markingData?.strengths)
+          ? markingData.strengths
+          : [],
+        improvements: Array.isArray(markingData?.improvements)
+          ? markingData.improvements
+          : [],
+      };
+
+      const scoredAnswers = questions.map((questionItem, index) => ({
+        question: questionItem.question,
+        user_answer: userAnswers[index] || "",
+        score: nextFeedback[index]?.score ?? 0,
+        out_of: nextFeedback[index]?.out_of ?? 0,
+        feedback: nextFeedback[index]?.feedback || "",
+      }));
+
       const { data } = await api.post("/api/submit-question-session/", {
         session_id: sessionId,
-        answers,
-        feedback: finalFeedback,
+        answers: scoredAnswers,
+        feedback: summaryFeedback,
       });
-      setFinalFeedback(data.feedback);
+
+      setFinalFeedback(
+        data?.feedback && typeof data.feedback === "object"
+          ? data.feedback
+          : summaryFeedback,
+      );
       setHasSubmitted(true);
     } catch (err) {
       console.error(err);
       alert("Failed to submit session.");
+    } finally {
       setIsSubmittingAll(false);
+      setIsBatchMarking(false);
     }
   };
 
@@ -345,8 +374,8 @@ export default function QuestionGenerator() {
       <header className="qg-header">
         <h1>Generate Questions</h1>
         <p className="muted">
-          Choose your scope, generate questions, answer one-by-one, and get
-          instant marking.
+          Choose your scope, generate questions, answer the full set, and get
+          one batch-marked feedback pass when you submit.
         </p>
         {user && (
           <div className="qg-access-summary" aria-live="polite">
@@ -585,21 +614,14 @@ export default function QuestionGenerator() {
                     onChange={(e) =>
                       handleAnswerChange(currentIndex, e.target.value)
                     }
-                    disabled={answered[currentIndex]}
+                    disabled={hasSubmitted || isBatchMarking}
                   />
-                  <button
-                    className="btn btn--ghost"
-                    onClick={() => handleMarkAnswer(currentIndex)}
-                    disabled={marking[currentIndex] || answered[currentIndex]}
-                  >
-                    {marking[currentIndex] ? (
-                      <>
-                        Marking… <span className="qg-spinner" />
-                      </>
-                    ) : (
-                      "Check Answer"
-                    )}
-                  </button>
+                  {!feedback[currentIndex] && (
+                    <p className="qg-hint">
+                      Answers are marked together when you submit the full
+                      question set.
+                    </p>
+                  )}
                 </div>
 
                 {feedback[currentIndex] && (
@@ -660,14 +682,14 @@ export default function QuestionGenerator() {
           <div className="qg-submit-wrap">
             <button
               onClick={handleSubmitAll}
-              disabled={isSubmittingAll || hasSubmitted}
+              disabled={isSubmittingAll || hasSubmitted || isBatchMarking}
               className="btn btn--primary qg-submit-all"
             >
               {hasSubmitted
                 ? "Submitted ✅"
-                : isSubmittingAll
-                  ? "Submitting…"
-                  : "Submit All Answers"}
+                : isBatchMarking || isSubmittingAll
+                  ? "Marking and submitting…"
+                  : "Mark and Submit All Answers"}
             </button>
           </div>
 
