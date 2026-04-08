@@ -3,10 +3,6 @@ import { Link } from "react-router-dom";
 import EmailVerificationNotice from "../components/EmailVerificationNotice";
 import "../styles/Home.modern.css";
 import { UserContext } from "../context/UserContextObject";
-import bioAlevel from "../assets/home/alevelbio.jpg";
-import chemAlevel from "../assets/home/alevelchem.jpg";
-import physicsAlevel from "../assets/home/alevelphysics.jpg";
-import SubjectCarousel from "../components/Carousel";
 import DevNotes from "../components/DevNotes";
 
 export default function Home() {
@@ -19,27 +15,6 @@ export default function Home() {
   } = useContext(UserContext);
   const needsEmailVerification = Boolean(user) && !emailVerified;
   const canUpgrade = Boolean(user) && !hasUnlimitedAccess && emailVerified;
-
-  const bioChemPhysAlevel = [
-    {
-      src: bioAlevel,
-      title: "Biology",
-      description:
-        "Cell biology, transport, disease, biodiversity, and genetics.",
-    },
-    {
-      src: chemAlevel,
-      title: "Chemistry",
-      description:
-        "Bonding, energetics, redox, organic chemistry, and analysis.",
-    },
-    {
-      src: physicsAlevel,
-      title: "Physics",
-      description:
-        "Mechanics, electricity, waves, thermal physics, and modern topics.",
-    },
-  ];
 
   const remainingLabel =
     questionsRemainingToday == null
@@ -437,25 +412,6 @@ export default function Home() {
             >
               View full specification
             </a>
-          </div>
-        </div>
-      </section>
-
-      <section className="subjectsV2">
-        <div className="container">
-          <div className="sectionHeading sectionHeading--centered">
-            <p className="sectionEyebrow">Explore subject coverage</p>
-            <h2>Current subject direction</h2>
-          </div>
-          <div className="cardsRow">
-            <div className="subjectCard">
-              <h3>A-Level Science</h3>
-              <p className="subjectCard__intro">
-                Browse the subjects currently supported and where question-bank
-                expansion is heading next.
-              </p>
-              <SubjectCarousel items={bioChemPhysAlevel} />
-            </div>
           </div>
         </div>
       </section>
