@@ -140,6 +140,45 @@
   margin: 0;
 }
 
+.account-price {
+  margin: 16px 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.account-benefits {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.account-benefits li + li {
+  margin-top: 8px;
+}
+
+.account-checkbox {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 16px;
+  color: var(--muted);
+}
+
+.account-checkbox input {
+  margin-top: 4px;
+}
+
+.account-checkbox a {
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.account-checkbox a:hover {
+  text-decoration: underline;
+}
+
 .account-note {
   margin: 6px 0 0;
   color: var(--muted);

@@ -485,6 +485,16 @@ body {
   letter-spacing: 0.08em;
 }
 
+.planMiniCard__benefits {
+  margin: 14px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.planMiniCard__benefits li + li {
+  margin-top: 8px;
+}
+
 .featureGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -558,6 +568,12 @@ body {
   border: 1px solid rgba(73, 209, 125, 0.22);
   border-radius: 24px;
   padding: 26px;
+}
+
+.closingCta__copy {
+  max-width: 56ch;
+  margin: 12px 0 0;
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .closingCta__inner h2 {

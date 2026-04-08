@@ -1,0 +1,87 @@
+.legal-root {
+  min-height: calc(100vh - 64px);
+  padding: 32px 0 72px;
+  background: var(--bg);
+}
+
+.legal-shell {
+  display: grid;
+  gap: 18px;
+}
+
+.legal-hero,
+.legal-card {
+  background: var(--card);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.22);
+}
+
+.legal-eyebrow {
+  margin: 0 0 8px;
+  color: var(--brand);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.legal-hero h1 {
+  margin: 0 0 10px;
+  font-size: clamp(28px, 5vw, 40px);
+}
+
+.legal-intro,
+.legal-meta,
+.legal-card p,
+.legal-card li {
+  color: var(--muted);
+}
+
+.legal-meta {
+  margin: 12px 0 0;
+}
+
+.legal-card {
+  display: grid;
+  gap: 20px;
+}
+
+.legal-card section {
+  display: grid;
+  gap: 10px;
+}
+
+.legal-card h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.legal-card p,
+.legal-card ul {
+  margin: 0;
+}
+
+.legal-links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.legal-links a {
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.legal-links a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 720px) {
+  .legal-hero,
+  .legal-card {
+    padding: 18px;
+  }
+}

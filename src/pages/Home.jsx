@@ -279,11 +279,17 @@ export default function Home() {
               </div>
               <div className="planMiniCard planMiniCard--accent">
                 <span className="planMiniCard__label">Paid plan</span>
-                <strong>Unlimited question access</strong>
+                <strong>£1.99 for unlimited revision access</strong>
                 <p>
-                  Use Stripe checkout to unlock more intensive revision sessions
-                  and saved progress.
+                  Upgrade for unlimited questions, feedback after submitting
+                  answers, and full review of completed work in your results
+                  section.
                 </p>
+                <ul className="planMiniCard__benefits">
+                  <li>Unlimited questions generated</li>
+                  <li>Feedback given when you submit questions</li>
+                  <li>Review results any time in the results section</li>
+                </ul>
               </div>
             </div>
           </article>
@@ -462,11 +468,15 @@ export default function Home() {
               {needsEmailVerification
                 ? "Verify your email first, then upgrade when you are ready for unlimited access."
                 : canUpgrade
-                  ? "Use one question to diagnose a weak spot, or use the paid plan to drill properly."
+                  ? "Use one question to diagnose a weak spot, or upgrade for £1.99 to unlock the full revision workflow."
                   : hasUnlimitedAccess
                     ? "Unlimited access is already active on this account."
                     : "Use one question to diagnose a weak spot before you upgrade."}
             </h2>
+            <p className="closingCta__copy">
+              Paid access includes unlimited generated questions, feedback on
+              submitted answers, and full results review for completed work.
+            </p>
           </div>
           <div className="closingCta__actions">
             {user ? (
@@ -481,7 +491,7 @@ export default function Home() {
                 ) : (
                   !hasUnlimitedAccess && (
                     <Link to="/account" className="btn btn--ghost">
-                      Upgrade to Paid Plan
+                      Upgrade for £1.99
                     </Link>
                   )
                 )}
@@ -518,6 +528,15 @@ export default function Home() {
             </Link>
             <Link className="link" to="/account">
               Account
+            </Link>
+            <Link className="link" to="/terms">
+              Terms
+            </Link>
+            <Link className="link" to="/paid-plan-terms">
+              Paid Plan Terms
+            </Link>
+            <Link className="link" to="/refund-policy">
+              Refund Policy
             </Link>
             <a className="link" href="#specs">
               Specs

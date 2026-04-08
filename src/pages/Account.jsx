@@ -45,6 +45,8 @@ export default function Account() {
   const [checkoutError, setCheckoutError] = useState("");
   const [statusBanner, setStatusBanner] = useState("");
   const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
+  const [hasAcceptedPurchaseTerms, setHasAcceptedPurchaseTerms] =
+    useState(false);
 
   const isLoggedIn = Boolean(user);
   const planLabel = useMemo(
@@ -181,9 +183,13 @@ export default function Account() {
   };
 
   const handleUpgrade = async () => {
-    if (isCreatingCheckout || !canUpgrade) {
+    if (isCreatingCheckout || !canUpgrade || !hasAcceptedPurchaseTerms) {
       if (needsEmailVerification) {
         setCheckoutError("Please verify your email before starting checkout.");
+      } else if (!hasAcceptedPurchaseTerms) {
+        setCheckoutError(
+          "You must accept the purchase terms before continuing.",
+        );
       } else if (!canUpgrade) {
         setCheckoutError("This account already has unlimited access.");
       }
@@ -392,7 +398,7 @@ export default function Account() {
               {needsEmailVerification
                 ? "Your free plan is active, but billing is locked until you verify your email address."
                 : canUpgrade
-                  ? "You are on the free plan. Upgrade for unlimited questions."
+                  ? "You are on the free plan. Upgrade for £1.99 to unlock the full paid workflow."
                   : hasUnlimitedAccess
                     ? planType === "lifetime"
                       ? "You have lifetime access. Unlimited questions unlocked."
@@ -400,10 +406,38 @@ export default function Account() {
                     : "Your current plan status is shown above."}
             </p>
 
+            {canUpgrade && (
+              <>
+                <p className="account-price">Paid plan price: £1.99</p>
+                <ul className="account-benefits">
+                  <li>Unlimited questions generated</li>
+                  <li>Feedback given when you submit questions</li>
+                  <li>Review results any time in the results section</li>
+                </ul>
+                <label className="account-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={hasAcceptedPurchaseTerms}
+                    onChange={(event) => {
+                      setHasAcceptedPurchaseTerms(event.target.checked);
+                      if (event.target.checked) {
+                        setCheckoutError("");
+                      }
+                    }}
+                  />
+                  <span>
+                    I agree to the <Link to="/terms">Terms of Service</Link>,{" "}
+                    <Link to="/paid-plan-terms">Paid Plan Terms</Link>, and{" "}
+                    <Link to="/refund-policy">Refund Policy</Link>.
+                  </span>
+                </label>
+              </>
+            )}
+
             {needsEmailVerification ? (
               <p className="account-note">
-                Check your inbox, then use the resend action above if you need a
-                fresh verification email.
+                Check your inbox and junk mail, then use the resend action above
+                if you need a fresh verification email.
               </p>
             ) : canUpgrade ? (
               <div className="account-actions">
@@ -411,13 +445,18 @@ export default function Account() {
                   type="button"
                   className="btn btn--primary"
                   onClick={handleUpgrade}
-                  disabled={isCreatingCheckout}
+                  disabled={isCreatingCheckout || !hasAcceptedPurchaseTerms}
                 >
-                  {isCreatingCheckout ? "Redirecting…" : "Upgrade now"}
+                  {isCreatingCheckout ? "Redirecting…" : "Upgrade for £1.99"}
                 </button>
                 <p className="account-note">
                   You will be redirected to Stripe Checkout. Your plan updates
-                  only after the backend webhook confirms payment.
+                  and unlimited features will become available after payment.
+                </p>
+                <p className="account-note">
+                  Paid access continues while the service remains available. See
+                  the <Link to="/paid-plan-terms">Paid Plan Terms</Link> and{" "}
+                  <Link to="/refund-policy">Refund Policy</Link> for details.
                 </p>
               </div>
             ) : hasUnlimitedAccess ? (
