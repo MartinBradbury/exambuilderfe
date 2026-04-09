@@ -478,16 +478,6 @@ export default function QuestionGenerator() {
     : topics.length === 0
       ? "-- No topics available --"
       : "-- Please Select --";
-  const subtopicPlaceholder = !selectedTopic
-    ? "-- Select topic first --"
-    : subtopics.length === 0
-      ? "-- No subtopics available --"
-      : "-- Optional --";
-  const subcategoryPlaceholder = !selectedSubtopic
-    ? "-- Select subtopic first --"
-    : subcategories.length === 0
-      ? "-- No subcategories available --"
-      : "-- Optional --";
   const generateDisabled =
     loading ||
     generationBlocked ||
@@ -687,40 +677,42 @@ export default function QuestionGenerator() {
             </div>
 
             {/* Subtopics (optional) */}
-            <div className="qg-field">
-              <label className="qg-label">SubTopic (Optional)</label>
-              <select
-                className="qg-input"
-                value={selectedSubtopic}
-                onChange={(e) => setSelectedSubtopic(e.target.value)}
-                disabled={!selectedTopic || subtopics.length === 0}
-              >
-                <option value="">{subtopicPlaceholder}</option>
-                {subtopics.map((st) => (
-                  <option key={st.id} value={st.id}>
-                    {st.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {selectedTopic && subtopics.length > 0 && (
+              <div className="qg-field">
+                <label className="qg-label">SubTopic (Optional)</label>
+                <select
+                  className="qg-input"
+                  value={selectedSubtopic}
+                  onChange={(e) => setSelectedSubtopic(e.target.value)}
+                >
+                  <option value="">-- Optional --</option>
+                  {subtopics.map((st) => (
+                    <option key={st.id} value={st.id}>
+                      {st.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Subcategories (optional) */}
-            <div className="qg-field">
-              <label className="qg-label">SubCategory (Optional)</label>
-              <select
-                className="qg-input"
-                value={selectedSubcategory}
-                onChange={(e) => setSelectedSubcategory(e.target.value)}
-                disabled={!selectedSubtopic || subcategories.length === 0}
-              >
-                <option value="">{subcategoryPlaceholder}</option>
-                {subcategories.map((sc) => (
-                  <option key={sc.id} value={sc.id}>
-                    {sc.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {selectedSubtopic && subcategories.length > 0 && (
+              <div className="qg-field">
+                <label className="qg-label">SubCategory (Optional)</label>
+                <select
+                  className="qg-input"
+                  value={selectedSubcategory}
+                  onChange={(e) => setSelectedSubcategory(e.target.value)}
+                >
+                  <option value="">-- Optional --</option>
+                  {subcategories.map((sc) => (
+                    <option key={sc.id} value={sc.id}>
+                      {sc.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Number of questions */}
             <div className="qg-field">
