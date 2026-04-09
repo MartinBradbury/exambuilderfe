@@ -201,24 +201,18 @@
   background: rgba(73, 209, 125, 0.1);
 }
 
-/* Generate button + progress */
+/* Generate button + loading state */
 .qg-generate {
   width: 100%;
   margin-top: 8px;
 }
-.qg-progress {
-  width: 100%;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 999px;
-  overflow: hidden;
-  margin-top: 10px;
-}
-.qg-progress-bar {
-  height: 100%;
-  width: 0;
-  background: var(--brand);
-  transition: width 0.3s ease;
+
+.qg-loading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px 0 0;
+  color: var(--muted);
 }
 
 /* Question block */

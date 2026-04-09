@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useContext, useMemo } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import "../styles/QuestionGenerator.modern.css";
 import { Link, useNavigate } from "react-router-dom";
 import { UserContext } from "../context/UserContextObject";
@@ -39,8 +39,6 @@ export default function QuestionGenerator() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [maxSeenIndex, setMaxSeenIndex] = useState(0);
 
-  const [progress, setProgress] = useState(0);
-  const progressIntervalRef = useRef(null);
   const [upgradeState, setUpgradeState] = useState(null);
 
   const navigate = useNavigate();
@@ -168,30 +166,6 @@ export default function QuestionGenerator() {
     run();
   }, [examBoard, selectedSubtopic]);
 
-  const startProgress = () => {
-    setProgress(0);
-    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-    progressIntervalRef.current = setInterval(() => {
-      setProgress((old) => {
-        if (old >= 95) return old;
-        const increment = old < 40 ? 7 : old < 70 ? 5 : 3;
-        return Math.min(95, old + increment);
-      });
-    }, 300);
-  };
-
-  const stopProgress = () => {
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
-    }
-    setProgress(100);
-    setTimeout(() => {
-      setLoading(false);
-      setProgress(0);
-    }, 500);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -217,8 +191,6 @@ export default function QuestionGenerator() {
     setAnswered({});
     setCurrentIndex(0);
     setMaxSeenIndex(0);
-
-    startProgress();
 
     try {
       const payload = {
@@ -256,7 +228,7 @@ export default function QuestionGenerator() {
         );
       }
     } finally {
-      stopProgress();
+      setLoading(false);
     }
   };
 
@@ -332,6 +304,7 @@ export default function QuestionGenerator() {
         feedback: nextFeedback[index]?.feedback || "",
       }));
 
+      setCurrentIndex(0);
       setMarkedAnswers(scoredAnswers);
       setFinalFeedback(summaryFeedback);
     } catch (err) {
@@ -559,17 +532,15 @@ export default function QuestionGenerator() {
               generationBlocked
             }
           >
-            {loading ? "Generating…" : "Generate Questions"}
+            {loading ? (
+              <>
+                Generating Questions…
+                <span className="qg-spinner" aria-hidden="true" />
+              </>
+            ) : (
+              "Generate Questions"
+            )}
           </button>
-
-          {loading && (
-            <div className="qg-progress" aria-live="polite">
-              <div
-                className="qg-progress-bar"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          )}
 
           {error && <p className="qg-error">{error}</p>}
         </form>
