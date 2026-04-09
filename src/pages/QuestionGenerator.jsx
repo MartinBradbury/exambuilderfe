@@ -51,7 +51,7 @@ export default function QuestionGenerator() {
   const isFreePlan = effectivePlanType === "free" && !hasUnlimitedAccess;
   const generationBlocked = !hasUnlimitedAccess && numericRemaining === 0;
   const questionCountOptions = useMemo(
-    () => (isFreePlan ? [1] : [1, 2, 3, 4, 6, 8, 10]),
+    () => (isFreePlan ? [1] : [1, 2, 3, 4, 5, 6]),
     [isFreePlan],
   );
 
