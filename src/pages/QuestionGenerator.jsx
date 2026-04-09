@@ -160,7 +160,7 @@ export default function QuestionGenerator() {
         return;
       }
 
-      if (isGcse && !selectedSubject) {
+      if (isGcse && (!selectedSubject || !selectedTier)) {
         clearTopicSelections();
         return;
       }
@@ -171,6 +171,7 @@ export default function QuestionGenerator() {
           ? {
               exam_board: examBoard,
               subject: selectedSubject,
+              tier: selectedTier,
             }
           : { exam_board: examBoard };
         const { data } = await api.get(endpoint, { params });
@@ -183,7 +184,14 @@ export default function QuestionGenerator() {
       }
     };
     fetchTopics();
-  }, [authReady, examBoard, hasSelectedQualification, isGcse, selectedSubject]);
+  }, [
+    authReady,
+    examBoard,
+    hasSelectedQualification,
+    isGcse,
+    selectedSubject,
+    selectedTier,
+  ]);
 
   useEffect(() => {
     const run = async () => {
@@ -200,6 +208,7 @@ export default function QuestionGenerator() {
               topic_id: selectedTopic,
               exam_board: examBoard,
               subject: selectedSubject,
+              tier: selectedTier,
             }
           : {
               topic_id: selectedTopic,
@@ -215,7 +224,7 @@ export default function QuestionGenerator() {
       }
     };
     run();
-  }, [examBoard, isGcse, selectedSubject, selectedTopic]);
+  }, [examBoard, isGcse, selectedSubject, selectedTier, selectedTopic]);
 
   useEffect(() => {
     const run = async () => {
@@ -232,6 +241,7 @@ export default function QuestionGenerator() {
               subtopic_id: selectedSubtopic,
               exam_board: examBoard,
               subject: selectedSubject,
+              tier: selectedTier,
             }
           : {
               subtopic_id: selectedSubtopic,
@@ -246,7 +256,7 @@ export default function QuestionGenerator() {
       }
     };
     run();
-  }, [examBoard, isGcse, selectedSubject, selectedSubtopic]);
+  }, [examBoard, isGcse, selectedSubject, selectedTier, selectedSubtopic]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
