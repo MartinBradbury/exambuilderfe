@@ -63,6 +63,105 @@
   padding: 18px;
 }
 
+.qg-choice-card {
+  background: var(--card);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  padding: 22px;
+}
+
+.qg-choice-header {
+  margin-bottom: 18px;
+}
+
+.qg-choice-header h2 {
+  margin: 0 0 6px;
+}
+
+.qg-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.qg-choice-tile {
+  display: grid;
+  gap: 14px;
+  padding: 12px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.02)
+  );
+  border: 1px solid var(--outline);
+  border-radius: 18px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.qg-choice-tile:hover {
+  transform: translateY(-3px);
+  border-color: rgba(73, 209, 125, 0.45);
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.24);
+}
+
+.qg-choice-tile:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.qg-choice-image {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 14px;
+  display: block;
+}
+
+.qg-choice-copy {
+  display: grid;
+  gap: 4px;
+  padding: 0 4px 2px;
+}
+
+.qg-choice-copy strong {
+  font-size: 1.15rem;
+}
+
+.qg-choice-copy span {
+  color: var(--muted);
+}
+
+.qg-form-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.qg-form-topbar h2 {
+  margin: 4px 0 0;
+}
+
+.qg-form-eyebrow {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.qg-change-qualification {
+  min-width: 190px;
+}
+
 /* Form grid */
 .qg-grid {
   display: grid;
@@ -429,6 +528,18 @@ form.qg-card .qg-field {
 }
 
 @media (max-width: 700px) {
+  .qg-choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .qg-form-topbar {
+    flex-direction: column;
+  }
+
+  .qg-change-qualification {
+    width: 100%;
+  }
+
   .qg-access-summary {
     align-items: flex-start;
     flex-direction: column;

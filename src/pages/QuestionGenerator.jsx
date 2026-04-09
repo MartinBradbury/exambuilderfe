@@ -3,6 +3,13 @@ import "../styles/QuestionGenerator.modern.css";
 import { Link, useNavigate } from "react-router-dom";
 import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
+import aLevelCover from "../assets/home/image.png";
+import gcseCover from "../assets/home/gcsephysics.jpg";
+
+const ALEVEL_QUALIFICATION = "ALEVEL_BIOLOGY";
+const GCSE_QUALIFICATION = "GCSE_SCIENCE";
+const GCSE_SUBJECT_OPTIONS = ["BIOLOGY", "CHEMISTRY", "PHYSICS"];
+const GCSE_TIER_OPTIONS = ["FOUNDATION", "HIGHER"];
 
 export default function QuestionGenerator() {
   const {
@@ -18,6 +25,10 @@ export default function QuestionGenerator() {
   const [selectedSubtopic, setSelectedSubtopic] = useState("");
   const [subcategories, setSubcategories] = useState([]);
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
+  const [qualification, setQualification] = useState(ALEVEL_QUALIFICATION);
+  const [hasSelectedQualification, setHasSelectedQualification] = useState(false);
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const [selectedTier, setSelectedTier] = useState("");
 
   const [examBoard, setExamBoard] = useState("OCR");
   const [numberOfQuestions, setNumberOfQuestions] = useState("3");
@@ -42,6 +53,7 @@ export default function QuestionGenerator() {
   const [upgradeState, setUpgradeState] = useState(null);
 
   const navigate = useNavigate();
+  const isGcse = qualification === GCSE_QUALIFICATION;
 
   const numericRemaining =
     questionsRemainingToday == null ? null : Number(questionsRemainingToday);
@@ -80,6 +92,63 @@ export default function QuestionGenerator() {
     }
   }, [isFreePlan, numberOfQuestions]);
 
+  const clearTopicSelections = () => {
+    setTopics([]);
+    setSelectedTopic("");
+    setSubtopics([]);
+    setSelectedSubtopic("");
+    setSubcategories([]);
+    setSelectedSubcategory("");
+  };
+
+  const clearSubtopicSelections = () => {
+    setSubtopics([]);
+    setSelectedSubtopic("");
+    setSubcategories([]);
+    setSelectedSubcategory("");
+  };
+
+  const clearSubcategorySelections = () => {
+    setSubcategories([]);
+    setSelectedSubcategory("");
+  };
+
+  const handleQualificationChange = (nextQualification) => {
+    setQualification(nextQualification);
+    setHasSelectedQualification(true);
+    setError("");
+    clearTopicSelections();
+    setSelectedSubject("");
+    setSelectedTier("");
+  };
+
+  const handleBackToQualificationChoice = () => {
+    setHasSelectedQualification(false);
+    setError("");
+    clearTopicSelections();
+    setSelectedSubject("");
+    setSelectedTier("");
+  };
+
+  const handleExamBoardChange = (nextExamBoard) => {
+    setExamBoard(nextExamBoard);
+    setError("");
+    clearTopicSelections();
+  };
+
+  const handleSubjectChange = (nextSubject) => {
+    setSelectedSubject(nextSubject);
+    setSelectedTier("");
+    setError("");
+    clearTopicSelections();
+  };
+
+  const handleTierChange = (nextTier) => {
+    setSelectedTier(nextTier);
+    setError("");
+    clearTopicSelections();
+  };
+
   // --- Fetch topics when examBoard changes (and pass ?exam_board=...)
   useEffect(() => {
     const fetchTopics = async () => {
@@ -87,87 +156,104 @@ export default function QuestionGenerator() {
         return;
       }
 
+      if (!hasSelectedQualification) {
+        return;
+      }
+
+      if (isGcse && !selectedSubject) {
+        clearTopicSelections();
+        return;
+      }
+
       try {
-        const { data } = await api.get("/api/biology-topics/", {
-          params: { exam_board: examBoard },
-        });
+        const endpoint = isGcse ? "/api/gcse-topics/" : "/api/biology-topics/";
+        const params = isGcse
+          ? {
+              exam_board: examBoard,
+              subject: selectedSubject,
+            }
+          : { exam_board: examBoard };
+        const { data } = await api.get(endpoint, { params });
         setTopics(data || []);
         setSelectedTopic("");
-        setSubtopics([]);
-        setSelectedSubtopic("");
-        setSubcategories([]);
-        setSelectedSubcategory("");
+        clearSubtopicSelections();
       } catch (err) {
         console.error("Failed to fetch topics:", err);
-        setTopics([]);
-        setSelectedTopic("");
-        setSubtopics([]);
-        setSelectedSubtopic("");
-        setSubcategories([]);
-        setSelectedSubcategory("");
+        clearTopicSelections();
       }
     };
     fetchTopics();
-  }, [authReady, examBoard]);
+  }, [authReady, examBoard, hasSelectedQualification, isGcse, selectedSubject]);
 
   useEffect(() => {
     const run = async () => {
       if (!selectedTopic) {
-        setSubtopics([]);
-        setSelectedSubtopic("");
-        setSubcategories([]);
-        setSelectedSubcategory("");
+        clearSubtopicSelections();
         return;
       }
       try {
-        const { data } = await api.get("/api/biology-subtopics/", {
-          params: {
-            topic_id: selectedTopic,
-            exam_board: examBoard,
-          },
-        });
+        const endpoint = isGcse
+          ? "/api/gcse-subtopics/"
+          : "/api/biology-subtopics/";
+        const params = isGcse
+          ? {
+              topic_id: selectedTopic,
+              exam_board: examBoard,
+              subject: selectedSubject,
+            }
+          : {
+              topic_id: selectedTopic,
+              exam_board: examBoard,
+            };
+        const { data } = await api.get(endpoint, { params });
         setSubtopics(data || []);
         setSelectedSubtopic("");
-        setSubcategories([]);
-        setSelectedSubcategory("");
+        clearSubcategorySelections();
       } catch (e) {
         console.error("Failed to fetch subtopics:", e);
-        setSubtopics([]);
-        setSelectedSubtopic("");
-        setSubcategories([]);
-        setSelectedSubcategory("");
+        clearSubtopicSelections();
       }
     };
     run();
-  }, [examBoard, selectedTopic]);
+  }, [examBoard, isGcse, selectedSubject, selectedTopic]);
 
   useEffect(() => {
     const run = async () => {
       if (!selectedSubtopic) {
-        setSubcategories([]);
-        setSelectedSubcategory("");
+        clearSubcategorySelections();
         return;
       }
       try {
-        const { data } = await api.get("/api/biology-subcategories/", {
-          params: {
-            subtopic_id: selectedSubtopic,
-            exam_board: examBoard,
-          },
-        });
+        const endpoint = isGcse
+          ? "/api/gcse-subcategories/"
+          : "/api/biology-subcategories/";
+        const params = isGcse
+          ? {
+              subtopic_id: selectedSubtopic,
+              exam_board: examBoard,
+              subject: selectedSubject,
+            }
+          : {
+              subtopic_id: selectedSubtopic,
+              exam_board: examBoard,
+            };
+        const { data } = await api.get(endpoint, { params });
         setSubcategories(data || []);
         setSelectedSubcategory("");
       } catch (e) {
         console.error("Failed to fetch subcategories:", e);
-        setSubcategories([]);
-        setSelectedSubcategory("");
+        clearSubcategorySelections();
       }
     };
     run();
-  }, [examBoard, selectedSubtopic]);
+  }, [examBoard, isGcse, selectedSubject, selectedSubtopic]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const missingRequiredFields = isGcse
+      ? !examBoard || !selectedSubject || !selectedTier || !selectedTopic
+      : !examBoard || !selectedTopic;
 
     if (generationBlocked) {
       setUpgradeState({
@@ -175,6 +261,11 @@ export default function QuestionGenerator() {
         plan_type: effectivePlanType,
         questions_remaining_today: numericRemaining,
       });
+      return;
+    }
+
+    if (missingRequiredFields) {
+      setError("Please complete all required fields before generating questions.");
       return;
     }
 
@@ -194,13 +285,22 @@ export default function QuestionGenerator() {
 
     try {
       const payload = {
+        qualification,
         topic_id: Number(selectedTopic),
-        subtopic_id: selectedSubtopic ? Number(selectedSubtopic) : null,
-        subcategory_id: selectedSubcategory
-          ? Number(selectedSubcategory)
-          : null,
         exam_board: examBoard,
         number_of_questions: parseInt(numberOfQuestions, 10),
+        ...(selectedSubtopic
+          ? { subtopic_id: Number(selectedSubtopic) }
+          : {}),
+        ...(selectedSubcategory
+          ? { subcategory_id: Number(selectedSubcategory) }
+          : {}),
+        ...(isGcse
+          ? {
+              subject: selectedSubject,
+              tier: selectedTier,
+            }
+          : {}),
       };
 
       const { data } = await api.post("/api/generate-questions/", payload);
@@ -253,10 +353,22 @@ export default function QuestionGenerator() {
     setIsBatchMarking(true);
 
     try {
-      const { data: markingData } = await api.post("/api/mark-answer/", {
+      const markingPayload = {
+        qualification,
         exam_board: examBoard,
         answers: answersToMark,
-      });
+        ...(isGcse
+          ? {
+              subject: selectedSubject,
+              tier: selectedTier,
+            }
+          : {}),
+      };
+
+      const { data: markingData } = await api.post(
+        "/api/mark-answer/",
+        markingPayload,
+      );
 
       const nextFeedback = {};
       const results = Array.isArray(markingData?.results)
@@ -355,6 +467,33 @@ export default function QuestionGenerator() {
   const jumpTo = (i) =>
     setCurrentIndex((curr) => (i <= maxSeenIndex ? i : curr));
 
+  const topicPlaceholder = isGcse
+    ? !selectedSubject
+      ? "-- Select subject first --"
+      : !selectedTier
+        ? "-- Select tier first --"
+        : topics.length === 0
+          ? "-- No topics available --"
+          : "-- Please Select --"
+    : topics.length === 0
+      ? "-- No topics available --"
+      : "-- Please Select --";
+  const subtopicPlaceholder = !selectedTopic
+    ? "-- Select topic first --"
+    : subtopics.length === 0
+      ? "-- No subtopics available --"
+      : "-- Optional --";
+  const subcategoryPlaceholder = !selectedSubtopic
+    ? "-- Select subtopic first --"
+    : subcategories.length === 0
+      ? "-- No subcategories available --"
+      : "-- Optional --";
+  const generateDisabled =
+    loading ||
+    generationBlocked ||
+    !selectedTopic ||
+    (isGcse && (!selectedSubject || !selectedTier));
+
   return (
     <div className="qg-root container">
       <header className="qg-header">
@@ -411,8 +550,68 @@ export default function QuestionGenerator() {
         </section>
       )}
 
-      {!questions && (
+      {!questions && !hasSelectedQualification && (
+        <section className="qg-choice-card">
+          <div className="qg-choice-header">
+            <h2>Select your qualification</h2>
+            <p className="muted">
+              Pick the route you want to generate from, then you will be taken
+              to the exam board and topic options.
+            </p>
+          </div>
+
+          <div className="qg-choice-grid">
+            <button
+              type="button"
+              className="qg-choice-tile"
+              onClick={() => handleQualificationChange(ALEVEL_QUALIFICATION)}
+            >
+              <img
+                src={aLevelCover}
+                alt="A-level Biology"
+                className="qg-choice-image"
+              />
+              <span className="qg-choice-copy">
+                <strong>A-level</strong>
+                <span>Biology question generation</span>
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className="qg-choice-tile"
+              onClick={() => handleQualificationChange(GCSE_QUALIFICATION)}
+            >
+              <img
+                src={gcseCover}
+                alt="GCSE Science"
+                className="qg-choice-image"
+              />
+              <span className="qg-choice-copy">
+                <strong>GCSE</strong>
+                <span>Biology, Chemistry, and Physics</span>
+              </span>
+            </button>
+          </div>
+        </section>
+      )}
+
+      {!questions && hasSelectedQualification && (
         <form onSubmit={handleSubmit} className="qg-card">
+          <div className="qg-form-topbar">
+            <div>
+              <p className="qg-form-eyebrow">Selected qualification</p>
+              <h2>{isGcse ? "GCSE Science" : "A-level Biology"}</h2>
+            </div>
+            <button
+              type="button"
+              className="btn btn--ghost qg-change-qualification"
+              onClick={handleBackToQualificationChoice}
+            >
+              Change qualification
+            </button>
+          </div>
+
           {/* Vertically stacked essentials */}
           <div className="qg-vert">
             {/* Exam board */}
@@ -421,83 +620,107 @@ export default function QuestionGenerator() {
               <select
                 className="qg-input"
                 value={examBoard}
-                onChange={(e) => {
-                  setExamBoard(e.target.value);
-                  // immediate defensive reset (the fetch also clears)
-                  setSelectedTopic("");
-                  setSubtopics([]);
-                  setSelectedSubtopic("");
-                  setSubcategories([]);
-                  setSelectedSubcategory("");
-                }}
+                onChange={(e) => handleExamBoardChange(e.target.value)}
               >
                 <option value="AQA">AQA</option>
                 <option value="OCR">OCR</option>
               </select>
             </div>
 
-            {/* Topic */}
-            {topics.length > 0 ? (
-              <div className="qg-field">
-                <label className="qg-label">Topic (Module)</label>
-                <select
-                  className="qg-input"
-                  value={selectedTopic}
-                  onChange={(e) => setSelectedTopic(e.target.value)}
-                  required
-                >
-                  <option value="">-- Please Select --</option>
-                  {topics.map((topic) => (
-                    <option key={topic.id} value={topic.id}>
-                      {topic.topic}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <div className="qg-field">
-                <label className="qg-label">Topic (Module)</label>
-                <div className="muted">No topics available.</div>
-              </div>
+            {isGcse && (
+              <>
+                <div className="qg-field">
+                  <label className="qg-label">Subject</label>
+                  <select
+                    className="qg-input"
+                    value={selectedSubject}
+                    onChange={(e) => handleSubjectChange(e.target.value)}
+                    disabled={!examBoard}
+                    required
+                  >
+                    <option value="">-- Please Select --</option>
+                    {GCSE_SUBJECT_OPTIONS.map((subject) => (
+                      <option key={subject} value={subject}>
+                        {subject}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="qg-field">
+                  <label className="qg-label">Tier</label>
+                  <select
+                    className="qg-input"
+                    value={selectedTier}
+                    onChange={(e) => handleTierChange(e.target.value)}
+                    disabled={!selectedSubject}
+                    required
+                  >
+                    <option value="">-- Please Select --</option>
+                    {GCSE_TIER_OPTIONS.map((tier) => (
+                      <option key={tier} value={tier}>
+                        {tier}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
             )}
+
+            {/* Topic */}
+            <div className="qg-field">
+              <label className="qg-label">{isGcse ? "Topic" : "Topic (Module)"}</label>
+              <select
+                className="qg-input"
+                value={selectedTopic}
+                onChange={(e) => setSelectedTopic(e.target.value)}
+                disabled={isGcse ? !selectedSubject || !selectedTier || topics.length === 0 : topics.length === 0}
+                required
+              >
+                <option value="">{topicPlaceholder}</option>
+                {topics.map((topic) => (
+                  <option key={topic.id} value={topic.id}>
+                    {topic.topic}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Subtopics (optional) */}
-            {subtopics.length > 0 && (
-              <div className="qg-field">
-                <label className="qg-label">SubTopic (Optional)</label>
-                <select
-                  className="qg-input"
-                  value={selectedSubtopic}
-                  onChange={(e) => setSelectedSubtopic(e.target.value)}
-                >
-                  <option value="">-- Optional --</option>
-                  {subtopics.map((st) => (
-                    <option key={st.id} value={st.id}>
-                      {st.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <div className="qg-field">
+              <label className="qg-label">SubTopic (Optional)</label>
+              <select
+                className="qg-input"
+                value={selectedSubtopic}
+                onChange={(e) => setSelectedSubtopic(e.target.value)}
+                disabled={!selectedTopic || subtopics.length === 0}
+              >
+                <option value="">{subtopicPlaceholder}</option>
+                {subtopics.map((st) => (
+                  <option key={st.id} value={st.id}>
+                    {st.title}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Subcategories (optional) */}
-            {subcategories.length > 0 && (
-              <div className="qg-field">
-                <label className="qg-label">SubCategory (Optional)</label>
-                <select
-                  className="qg-input"
-                  value={selectedSubcategory}
-                  onChange={(e) => setSelectedSubcategory(e.target.value)}
-                >
-                  <option value="">-- Optional --</option>
-                  {subcategories.map((sc) => (
-                    <option key={sc.id} value={sc.id}>
-                      {sc.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <div className="qg-field">
+              <label className="qg-label">SubCategory (Optional)</label>
+              <select
+                className="qg-input"
+                value={selectedSubcategory}
+                onChange={(e) => setSelectedSubcategory(e.target.value)}
+                disabled={!selectedSubtopic || subcategories.length === 0}
+              >
+                <option value="">{subcategoryPlaceholder}</option>
+                {subcategories.map((sc) => (
+                  <option key={sc.id} value={sc.id}>
+                    {sc.title}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Number of questions */}
             <div className="qg-field">
@@ -525,12 +748,7 @@ export default function QuestionGenerator() {
           <button
             className="btn btn--primary qg-generate"
             type="submit"
-            disabled={
-              loading ||
-              topics.length === 0 ||
-              !selectedTopic ||
-              generationBlocked
-            }
+            disabled={generateDisabled}
           >
             {loading ? (
               <>
