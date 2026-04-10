@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 
-const normalizeText = (value) => String(value || "").trim().toLowerCase();
+const normalizeText = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
 
 const getSessionLevel = (session) =>
   session?.level || session?.qualification_label || "Not recorded";
@@ -227,25 +230,28 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
           return rightDate - leftDate;
         })
         .map((session) => {
-        const feedback = parseFeedback(session.feedback);
-        const isOpen = expandedSessionId === session.id;
+          const feedback = parseFeedback(session.feedback);
+          const isOpen = expandedSessionId === session.id;
 
-        return {
-          ...session,
-          feedback,
-          isOpen,
-          formattedDate: formatSessionDate(session.created_at),
-          compactDate: formatCompactDate(session.created_at),
-          scorePercent: getScorePercent(session.total_score, session.total_available),
-          gradeLabel: getGradeLabel(
-            getScorePercent(session.total_score, session.total_available),
-          ),
-          topicLabel: getSessionTopic(session),
-          levelLabel: getSessionLevel(session),
-          subtopicLabel: getSessionSubtopic(session),
-          subcategoryLabel: getSessionSubcategory(session),
-        };
-      }),
+          return {
+            ...session,
+            feedback,
+            isOpen,
+            formattedDate: formatSessionDate(session.created_at),
+            compactDate: formatCompactDate(session.created_at),
+            scorePercent: getScorePercent(
+              session.total_score,
+              session.total_available,
+            ),
+            gradeLabel: getGradeLabel(
+              getScorePercent(session.total_score, session.total_available),
+            ),
+            topicLabel: getSessionTopic(session),
+            levelLabel: getSessionLevel(session),
+            subtopicLabel: getSessionSubtopic(session),
+            subcategoryLabel: getSessionSubcategory(session),
+          };
+        }),
     [examBoardFilter, expandedSessionId, searchTerm, sessions, sortOrder],
   );
 
@@ -381,7 +387,8 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
                 <div className="account-resultCard__score">
                   <span>{session.scorePercent}%</span>
                   <strong>
-                    {session.total_score} / {session.total_available} — Grade {session.gradeLabel}
+                    {session.total_score} / {session.total_available} — Grade{" "}
+                    {session.gradeLabel}
                   </strong>
                 </div>
               </div>
@@ -409,7 +416,10 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
 
               {session.isOpen && (
                 <div className="account-resultCard__body">
-                  <div className="account-resultCard__divider" aria-hidden="true" />
+                  <div
+                    className="account-resultCard__divider"
+                    aria-hidden="true"
+                  />
 
                   <div className="account-resultCard__feedbackBlock account-resultCard__feedbackBlock--insight">
                     <h4>🧠 Insight</h4>
@@ -442,12 +452,14 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
                     </div>
                   )}
 
-                  {!session.feedback?.strengths?.length && !session.feedback?.improvements?.length && session.feedback?.raw && (
-                    <div className="account-resultCard__feedbackBlock">
-                      <h4>📝 Feedback</h4>
-                      <p>{session.feedback.raw}</p>
-                    </div>
-                  )}
+                  {!session.feedback?.strengths?.length &&
+                    !session.feedback?.improvements?.length &&
+                    session.feedback?.raw && (
+                      <div className="account-resultCard__feedbackBlock">
+                        <h4>📝 Feedback</h4>
+                        <p>{session.feedback.raw}</p>
+                      </div>
+                    )}
 
                   <div className="account-resultCard__footerAction">
                     <Link

@@ -407,7 +407,9 @@ export default function QuestionGenerator() {
     }
 
     const matchedTopic = topics.find(
-      (topic) => normalizeTopicName(topic.topic) === normalizeTopicName(resumeSession.topicName),
+      (topic) =>
+        normalizeTopicName(topic.topic) ===
+        normalizeTopicName(resumeSession.topicName),
     );
 
     if (matchedTopic?.id != null) {
