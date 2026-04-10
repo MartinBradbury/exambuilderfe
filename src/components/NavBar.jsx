@@ -57,7 +57,7 @@ export default function Navbar() {
                 Generator
               </NavLink>
               <NavLink
-                to="/my-results"
+                to="/account#results"
                 className={({ isActive }) =>
                   isActive ? "nav-link is-active" : "nav-link"
                 }
@@ -142,7 +142,7 @@ export default function Navbar() {
                 Generator
               </NavLink>
               <NavLink
-                to="/my-results"
+                to="/account#results"
                 className="mobile-link"
                 onClick={closeMenu}
               >

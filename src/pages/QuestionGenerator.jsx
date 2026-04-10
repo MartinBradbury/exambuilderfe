@@ -18,6 +18,11 @@ const GCSE_TIER_OPTIONS = ["FOUNDATION", "HIGHER"];
 const SESSION_LEAVE_MESSAGE =
   "Are you sure you want to leave this page? Your current question session will be lost.";
 
+const normalizeTopicName = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+
 export default function QuestionGenerator() {
   const {
     user,
@@ -58,12 +63,14 @@ export default function QuestionGenerator() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [maxSeenIndex, setMaxSeenIndex] = useState(0);
   const [allowNavigation, setAllowNavigation] = useState(false);
+  const [resumeNotice, setResumeNotice] = useState("");
 
   const [upgradeState, setUpgradeState] = useState(null);
 
   const navigate = useNavigate();
   const location = useLocation();
   const isGcse = qualification === GCSE_QUALIFICATION;
+  const resumeSession = location.state?.resumeSession || null;
 
   const numericRemaining =
     questionsRemainingToday == null ? null : Number(questionsRemainingToday);
@@ -180,6 +187,53 @@ export default function QuestionGenerator() {
       setNumberOfQuestions("1");
     }
   }, [isFreePlan, numberOfQuestions]);
+
+  useEffect(() => {
+    if (!resumeSession) {
+      setResumeNotice("");
+      return;
+    }
+
+    const nextQualification =
+      resumeSession.qualification === GCSE_QUALIFICATION ||
+      resumeSession.qualification === ALEVEL_QUALIFICATION
+        ? resumeSession.qualification
+        : null;
+
+    if (nextQualification) {
+      setQualification(nextQualification);
+      setHasSelectedQualification(true);
+    }
+
+    if (
+      resumeSession.examBoard &&
+      ["AQA", "OCR"].includes(String(resumeSession.examBoard).toUpperCase())
+    ) {
+      setExamBoard(String(resumeSession.examBoard).toUpperCase());
+    }
+
+    if (
+      resumeSession.subject &&
+      GCSE_SUBJECT_OPTIONS.includes(String(resumeSession.subject).toUpperCase())
+    ) {
+      setSelectedSubject(String(resumeSession.subject).toUpperCase());
+    }
+
+    if (
+      resumeSession.tier &&
+      GCSE_TIER_OPTIONS.includes(String(resumeSession.tier).toUpperCase())
+    ) {
+      setSelectedTier(String(resumeSession.tier).toUpperCase());
+    }
+
+    if (resumeSession.numberOfQuestions) {
+      setNumberOfQuestions(String(resumeSession.numberOfQuestions));
+    }
+
+    setResumeNotice(
+      `Loaded a similar setup from session #${resumeSession.sessionId}. Review the options below before generating a new set.`,
+    );
+  }, [resumeSession]);
 
   const clearTopicSelections = () => {
     setTopics([]);
@@ -346,6 +400,41 @@ export default function QuestionGenerator() {
     };
     run();
   }, [examBoard, isGcse, selectedSubject, selectedTier, selectedSubtopic]);
+
+  useEffect(() => {
+    if (!resumeSession?.topicName || selectedTopic || topics.length === 0) {
+      return;
+    }
+
+    const matchedTopic = topics.find(
+      (topic) => normalizeTopicName(topic.topic) === normalizeTopicName(resumeSession.topicName),
+    );
+
+    if (matchedTopic?.id != null) {
+      setSelectedTopic(String(matchedTopic.id));
+    }
+  }, [resumeSession, selectedTopic, topics]);
+
+  useEffect(() => {
+    if (
+      !resumeSession?.subtopicName ||
+      !selectedTopic ||
+      selectedSubtopic ||
+      subtopics.length === 0
+    ) {
+      return;
+    }
+
+    const matchedSubtopic = subtopics.find(
+      (subtopic) =>
+        normalizeTopicName(subtopic.title) ===
+        normalizeTopicName(resumeSession.subtopicName),
+    );
+
+    if (matchedSubtopic?.id != null) {
+      setSelectedSubtopic(String(matchedSubtopic.id));
+    }
+  }, [resumeSession, selectedSubtopic, selectedTopic, subtopics]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -545,7 +634,7 @@ export default function QuestionGenerator() {
 
       setAllowNavigation(true);
       setHasSubmitted(true);
-      navigate("/my-results");
+      navigate("/account#results");
     } catch (err) {
       console.error(err);
       alert("Failed to save session.");
@@ -632,7 +721,7 @@ export default function QuestionGenerator() {
             <Link to="/account" className="btn btn--primary">
               Upgrade now
             </Link>
-            <Link to="/my-results" className="btn btn--ghost">
+            <Link to="/account#results" className="btn btn--ghost">
               View saved results
             </Link>
             <Link to="/" className="btn btn--subtle">
@@ -690,6 +779,11 @@ export default function QuestionGenerator() {
 
       {!questions && hasSelectedQualification && (
         <form onSubmit={handleSubmit} className="qg-card">
+          {resumeNotice && (
+            <p className="qg-hint" role="status">
+              {resumeNotice}
+            </p>
+          )}
           <div className="qg-form-topbar">
             <div>
               <p className="qg-form-eyebrow">Selected qualification</p>

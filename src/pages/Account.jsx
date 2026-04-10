@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import EmailVerificationNotice from "../components/EmailVerificationNotice";
+import ResultsHistory from "../components/ResultsHistory";
 import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
 import "../styles/Account.modern.css";
@@ -471,6 +472,8 @@ export default function Account() {
             )}
           </article>
         </section>
+
+        <ResultsHistory />
       </div>
     </div>
   );

@@ -184,6 +184,191 @@
   color: var(--muted);
 }
 
+.account-results {
+  display: grid;
+  gap: 18px;
+}
+
+.account-results__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.account-results__header h2 {
+  margin: 0 0 8px;
+  font-size: clamp(24px, 4vw, 34px);
+}
+
+.account-results__list {
+  display: grid;
+  gap: 18px;
+}
+
+.account-results__toolbar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.account-results__control {
+  display: grid;
+  gap: 8px;
+}
+
+.account-results__control label {
+  font-weight: 700;
+  font-size: 0.94rem;
+}
+
+.account-results__input {
+  min-height: 44px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--outline);
+  background: #0d141c;
+  color: var(--text);
+}
+
+.account-results__input:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+@media (prefers-color-scheme: light) {
+  .account-results__input {
+    background: #fff;
+  }
+}
+
+.account-resultCard {
+  display: grid;
+  gap: 18px;
+}
+
+.account-resultCard__top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+}
+
+.account-resultCard__top h3 {
+  margin: 0;
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+}
+
+.account-resultCard__titleWrap {
+  display: grid;
+  gap: 10px;
+}
+
+.account-resultCard__meta,
+.account-resultCard__subtopic,
+.account-resultCard__metaLine {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.account-resultCard__subtopic {
+  font-size: 0.96rem;
+}
+
+.account-resultCard__metaLine {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-weight: 600;
+}
+
+.account-resultCard__metaLine span {
+  display: inline-flex;
+  align-items: center;
+}
+
+.account-resultCard__metaLine span + span::before {
+  content: "|";
+  margin-right: 10px;
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.account-resultCard__score {
+  display: grid;
+  gap: 4px;
+  min-width: 168px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(73, 209, 125, 0.22);
+  background: linear-gradient(180deg, rgba(73, 209, 125, 0.16), rgba(73, 209, 125, 0.08));
+}
+
+.account-resultCard__score span {
+  color: var(--brand);
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-transform: none;
+}
+
+.account-resultCard__score strong {
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.account-resultCard__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.account-resultCard__body {
+  display: grid;
+  gap: 16px;
+  padding-top: 4px;
+}
+
+.account-resultCard__divider {
+  border-top: 1px solid var(--outline);
+}
+
+.account-resultCard__feedbackBlock {
+  padding: 18px;
+  border: 1px solid var(--outline);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.account-resultCard__feedbackBlock--insight {
+  background: linear-gradient(180deg, rgba(73, 209, 125, 0.08), rgba(255, 255, 255, 0.03));
+}
+
+.account-resultCard__feedbackBlock h4 {
+  margin: 0 0 10px;
+}
+
+.account-resultCard__feedbackBlock p,
+.account-resultCard__feedbackBlock ul {
+  margin: 0;
+  color: var(--muted);
+}
+
+.account-resultCard__feedbackBlock ul {
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.account-resultCard__footerAction {
+  display: flex;
+  justify-content: flex-start;
+}
+
 @media (max-width: 720px) {
   .account-actions {
     flex-direction: column;
@@ -199,5 +384,36 @@
 
   .account-details dd {
     text-align: left;
+  }
+
+  .account-results__header {
+    align-items: stretch;
+  }
+
+  .account-results__header .btn {
+    width: 100%;
+  }
+
+  .account-resultCard__top {
+    grid-template-columns: 1fr;
+  }
+
+  .account-resultCard__score {
+    width: 100%;
+  }
+
+  .account-results__toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .account-resultCard__actions,
+  .account-resultCard__footerAction {
+    flex-direction: column;
+  }
+
+  .account-resultCard__actions .btn,
+  .account-resultCard__footerAction .btn {
+    width: 100%;
+    justify-content: center;
   }
 }

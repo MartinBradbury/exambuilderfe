@@ -413,7 +413,7 @@ export default function Home() {
             <Link className="link" to="/question-generator">
               Generator
             </Link>
-            <Link className="link" to="/my-results">
+            <Link className="link" to="/account#results">
               Results
             </Link>
             <Link className="link" to="/account">
