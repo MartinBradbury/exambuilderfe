@@ -1,0 +1,218 @@
+.specPage-root {
+  overflow-x: clip;
+  padding-bottom: 72px;
+}
+
+.specPage-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 34px 0 30px;
+}
+
+.specPage-heroBg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(
+      circle at 14% 14%,
+      rgba(73, 209, 125, 0.18),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 84% 18%,
+      rgba(255, 209, 102, 0.14),
+      transparent 32%
+    ),
+    linear-gradient(180deg, var(--surface), var(--bg) 68%);
+}
+
+.specPage-heroInner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 22px;
+  align-items: stretch;
+}
+
+.specPage-copy {
+  padding: 42px 0 24px;
+}
+
+.specPage-eyebrow {
+  margin: 0 0 10px;
+  color: var(--brand);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.specPage-copy h1,
+.specPage-heading h2 {
+  margin: 0;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+}
+
+.specPage-copy h1 {
+  max-width: 13ch;
+  font-size: clamp(2.6rem, 6vw, 4.4rem);
+}
+
+.specPage-lead,
+.specPage-heading p,
+.specPage-intro,
+.specPage-points,
+.specPage-statCard p {
+  color: var(--muted);
+}
+
+.specPage-lead {
+  max-width: 62ch;
+  margin: 18px 0 0;
+  font-size: 1.06rem;
+}
+
+.specPage-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+
+.specPage-panel {
+  display: grid;
+  gap: 16px;
+  align-content: center;
+  padding: 42px 0 18px;
+}
+
+.specPage-statCard,
+.specPage-card {
+  background: linear-gradient(180deg, var(--card-strong), var(--card));
+  border: 1px solid var(--outline);
+  border-radius: 22px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
+}
+
+.specPage-statCard {
+  padding: 22px;
+  display: grid;
+  gap: 10px;
+}
+
+.specPage-statCard span,
+.specPage-code {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(73, 209, 125, 0.12);
+  color: var(--brand);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.specPage-statCard strong {
+  font-size: 1.4rem;
+}
+
+.specPage-statCard--accent span {
+  background: rgba(255, 209, 102, 0.14);
+  color: var(--accent);
+}
+
+.specPage-section {
+  padding: 54px 0 0;
+}
+
+.specPage-heading {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.specPage-heading h2 {
+  font-size: clamp(1.9rem, 4vw, 3rem);
+}
+
+.specPage-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.specPage-grid--gcse,
+.specPage-grid--alevel {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.specPage-card {
+  padding: 22px;
+  display: grid;
+  gap: 16px;
+}
+
+.specPage-cardTop {
+  display: grid;
+  gap: 10px;
+}
+
+.specPage-card h3 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.specPage-intro {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.specPage-points {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.specPage-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.specPage-links .btn {
+  min-height: 44px;
+  align-items: center;
+  display: inline-flex;
+}
+
+@media (max-width: 960px) {
+  .specPage-heroInner,
+  .specPage-grid--gcse,
+  .specPage-grid--alevel {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .specPage-card,
+  .specPage-statCard {
+    padding: 18px;
+  }
+
+  .specPage-actions,
+  .specPage-links {
+    flex-direction: column;
+  }
+
+  .specPage-actions .btn,
+  .specPage-links .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

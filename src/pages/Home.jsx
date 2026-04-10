@@ -321,74 +321,32 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="roadmapV2 container">
-        <div className="roadmapIntro">
-          <div className="sectionHeading">
-            <p className="sectionEyebrow">What is shipping next</p>
-            <h2>Features already in the pipeline</h2>
-            <p>
-              The product is usable now, but the roadmap is focused on deeper
-              exam realism: longer essay modes, mixed-topic mini tests, and more
-              chemistry and physics coverage.
-            </p>
-          </div>
-        </div>
-        <DevNotes />
-      </section>
-
-      <section id="specs" className="specsV2 container">
+      <section
+        className="specsTeaserV2 container"
+        aria-labelledby="spec-teaser-title"
+      >
         <div className="sectionHeading">
           <p className="sectionEyebrow">Specification links</p>
-          <h2>Revision should still map back to the official course content</h2>
+          <h2 id="spec-teaser-title">
+            Revision should still map back to the official course content
+          </h2>
+          <p>
+            The specification links now live on a dedicated page, grouped more
+            clearly by qualification and exam board.
+          </p>
         </div>
-        <div className="specGridV2">
-          <div className="specItem">
-            <h3>OCR A-Level Biology (A)</h3>
+        <div className="specsTeaserCard">
+          <div>
+            <strong>GCSE and A-Level Biology specifications</strong>
             <p>
-              Biological molecules, cells, enzymes, transport, disease,
-              biodiversity, evolution, and gene technologies.
+              Browse OCR Gateway combined and separate science, AQA combined and
+              separate science, plus OCR and AQA A-Level Biology from one clean
+              reference page.
             </p>
-            <a
-              className="link"
-              href="https://www.ocr.org.uk/qualifications/as-and-a-level/biology-a-h020-h420-from-2015/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View full specification
-            </a>
           </div>
-
-          <div className="specItem">
-            <h3>OCR A-Level Chemistry (A)</h3>
-            <p>
-              Atomic structure, bonding, periodicity, organic chemistry,
-              energetics, redox, and analytical techniques.
-            </p>
-            <a
-              className="link"
-              href="https://www.ocr.org.uk/qualifications/as-and-a-level/chemistry-a-h032-h432-from-2015/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View full specification
-            </a>
-          </div>
-
-          <div className="specItem">
-            <h3>OCR A-Level Physics (A)</h3>
-            <p>
-              Mechanics, materials, waves, electricity, thermal physics, quantum
-              phenomena, and nuclear physics.
-            </p>
-            <a
-              className="link"
-              href="https://www.ocr.org.uk/qualifications/as-and-a-level/physics-a-h156-h556-from-2015/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View full specification
-            </a>
-          </div>
+          <Link to="/specification" className="btn btn--primary">
+            Open Specification Page
+          </Link>
         </div>
       </section>
 
@@ -470,9 +428,9 @@ export default function Home() {
             <Link className="link" to="/refund-policy">
               Refund Policy
             </Link>
-            <a className="link" href="#specs">
-              Specs
-            </a>
+            <Link className="link" to="/specification">
+              Specifications
+            </Link>
           </nav>
         </div>
       </footer>

@@ -17,6 +17,7 @@ import PaidPlanTerms from "./pages/PaidPlanTerms";
 import RefundPolicy from "./pages/RefundPolicy";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
+import Specification from "./pages/Specification";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Routes>
           <Route index element={<Home />} />
           <Route path="access-denied" element={<AccessDenied />} />
+          <Route path="specification" element={<Specification />} />
           <Route element={<GuestOnlyRoute />}>
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />

@@ -72,6 +72,14 @@ export default function Navbar() {
               >
                 Account
               </NavLink>
+              <NavLink
+                to="/specification"
+                className={({ isActive }) =>
+                  isActive ? "nav-link is-active" : "nav-link"
+                }
+              >
+                Specifications
+              </NavLink>
             </>
           )}
         </nav>
@@ -146,6 +154,13 @@ export default function Navbar() {
                 onClick={closeMenu}
               >
                 Account
+              </NavLink>
+              <NavLink
+                to="/specification"
+                className="mobile-link"
+                onClick={closeMenu}
+              >
+                Specifications
               </NavLink>
             </>
           )}
