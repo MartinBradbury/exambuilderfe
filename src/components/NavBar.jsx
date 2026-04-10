@@ -7,6 +7,7 @@ export default function Navbar() {
   const { user, logout, hasUnlimitedAccess } = useContext(UserContext) || {};
   const navigate = useNavigate();
   const showUpgradeCta = Boolean(user) && !hasUnlimitedAccess;
+  const membershipLabel = hasUnlimitedAccess ? "Unlimited access" : "Free plan";
 
   const displayName = useMemo(() => {
     if (user?.username) return user.username;
@@ -86,7 +87,10 @@ export default function Navbar() {
               )}
               <div className="user-info" title={displayName}>
                 <div className="avatar">{initials}</div>
-                <span className="username">{displayName}</span>
+                <div className="user-meta">
+                  <span className="username">{displayName}</span>
+                  <span className="membership-badge">{membershipLabel}</span>
+                </div>
               </div>
               <button className="btn btn--ghost logout" onClick={handleLogout}>
                 Logout
@@ -153,7 +157,7 @@ export default function Navbar() {
                   <div className="avatar">{initials}</div>
                   <div className="mobile-identity">
                     <strong>{displayName}</strong>
-                    {/* If you also want email here: <small className="muted">{user?.email}</small> */}
+                    <span className="mobile-membership">{membershipLabel}</span>
                   </div>
                 </div>
                 {showUpgradeCta && (

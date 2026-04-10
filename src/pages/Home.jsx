@@ -6,26 +6,9 @@ import { UserContext } from "../context/UserContextObject";
 import DevNotes from "../components/DevNotes";
 
 export default function Home() {
-  const {
-    user,
-    hasUnlimitedAccess,
-    planType,
-    questionsRemainingToday,
-    emailVerified,
-  } = useContext(UserContext);
+  const { user, hasUnlimitedAccess, emailVerified } = useContext(UserContext);
   const needsEmailVerification = Boolean(user) && !emailVerified;
   const canUpgrade = Boolean(user) && !hasUnlimitedAccess && emailVerified;
-
-  const remainingLabel =
-    questionsRemainingToday == null
-      ? "Unlimited questions available"
-      : `${questionsRemainingToday} question${questionsRemainingToday === 1 ? "" : "s"} left today`;
-
-  const currentPlanLabel = hasUnlimitedAccess
-    ? planType === "lifetime"
-      ? "Lifetime plan"
-      : "Paid plan"
-    : `${planType || "free"} plan`;
 
   return (
     <div className="home-root">
@@ -77,15 +60,9 @@ export default function Home() {
                     Verify Email to Upgrade
                   </Link>
                 ) : (
-                  <span
-                    className="planStatusPill"
-                    role="status"
-                    aria-live="polite"
-                  >
-                    {planType === "lifetime"
-                      ? "Lifetime access active"
-                      : "Unlimited access active"}
-                  </span>
+                  <Link to="/account" className="btn btn--ghost">
+                    View Account
+                  </Link>
                 )
               ) : (
                 <Link to="/login" className="btn btn--ghost">
@@ -118,11 +95,10 @@ export default function Home() {
                 <span>Topic drills, mark schemes, and 6-mark practice</span>
               </div>
               <div>
-                <strong>Your access</strong>
+                <strong>Built for progression</strong>
                 <span>
-                  {user
-                    ? `${currentPlanLabel}, ${remainingLabel}`
-                    : "Free plan available to get started"}
+                  Topic drills, saved attempts, and feedback that stays easy to
+                  revisit.
                 </span>
               </div>
             </div>

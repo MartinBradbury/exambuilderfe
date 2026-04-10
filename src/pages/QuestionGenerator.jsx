@@ -1,6 +1,11 @@
-import { useState, useEffect, useContext, useMemo } from "react";
+import { useState, useEffect, useContext, useMemo, useCallback } from "react";
 import "../styles/QuestionGenerator.modern.css";
-import { Link, useNavigate } from "react-router-dom";
+import {
+  Link,
+  useBeforeUnload,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
 import aLevelCover from "../assets/home/image.png";
@@ -10,6 +15,8 @@ const ALEVEL_QUALIFICATION = "ALEVEL_BIOLOGY";
 const GCSE_QUALIFICATION = "GCSE_SCIENCE";
 const GCSE_SUBJECT_OPTIONS = ["BIOLOGY", "CHEMISTRY", "PHYSICS"];
 const GCSE_TIER_OPTIONS = ["FOUNDATION", "HIGHER"];
+const SESSION_LEAVE_MESSAGE =
+  "Are you sure you want to leave this page? Your current question session will be lost.";
 
 export default function QuestionGenerator() {
   const {
@@ -26,7 +33,8 @@ export default function QuestionGenerator() {
   const [subcategories, setSubcategories] = useState([]);
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [qualification, setQualification] = useState(ALEVEL_QUALIFICATION);
-  const [hasSelectedQualification, setHasSelectedQualification] = useState(false);
+  const [hasSelectedQualification, setHasSelectedQualification] =
+    useState(false);
   const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedTier, setSelectedTier] = useState("");
 
@@ -49,10 +57,12 @@ export default function QuestionGenerator() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [maxSeenIndex, setMaxSeenIndex] = useState(0);
+  const [allowNavigation, setAllowNavigation] = useState(false);
 
   const [upgradeState, setUpgradeState] = useState(null);
 
   const navigate = useNavigate();
+  const location = useLocation();
   const isGcse = qualification === GCSE_QUALIFICATION;
 
   const numericRemaining =
@@ -64,6 +74,85 @@ export default function QuestionGenerator() {
     () => (isFreePlan ? [1] : [1, 2, 3, 4, 5, 6]),
     [isFreePlan],
   );
+  const hasActiveQuestionSession = Boolean(questions?.length) && !hasSubmitted;
+  const shouldBlockNavigation = hasActiveQuestionSession && !allowNavigation;
+
+  useBeforeUnload(
+    useCallback(
+      (event) => {
+        if (!shouldBlockNavigation) {
+          return;
+        }
+
+        event.preventDefault();
+        event.returnValue = SESSION_LEAVE_MESSAGE;
+      },
+      [shouldBlockNavigation],
+    ),
+  );
+
+  useEffect(() => {
+    if (!shouldBlockNavigation) {
+      return;
+    }
+
+    const handleDocumentClick = (event) => {
+      const target = event.target;
+      const anchor =
+        target instanceof Element ? target.closest("a[href]") : null;
+
+      if (!anchor) {
+        return;
+      }
+
+      const href = anchor.getAttribute("href");
+      if (
+        !href ||
+        href.startsWith("#") ||
+        anchor.hasAttribute("download") ||
+        anchor.target === "_blank"
+      ) {
+        return;
+      }
+
+      const destination = new URL(anchor.href, window.location.href);
+      const currentUrl = new URL(window.location.href);
+      const isSameDocument =
+        destination.pathname === currentUrl.pathname &&
+        destination.search === currentUrl.search &&
+        destination.hash === currentUrl.hash;
+
+      if (isSameDocument) {
+        return;
+      }
+
+      const confirmed = window.confirm(SESSION_LEAVE_MESSAGE);
+      if (!confirmed) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
+    const handlePopState = () => {
+      const confirmed = window.confirm(SESSION_LEAVE_MESSAGE);
+      if (!confirmed) {
+        window.history.go(1);
+      }
+    };
+
+    document.addEventListener("click", handleDocumentClick, true);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      document.removeEventListener("click", handleDocumentClick, true);
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [
+    location.hash,
+    location.pathname,
+    location.search,
+    shouldBlockNavigation,
+  ]);
 
   const applyEntitlementUpdate = (payload) => {
     if (!payload || !updateEntitlement) {
@@ -275,7 +364,9 @@ export default function QuestionGenerator() {
     }
 
     if (missingRequiredFields) {
-      setError("Please complete all required fields before generating questions.");
+      setError(
+        "Please complete all required fields before generating questions.",
+      );
       return;
     }
 
@@ -292,6 +383,7 @@ export default function QuestionGenerator() {
     setAnswered({});
     setCurrentIndex(0);
     setMaxSeenIndex(0);
+    setAllowNavigation(false);
 
     try {
       const payload = {
@@ -299,9 +391,7 @@ export default function QuestionGenerator() {
         topic_id: Number(selectedTopic),
         exam_board: examBoard,
         number_of_questions: parseInt(numberOfQuestions, 10),
-        ...(selectedSubtopic
-          ? { subtopic_id: Number(selectedSubtopic) }
-          : {}),
+        ...(selectedSubtopic ? { subtopic_id: Number(selectedSubtopic) } : {}),
         ...(selectedSubcategory
           ? { subcategory_id: Number(selectedSubcategory) }
           : {}),
@@ -317,6 +407,7 @@ export default function QuestionGenerator() {
 
       setQuestions(data.questions);
       setSessionId(data.session_id);
+      setMaxSeenIndex(Math.max(0, (data.questions?.length || 1) - 1));
       applyEntitlementUpdate(data);
     } catch (err) {
       console.error(err);
@@ -452,6 +543,7 @@ export default function QuestionGenerator() {
         feedback: finalFeedback,
       });
 
+      setAllowNavigation(true);
       setHasSubmitted(true);
       navigate("/my-results");
     } catch (err) {
@@ -669,12 +761,18 @@ export default function QuestionGenerator() {
 
             {/* Topic */}
             <div className="qg-field">
-              <label className="qg-label">{isGcse ? "Topic" : "Topic (Module)"}</label>
+              <label className="qg-label">
+                {isGcse ? "Topic" : "Topic (Module)"}
+              </label>
               <select
                 className="qg-input"
                 value={selectedTopic}
                 onChange={(e) => setSelectedTopic(e.target.value)}
-                disabled={isGcse ? !selectedSubject || !selectedTier || topics.length === 0 : topics.length === 0}
+                disabled={
+                  isGcse
+                    ? !selectedSubject || !selectedTier || topics.length === 0
+                    : topics.length === 0
+                }
                 required
               >
                 <option value="">{topicPlaceholder}</option>
@@ -862,7 +960,6 @@ export default function QuestionGenerator() {
             </button>
 
             <div className="qg-jumps">
-              <small>Jump to:</small>
               {Array.from({ length: maxSeenIndex + 1 }).map((_, i) => (
                 <button
                   key={`jump-${i}`}
