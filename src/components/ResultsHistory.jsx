@@ -82,15 +82,6 @@ const getScorePercent = (score, total) => {
   return Math.round((numericScore / numericTotal) * 100);
 };
 
-const getGradeLabel = (percent) => {
-  if (percent >= 90) return "A";
-  if (percent >= 80) return "B";
-  if (percent >= 70) return "C";
-  if (percent >= 60) return "D";
-  if (percent >= 50) return "E";
-  return "U";
-};
-
 const getInsightText = (session) => {
   const rawFeedback = session.feedback?.raw;
 
@@ -147,7 +138,6 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
 
         const nextSessions = Array.isArray(response.data) ? response.data : [];
         setSessions(nextSessions);
-        setExpandedSessionId(nextSessions[0]?.id ?? null);
       } catch (err) {
         console.error(err);
         if (isActive) {
@@ -243,9 +233,6 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
               session.total_score,
               session.total_available,
             ),
-            gradeLabel: getGradeLabel(
-              getScorePercent(session.total_score, session.total_available),
-            ),
             topicLabel: getSessionTopic(session),
             levelLabel: getSessionLevel(session),
             subtopicLabel: getSessionSubtopic(session),
@@ -263,12 +250,16 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
       return;
     }
 
+    if (expandedSessionId === null) {
+      return;
+    }
+
     const currentStillVisible = sessionCards.some(
       (session) => session.id === expandedSessionId,
     );
 
     if (!currentStillVisible) {
-      setExpandedSessionId(sessionCards[0].id);
+      setExpandedSessionId(null);
     }
   }, [expandedSessionId, sessionCards]);
 
@@ -374,6 +365,9 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
             >
               <div className="account-resultCard__top">
                 <div className="account-resultCard__titleWrap">
+                  <p className="account-resultCard__levelBadge">
+                    {session.levelLabel}
+                  </p>
                   <h3>{formatAssessmentTitle(session.topicLabel)}</h3>
                   <p className="account-resultCard__subtopic">
                     Examination topic area: {session.subtopicLabel}
@@ -387,15 +381,13 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
                 <div className="account-resultCard__score">
                   <span>{session.scorePercent}%</span>
                   <strong>
-                    {session.total_score} / {session.total_available} — Grade{" "}
-                    {session.gradeLabel}
+                    {session.total_score} / {session.total_available}
                   </strong>
                 </div>
               </div>
 
               <p className="account-resultCard__metaLine">
                 <span>{session.exam_board || "Not recorded"}</span>
-                <span>{session.levelLabel}</span>
                 <span>{session.number_of_questions ?? "-"} Questions</span>
                 <span>{session.compactDate}</span>
               </p>
