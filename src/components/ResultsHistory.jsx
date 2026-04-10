@@ -1,11 +1,75 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { api } from "../lib/api";
+
+const CHART_COLORS = {
+  gained: "#49d17d",
+  missed: "#ff6b6b",
+  line: "#6fd3ff",
+  bar: "#f7b955",
+  grid: "rgba(255, 255, 255, 0.08)",
+  text: "#d7e1ea",
+};
 
 const normalizeText = (value) =>
   String(value || "")
     .trim()
     .toLowerCase();
+
+const getLevelKey = (value) => {
+  const normalizedValue = normalizeText(value);
+
+  if (normalizedValue.includes("gcse")) {
+    return "gcse";
+  }
+
+  if (
+    normalizedValue.includes("a level") ||
+    normalizedValue.includes("alevel") ||
+    normalizedValue.includes("as and a level")
+  ) {
+    return "a-level";
+  }
+
+  return "other";
+};
+
+const formatLevelHeading = (levelKey) => {
+  if (levelKey === "gcse") {
+    return "GCSE";
+  }
+
+  if (levelKey === "a-level") {
+    return "A level";
+  }
+
+  return "Other";
+};
+
+const truncateChartLabel = (value, maxLength = 24) => {
+  const label = String(value || "").trim();
+
+  if (label.length <= maxLength) {
+    return label;
+  }
+
+  return `${label.slice(0, maxLength - 1)}…`;
+};
 
 const getSessionLevel = (session) =>
   session?.level || session?.qualification_label || "Not recorded";
@@ -71,7 +135,7 @@ const formatCompactDate = (value) => {
   });
 };
 
-const getScorePercent = (score, total) => {
+const calculatePercentageScore = (score, total) => {
   const numericScore = Number(score) || 0;
   const numericTotal = Number(total) || 0;
 
@@ -80,6 +144,109 @@ const getScorePercent = (score, total) => {
   }
 
   return Math.round((numericScore / numericTotal) * 100);
+};
+
+const getSessionScore = (session) =>
+  Number(session?.total_score ?? session?.score ?? 0) || 0;
+
+const getSessionMaxScore = (session) =>
+  Number(session?.total_available ?? session?.max_score ?? 0) || 0;
+
+const getSessionDateValue = (session) =>
+  session?.created_at || session?.date || null;
+
+const calculateMarksSummary = (results) => {
+  const totals = results.reduce(
+    (summary, result) => {
+      const gained = getSessionScore(result);
+      const maxScore = getSessionMaxScore(result);
+
+      summary.gained += gained;
+      summary.missed += Math.max(maxScore - gained, 0);
+      return summary;
+    },
+    { gained: 0, missed: 0 },
+  );
+
+  return [
+    { name: "Marks gained", value: totals.gained, fill: CHART_COLORS.gained },
+    { name: "Marks missed", value: totals.missed, fill: CHART_COLORS.missed },
+  ];
+};
+
+const buildLineChartData = (results) =>
+  [...results]
+    .sort((left, right) => {
+      const leftDate = new Date(getSessionDateValue(left)).getTime() || 0;
+      const rightDate = new Date(getSessionDateValue(right)).getTime() || 0;
+      return leftDate - rightDate;
+    })
+    .map((result, index) => ({
+      id: result.id ?? index,
+      label: formatCompactDate(getSessionDateValue(result)),
+      percentage: calculatePercentageScore(
+        getSessionScore(result),
+        getSessionMaxScore(result),
+      ),
+      fullDate: formatSessionDate(getSessionDateValue(result)),
+      topic: result.topicLabel || getSessionTopic(result),
+    }));
+
+const groupAverageScoreByTopic = (results) => {
+  const grouped = results.reduce((map, result) => {
+    const key = result.topicLabel || getSessionTopic(result);
+    const current = map.get(key) || {
+      topic: key,
+      totalPercent: 0,
+      attempts: 0,
+    };
+
+    current.totalPercent += calculatePercentageScore(
+      getSessionScore(result),
+      getSessionMaxScore(result),
+    );
+    current.attempts += 1;
+
+    map.set(key, current);
+    return map;
+  }, new Map());
+
+  return Array.from(grouped.values())
+    .map((entry) => ({
+      topic: entry.topic,
+      topicShortLabel: truncateChartLabel(entry.topic),
+      averageScore: Math.round(entry.totalPercent / entry.attempts),
+      attempts: entry.attempts,
+    }))
+    .sort(
+      (left, right) =>
+        right.averageScore - left.averageScore ||
+        left.topic.localeCompare(right.topic),
+    );
+};
+
+const renderChartTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) {
+    return null;
+  }
+
+  return (
+    <div className="account-chartTooltip">
+      {label ? <p className="account-chartTooltip__label">{label}</p> : null}
+      {payload.map((item) => (
+        <p key={item.dataKey} className="account-chartTooltip__value">
+          <span
+            className="account-chartTooltip__swatch"
+            style={{ backgroundColor: item.color }}
+          />
+          {item.name}: {item.value}
+          {item.dataKey === "percentage" || item.dataKey === "averageScore"
+            ? "%"
+            : ""}
+        </p>
+      ))}
+    </div>
+  );
 };
 
 const getInsightText = (session) => {
@@ -229,7 +396,7 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
             isOpen,
             formattedDate: formatSessionDate(session.created_at),
             compactDate: formatCompactDate(session.created_at),
-            scorePercent: getScorePercent(
+            scorePercent: calculatePercentageScore(
               session.total_score,
               session.total_available,
             ),
@@ -241,6 +408,34 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
         }),
     [examBoardFilter, expandedSessionId, searchTerm, sessions, sortOrder],
   );
+
+  const overviewSections = useMemo(() => {
+    const groupedSessions = sessionCards.reduce((groups, session) => {
+      const levelKey = getLevelKey(session.levelLabel);
+
+      if (levelKey === "other") {
+        return groups;
+      }
+
+      if (!groups[levelKey]) {
+        groups[levelKey] = [];
+      }
+
+      groups[levelKey].push(session);
+      return groups;
+    }, {});
+
+    return Object.entries(groupedSessions)
+      .map(([levelKey, levelSessions]) => ({
+        levelKey,
+        title: formatLevelHeading(levelKey),
+        sessions: levelSessions,
+        marksSummaryData: calculateMarksSummary(levelSessions),
+        scoreTrendData: buildLineChartData(levelSessions),
+        averageTopicData: groupAverageScoreByTopic(levelSessions),
+      }))
+      .sort((left, right) => left.title.localeCompare(right.title));
+  }, [sessionCards]);
 
   useEffect(() => {
     if (sessionCards.length === 0) {
@@ -357,130 +552,286 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
       )}
 
       {!loading && !error && sessionCards.length > 0 && (
-        <div className="account-results__list">
-          {sessionCards.map((session) => (
-            <article
-              key={session.id}
-              className="account-card account-resultCard"
-            >
-              <div className="account-resultCard__top">
-                <div className="account-resultCard__titleWrap">
-                  <p className="account-resultCard__levelBadge">
-                    {session.levelLabel}
-                  </p>
-                  <h3>{formatAssessmentTitle(session.topicLabel)}</h3>
-                  <p className="account-resultCard__subtopic">
-                    Examination topic area: {session.subtopicLabel}
-                  </p>
-                  {session.subcategoryLabel && (
-                    <p className="account-resultCard__meta">
-                      Focus area: {session.subcategoryLabel}
-                    </p>
-                  )}
-                </div>
-                <div className="account-resultCard__score">
-                  <span>{session.scorePercent}%</span>
-                  <strong>
-                    {session.total_score} / {session.total_available}
-                  </strong>
-                </div>
+        <>
+          {/* Performance Overview: insert this new analytics section above the existing results card list. */}
+          <section className="account-results__overview">
+            <div className="account-results__overviewHeader">
+              <div>
+                <p className="account-eyebrow">Performance overview</p>
+                <h3>Track how your results are trending</h3>
+                <p className="account-muted">
+                  These charts use the same result history dataset shown in the
+                  cards below.
+                </p>
               </div>
+            </div>
 
-              <p className="account-resultCard__metaLine">
-                <span>{session.exam_board || "Not recorded"}</span>
-                <span>{session.number_of_questions ?? "-"} Questions</span>
-                <span>{session.compactDate}</span>
-              </p>
+            {overviewSections.map((section) => (
+              <section
+                key={section.levelKey}
+                className="account-results__overviewGroup"
+              >
+                <div className="account-results__overviewGroupHeader">
+                  <h4>{section.title} charts</h4>
+                  <p className="account-muted">
+                    Only {section.title.toLowerCase()} sessions are included in
+                    these charts.
+                  </p>
+                </div>
 
-              <div className="account-resultCard__actions">
-                <button
-                  type="button"
-                  className="btn btn--ghost"
-                  onClick={() =>
-                    setExpandedSessionId((currentId) =>
-                      currentId === session.id ? null : session.id,
-                    )
-                  }
-                >
-                  {session.isOpen ? "Hide Feedback" : "View Feedback"}
-                </button>
-              </div>
-
-              {session.isOpen && (
-                <div className="account-resultCard__body">
-                  <div
-                    className="account-resultCard__divider"
-                    aria-hidden="true"
-                  />
-
-                  <div className="account-resultCard__feedbackBlock account-resultCard__feedbackBlock--insight">
-                    <h4>🧠 Insight</h4>
-                    <p>{getInsightText(session)}</p>
+                <div className="row g-3">
+                  <div className="col-12 col-lg-4">
+                    <article className="card account-card account-chartCard h-100">
+                      <div className="account-chartCard__header">
+                        <h4>Marks gained vs missed</h4>
+                        <p className="account-muted">
+                          Total marks across visible{" "}
+                          {section.title.toLowerCase()} sessions.
+                        </p>
+                      </div>
+                      <div className="account-chartCard__body account-chartCard__body--donut">
+                        <ResponsiveContainer width="100%" height={260}>
+                          <PieChart>
+                            <Pie
+                              data={section.marksSummaryData}
+                              dataKey="value"
+                              nameKey="name"
+                              innerRadius={72}
+                              outerRadius={102}
+                              paddingAngle={4}
+                            >
+                              {section.marksSummaryData.map((entry) => (
+                                <Cell key={entry.name} fill={entry.fill} />
+                              ))}
+                            </Pie>
+                            <Tooltip content={renderChartTooltip} />
+                            <Legend verticalAlign="bottom" />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </article>
                   </div>
 
-                  {session.feedback?.strengths?.length > 0 && (
-                    <div className="account-resultCard__feedbackBlock">
-                      <h4>💪 What You Did Well</h4>
-                      <ul>
-                        {session.feedback.strengths.map((item, index) => (
-                          <li key={`${session.id}-strength-${index}`}>
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  <div className="col-12 col-lg-8">
+                    <article className="card account-card account-chartCard h-100">
+                      <div className="account-chartCard__header">
+                        <h4>Percentage score over time</h4>
+                        <p className="account-muted">
+                          See whether your {section.title.toLowerCase()} scores
+                          are improving over time.
+                        </p>
+                      </div>
+                      <div className="account-chartCard__body">
+                        <ResponsiveContainer width="100%" height={260}>
+                          <LineChart data={section.scoreTrendData}>
+                            <CartesianGrid
+                              stroke={CHART_COLORS.grid}
+                              vertical={false}
+                            />
+                            <XAxis
+                              dataKey="label"
+                              tick={{ fill: CHART_COLORS.text, fontSize: 12 }}
+                            />
+                            <YAxis
+                              domain={[0, 100]}
+                              tick={{ fill: CHART_COLORS.text, fontSize: 12 }}
+                              tickFormatter={(value) => `${value}%`}
+                            />
+                            <Tooltip content={renderChartTooltip} />
+                            <Line
+                              type="monotone"
+                              dataKey="percentage"
+                              name="Score"
+                              stroke={CHART_COLORS.line}
+                              strokeWidth={3}
+                              dot={{
+                                r: 4,
+                                strokeWidth: 0,
+                                fill: CHART_COLORS.line,
+                              }}
+                              activeDot={{ r: 6 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </article>
+                  </div>
 
-                  {session.feedback?.improvements?.length > 0 && (
-                    <div className="account-resultCard__feedbackBlock">
-                      <h4>🎯 Next Steps</h4>
-                      <ul>
-                        {session.feedback.improvements.map((item, index) => (
-                          <li key={`${session.id}-improvement-${index}`}>
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  <div className="col-12">
+                    <article className="card account-card account-chartCard">
+                      <div className="account-chartCard__header">
+                        <h4>Average score by topic</h4>
+                        <p className="account-muted">
+                          Compare topic performance within your{" "}
+                          {section.title.toLowerCase()} attempts.
+                        </p>
+                      </div>
+                      <div className="account-chartCard__body">
+                        <ResponsiveContainer width="100%" height={340}>
+                          <BarChart
+                            data={section.averageTopicData}
+                            layout="vertical"
+                            margin={{ top: 8, right: 8, bottom: 8, left: 24 }}
+                          >
+                            <CartesianGrid
+                              stroke={CHART_COLORS.grid}
+                              horizontal={false}
+                            />
+                            <XAxis
+                              type="number"
+                              domain={[0, 100]}
+                              tick={{ fill: CHART_COLORS.text, fontSize: 12 }}
+                              tickFormatter={(value) => `${value}%`}
+                            />
+                            <YAxis
+                              type="category"
+                              dataKey="topicShortLabel"
+                              width={190}
+                              tick={{ fill: CHART_COLORS.text, fontSize: 12 }}
+                            />
+                            <Tooltip content={renderChartTooltip} />
+                            <Bar
+                              dataKey="averageScore"
+                              name="Average"
+                              fill={CHART_COLORS.bar}
+                              radius={[0, 8, 8, 0]}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </article>
+                  </div>
+                </div>
+              </section>
+            ))}
+          </section>
 
-                  {!session.feedback?.strengths?.length &&
-                    !session.feedback?.improvements?.length &&
-                    session.feedback?.raw && (
+          {/* Existing results card list stays in place below the new overview section. */}
+          <div className="account-results__list">
+            {sessionCards.map((session) => (
+              <article
+                key={session.id}
+                className="account-card account-resultCard"
+              >
+                <div className="account-resultCard__top">
+                  <div className="account-resultCard__titleWrap">
+                    <p className="account-resultCard__levelBadge">
+                      {session.levelLabel}
+                    </p>
+                    <h3>{formatAssessmentTitle(session.topicLabel)}</h3>
+                    <p className="account-resultCard__subtopic">
+                      Examination topic area: {session.subtopicLabel}
+                    </p>
+                    {session.subcategoryLabel && (
+                      <p className="account-resultCard__meta">
+                        Focus area: {session.subcategoryLabel}
+                      </p>
+                    )}
+                  </div>
+                  <div className="account-resultCard__score">
+                    <span>{session.scorePercent}%</span>
+                    <strong>
+                      {session.total_score} / {session.total_available}
+                    </strong>
+                  </div>
+                </div>
+
+                <p className="account-resultCard__metaLine">
+                  <span>{session.exam_board || "Not recorded"}</span>
+                  <span>{session.number_of_questions ?? "-"} Questions</span>
+                  <span>{session.compactDate}</span>
+                </p>
+
+                <div className="account-resultCard__actions">
+                  <button
+                    type="button"
+                    className="btn btn--ghost"
+                    onClick={() =>
+                      setExpandedSessionId((currentId) =>
+                        currentId === session.id ? null : session.id,
+                      )
+                    }
+                  >
+                    {session.isOpen ? "Hide Feedback" : "View Feedback"}
+                  </button>
+                </div>
+
+                {session.isOpen && (
+                  <div className="account-resultCard__body">
+                    <div
+                      className="account-resultCard__divider"
+                      aria-hidden="true"
+                    />
+
+                    <div className="account-resultCard__feedbackBlock account-resultCard__feedbackBlock--insight">
+                      <h4>🧠 Insight</h4>
+                      <p>{getInsightText(session)}</p>
+                    </div>
+
+                    {session.feedback?.strengths?.length > 0 && (
                       <div className="account-resultCard__feedbackBlock">
-                        <h4>📝 Feedback</h4>
-                        <p>{session.feedback.raw}</p>
+                        <h4>💪 What You Did Well</h4>
+                        <ul>
+                          {session.feedback.strengths.map((item, index) => (
+                            <li key={`${session.id}-strength-${index}`}>
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     )}
 
-                  <div className="account-resultCard__footerAction">
-                    <Link
-                      to="/question-generator"
-                      className="btn btn--primary"
-                      state={{
-                        resumeSession: {
-                          sessionId: session.id,
-                          topicName: session.topicLabel,
-                          subtopicName: session.subtopicLabel,
-                          examBoard: session.exam_board,
-                          numberOfQuestions:
-                            session.number_of_questions != null
-                              ? String(session.number_of_questions)
-                              : undefined,
-                          qualification: session.qualification,
-                          subject: session.subject,
-                          tier: session.tier,
-                        },
-                      }}
-                    >
-                      Practice This Topic Again
-                    </Link>
+                    {session.feedback?.improvements?.length > 0 && (
+                      <div className="account-resultCard__feedbackBlock">
+                        <h4>🎯 Next Steps</h4>
+                        <ul>
+                          {session.feedback.improvements.map((item, index) => (
+                            <li key={`${session.id}-improvement-${index}`}>
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {!session.feedback?.strengths?.length &&
+                      !session.feedback?.improvements?.length &&
+                      session.feedback?.raw && (
+                        <div className="account-resultCard__feedbackBlock">
+                          <h4>📝 Feedback</h4>
+                          <p>{session.feedback.raw}</p>
+                        </div>
+                      )}
+
+                    <div className="account-resultCard__footerAction">
+                      <Link
+                        to="/question-generator"
+                        className="btn btn--primary"
+                        state={{
+                          resumeSession: {
+                            sessionId: session.id,
+                            topicName: session.topicLabel,
+                            subtopicName: session.subtopicLabel,
+                            examBoard: session.exam_board,
+                            numberOfQuestions:
+                              session.number_of_questions != null
+                                ? String(session.number_of_questions)
+                                : undefined,
+                            qualification: session.qualification,
+                            subject: session.subject,
+                            tier: session.tier,
+                          },
+                        }}
+                      >
+                        Practice This Topic Again
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              )}
-            </article>
-          ))}
-        </div>
+                )}
+              </article>
+            ))}
+          </div>
+        </>
       )}
     </section>
   );

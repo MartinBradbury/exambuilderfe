@@ -207,6 +207,36 @@
   gap: 18px;
 }
 
+.account-results__overview {
+  display: grid;
+  gap: 18px;
+}
+
+.account-results__overviewGroup {
+  display: grid;
+  gap: 14px;
+}
+
+.account-results__overviewGroup + .account-results__overviewGroup {
+  padding-top: 6px;
+  border-top: 1px solid var(--outline);
+}
+
+.account-results__overviewGroupHeader {
+  display: grid;
+  gap: 4px;
+}
+
+.account-results__overviewGroupHeader h4 {
+  margin: 0;
+  font-size: 1.08rem;
+}
+
+.account-results__overviewHeader h3 {
+  margin: 0 0 8px;
+  font-size: clamp(1.25rem, 2vw, 1.8rem);
+}
+
 .account-results__toolbar {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -248,6 +278,69 @@
 .account-resultCard {
   display: grid;
   gap: 18px;
+}
+
+.account-chartCard {
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 21, 30, 0.96),
+    rgba(10, 15, 22, 0.96)
+  );
+}
+
+.account-chartCard__header {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.account-chartCard__header h4 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.account-chartCard__body {
+  min-height: 260px;
+}
+
+.account-chartCard__body--donut {
+  display: grid;
+  align-items: center;
+}
+
+.account-chartTooltip {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(11, 17, 24, 0.96);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+}
+
+.account-chartTooltip__label {
+  margin: 0 0 6px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.account-chartTooltip__value {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.account-chartTooltip__value + .account-chartTooltip__value {
+  margin-top: 4px;
+}
+
+.account-chartTooltip__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex: 0 0 auto;
 }
 
 .account-resultCard__top {
