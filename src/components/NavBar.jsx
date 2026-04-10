@@ -1,10 +1,11 @@
 import { useState, useContext, useMemo } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import "../styles/NavBar.modern.css";
 import { UserContext } from "../context/UserContextObject";
 
 export default function Navbar() {
   const { user, logout, hasUnlimitedAccess } = useContext(UserContext) || {};
+  const navigate = useNavigate();
   const showUpgradeCta = Boolean(user) && !hasUnlimitedAccess;
 
   const displayName = useMemo(() => {
@@ -27,6 +28,12 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const closeMenu = () => setOpen(false);
 
+  const handleLogout = async () => {
+    closeMenu();
+    navigate("/", { replace: true });
+    await logout?.();
+  };
+
   return (
     <header className={`site-navbarV2 ${open ? "is-open" : ""}`}>
       <div className="container nav-inner">
@@ -38,30 +45,34 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <nav className="nav-links" aria-label="Primary">
-          <NavLink
-            to="/question-generator"
-            className={({ isActive }) =>
-              isActive ? "nav-link is-active" : "nav-link"
-            }
-          >
-            Generator
-          </NavLink>
-          <NavLink
-            to="/my-results"
-            className={({ isActive }) =>
-              isActive ? "nav-link is-active" : "nav-link"
-            }
-          >
-            Results
-          </NavLink>
-          <NavLink
-            to="/account"
-            className={({ isActive }) =>
-              isActive ? "nav-link is-active" : "nav-link"
-            }
-          >
-            Account
-          </NavLink>
+          {user && (
+            <>
+              <NavLink
+                to="/question-generator"
+                className={({ isActive }) =>
+                  isActive ? "nav-link is-active" : "nav-link"
+                }
+              >
+                Generator
+              </NavLink>
+              <NavLink
+                to="/my-results"
+                className={({ isActive }) =>
+                  isActive ? "nav-link is-active" : "nav-link"
+                }
+              >
+                Results
+              </NavLink>
+              <NavLink
+                to="/account"
+                className={({ isActive }) =>
+                  isActive ? "nav-link is-active" : "nav-link"
+                }
+              >
+                Account
+              </NavLink>
+            </>
+          )}
         </nav>
 
         {/* Right side actions */}
@@ -77,7 +88,7 @@ export default function Navbar() {
                 <div className="avatar">{initials}</div>
                 <span className="username">{displayName}</span>
               </div>
-              <button className="btn btn--ghost logout" onClick={logout}>
+              <button className="btn btn--ghost logout" onClick={handleLogout}>
                 Logout
               </button>
             </>
@@ -109,19 +120,31 @@ export default function Navbar() {
       {/* Mobile drawer */}
       <div className="mobile-drawer" aria-hidden={!open}>
         <nav className="mobile-links" aria-label="Mobile">
-          <NavLink
-            to="/question-generator"
-            className="mobile-link"
-            onClick={closeMenu}
-          >
-            Generator
-          </NavLink>
-          <NavLink to="/my-results" className="mobile-link" onClick={closeMenu}>
-            Results
-          </NavLink>
-          <NavLink to="/account" className="mobile-link" onClick={closeMenu}>
-            Account
-          </NavLink>
+          {user && (
+            <>
+              <NavLink
+                to="/question-generator"
+                className="mobile-link"
+                onClick={closeMenu}
+              >
+                Generator
+              </NavLink>
+              <NavLink
+                to="/my-results"
+                className="mobile-link"
+                onClick={closeMenu}
+              >
+                Results
+              </NavLink>
+              <NavLink
+                to="/account"
+                className="mobile-link"
+                onClick={closeMenu}
+              >
+                Account
+              </NavLink>
+            </>
+          )}
 
           <div className="mobile-actions">
             {user ? (
@@ -144,10 +167,7 @@ export default function Navbar() {
                 )}
                 <button
                   className="btn btn--ghost logout"
-                  onClick={() => {
-                    logout?.();
-                    closeMenu();
-                  }}
+                  onClick={handleLogout}
                 >
                   Logout
                 </button>

@@ -1,0 +1,82 @@
+.route-status-root {
+  min-height: calc(100vh - 64px);
+  display: grid;
+  align-items: center;
+  padding: 32px 0 72px;
+  background:
+    radial-gradient(circle at top, rgba(73, 209, 125, 0.12), transparent 36%),
+    linear-gradient(180deg, var(--surface), var(--bg) 62%);
+}
+
+.route-status-shell {
+  display: grid;
+}
+
+.route-status-card {
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: 32px;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--card-strong), var(--card));
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+}
+
+.route-status-eyebrow {
+  margin: 0 0 10px;
+  color: var(--brand);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.route-status-card h1 {
+  margin: 0;
+  max-width: 14ch;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.05;
+}
+
+.route-status-copy {
+  margin: 18px 0 0;
+  max-width: 54ch;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.7;
+}
+
+.route-status-path {
+  margin: 18px 0 0;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.route-status-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+
+@media (max-width: 720px) {
+  .route-status-card {
+    padding: 24px;
+  }
+
+  .route-status-actions {
+    flex-direction: column;
+  }
+
+  .route-status-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
