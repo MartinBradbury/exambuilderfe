@@ -48,11 +48,8 @@ const formatTrackingDate = (value) => {
 const formatMetricValue = (value, suffix = "") =>
   value == null ? "--" : `${value}${suffix}`;
 
-const SectionTitle = ({ icon, title }) => (
+const SectionTitle = ({ title }) => (
   <div className="account-sectionTitle">
-    <span className="account-sectionIcon" aria-hidden="true">
-      {icon}
-    </span>
     <h2>{title}</h2>
   </div>
 );
@@ -138,9 +135,9 @@ export default function Account() {
         const refreshedUser = await refreshCurrentUser();
         const paidAfterRefresh = Boolean(
           refreshedUser?.has_unlimited_access ||
-            refreshedUser?.lifetime_unlocked ||
-            refreshedUser?.plan_type === "paid" ||
-            refreshedUser?.plan_type === "lifetime",
+          refreshedUser?.lifetime_unlocked ||
+          refreshedUser?.plan_type === "paid" ||
+          refreshedUser?.plan_type === "lifetime",
         );
 
         if (!isActive) {
@@ -168,9 +165,9 @@ export default function Account() {
               const retriedUser = await refreshCurrentUser();
               const paidAfterRetry = Boolean(
                 retriedUser?.has_unlimited_access ||
-                  retriedUser?.lifetime_unlocked ||
-                  retriedUser?.plan_type === "paid" ||
-                  retriedUser?.plan_type === "lifetime",
+                retriedUser?.lifetime_unlocked ||
+                retriedUser?.plan_type === "paid" ||
+                retriedUser?.plan_type === "lifetime",
               );
 
               if (paidAfterRetry && isActive) {
@@ -226,7 +223,9 @@ export default function Account() {
           return;
         }
 
-        setPerformanceSessions(Array.isArray(response.data) ? response.data : []);
+        setPerformanceSessions(
+          Array.isArray(response.data) ? response.data : [],
+        );
       } catch (error) {
         console.error("Unable to load performance sessions", error);
 
@@ -498,7 +497,7 @@ export default function Account() {
         <section className="row g-3">
           <div className="col-12 col-lg-6">
             <article className="account-card h-100">
-              <SectionTitle icon="PL" title="Profile / Plan" />
+              <SectionTitle title="Profile / Plan" />
               <dl className="account-details">
                 <div>
                   <dt>Email</dt>
@@ -533,7 +532,7 @@ export default function Account() {
               to="/progress"
               className="account-card account-card--interactive account-summaryLink h-100"
             >
-              <SectionTitle icon="PF" title="Performance Summary" />
+              <SectionTitle title="Performance Summary" />
 
               {isLoadingPerformance ? (
                 <p className="account-muted">Loading summary…</p>
@@ -555,14 +554,16 @@ export default function Account() {
               )}
 
               <div className="account-summaryFooter">
-                <span className="account-summaryCta">View detailed progress -&gt;</span>
+                <span className="account-summaryCta">
+                  View detailed progress -&gt;
+                </span>
               </div>
             </Link>
           </div>
 
           <div className="col-12 col-lg-6">
             <article className="account-card h-100">
-              <SectionTitle icon="TR" title="Performance Tracking" />
+              <SectionTitle title="Performance Tracking" />
               <div className="account-trackingMeta">
                 <p className="account-muted">Tracking start date</p>
                 <strong>
@@ -592,7 +593,7 @@ export default function Account() {
 
           <div className="col-12 col-lg-6">
             <article className="account-card account-card--accent h-100">
-              <SectionTitle icon="UP" title="Upgrade Plan" />
+              <SectionTitle title="Upgrade Plan" />
               <p className="account-muted">
                 {needsEmailVerification
                   ? "Verify your email to unlock checkout."
@@ -661,7 +662,7 @@ export default function Account() {
 
           <div className="col-12">
             <article className="account-card">
-              <SectionTitle icon="ST" title="Account Settings" />
+              <SectionTitle title="Account Settings" />
               <p className="account-muted">
                 Refresh account data, review terms, or sign out.
               </p>
@@ -672,7 +673,9 @@ export default function Account() {
                   onClick={handleRefreshStatus}
                   disabled={isRefreshingStatus}
                 >
-                  {isRefreshingStatus ? "Refreshing…" : "Refresh account status"}
+                  {isRefreshingStatus
+                    ? "Refreshing…"
+                    : "Refresh account status"}
                 </button>
                 <Link to="/terms" className="btn btn--ghost">
                   Terms of Service

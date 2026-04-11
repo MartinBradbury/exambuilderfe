@@ -102,29 +102,11 @@
 }
 
 .account-sectionTitle {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   margin-bottom: 16px;
 }
 
 .account-sectionTitle h2 {
   margin: 0;
-}
-
-.account-sectionIcon {
-  width: 36px;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  border: 1px solid rgba(73, 209, 125, 0.24);
-  background: rgba(73, 209, 125, 0.1);
-  color: var(--brand);
-  font-size: 0.74rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
 }
 
 .account-details {
