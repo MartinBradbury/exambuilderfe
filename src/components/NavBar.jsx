@@ -7,7 +7,9 @@ export default function Navbar() {
   const { user, logout, hasUnlimitedAccess } = useContext(UserContext) || {};
   const navigate = useNavigate();
   const showUpgradeCta = Boolean(user) && !hasUnlimitedAccess;
-  const membershipLabel = hasUnlimitedAccess ? "Unlimited access" : "Free plan";
+  const membershipLabel = hasUnlimitedAccess
+    ? "Full Access"
+    : "Free Plan - Limited";
 
   const displayName = useMemo(() => {
     if (user?.username) return user.username;
@@ -83,14 +85,6 @@ export default function Navbar() {
               >
                 Account
               </NavLink>
-              <NavLink
-                to="/specification"
-                className={({ isActive }) =>
-                  isActive ? "nav-link is-active" : "nav-link"
-                }
-              >
-                Specifications
-              </NavLink>
             </>
           )}
         </nav>
@@ -98,12 +92,7 @@ export default function Navbar() {
         {/* Right side actions */}
         <div className="nav-actions">
           {user ? (
-            <>
-              {showUpgradeCta && (
-                <NavLink to="/account" className="btn btn--primary nav-upgrade">
-                  Upgrade
-                </NavLink>
-              )}
+            <div className="user-cluster">
               <div className="user-info" title={displayName}>
                 <div className="avatar">{initials}</div>
                 <div className="user-meta">
@@ -111,10 +100,23 @@ export default function Navbar() {
                   <span className="membership-badge">{membershipLabel}</span>
                 </div>
               </div>
-              <button className="btn btn--ghost logout" onClick={handleLogout}>
-                Logout
-              </button>
-            </>
+              <div className="user-actions">
+                {showUpgradeCta && (
+                  <NavLink
+                    to="/account"
+                    className="btn btn--primary nav-upgrade"
+                  >
+                    Unlock Full Access
+                  </NavLink>
+                )}
+                <button
+                  className="btn btn--subtle logout"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
           ) : (
             <>
               <NavLink to="/login" className="btn btn--ghost">
@@ -166,13 +168,6 @@ export default function Navbar() {
               >
                 Account
               </NavLink>
-              <NavLink
-                to="/specification"
-                className="mobile-link"
-                onClick={closeMenu}
-              >
-                Specifications
-              </NavLink>
             </>
           )}
 
@@ -182,7 +177,7 @@ export default function Navbar() {
                 <div className="mobile-user">
                   <div className="avatar">{initials}</div>
                   <div className="mobile-identity">
-                    <strong>{displayName}</strong>
+                    <span className="mobile-username">{displayName}</span>
                     <span className="mobile-membership">{membershipLabel}</span>
                   </div>
                 </div>
@@ -192,11 +187,11 @@ export default function Navbar() {
                     className="btn btn--primary"
                     onClick={closeMenu}
                   >
-                    Upgrade
+                    Unlock Full Access
                   </NavLink>
                 )}
                 <button
-                  className="btn btn--ghost logout"
+                  className="btn btn--subtle logout"
                   onClick={handleLogout}
                 >
                   Logout

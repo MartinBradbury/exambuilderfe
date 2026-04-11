@@ -84,6 +84,18 @@
   gap: 10px;
 }
 
+.user-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* --- user info chip always visible on desktop --- */
 .user-info {
   display: inline-flex;
@@ -92,7 +104,7 @@
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--outline);
   border-radius: 999px;
-  padding: 4px 10px 4px 4px;
+  padding: 4px 12px 4px 4px;
 }
 .user-meta {
   display: grid;
@@ -100,11 +112,8 @@
 }
 .username {
   color: var(--text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 0.95rem;
+  font-weight: 500;
+  font-size: 0.94rem;
   max-width: 220px;
   white-space: nowrap;
   overflow: hidden;
@@ -115,16 +124,15 @@
   display: inline-flex;
   align-items: center;
   width: fit-content;
-  padding: 2px 8px;
+  padding: 1px 7px;
   border-radius: 999px;
   border: 1px solid rgba(73, 209, 125, 0.3);
   background: rgba(73, 209, 125, 0.12);
   color: var(--brand);
-  font-size: 0.74rem;
+  font-size: 0.68rem;
   font-weight: 700;
   line-height: 1.2;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
 .avatar {
@@ -184,12 +192,24 @@
 .btn--ghost:hover {
   background: rgba(73, 209, 125, 0.1);
 }
+.btn--subtle {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+.btn--subtle:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
 .logout {
   height: 36px;
+  padding-inline: 12px;
 }
 
 .nav-upgrade {
   height: 36px;
+  padding-inline: 14px;
+  box-shadow: 0 10px 24px rgba(73, 209, 125, 0.22);
 }
 
 .mobile-accountButton {
@@ -272,9 +292,13 @@
   gap: 10px;
   align-items: center;
 }
-.mobile-identity strong {
+
+.mobile-username {
   display: block;
+  color: var(--text);
+  font-weight: 500;
 }
+
 .mobile-membership {
   margin-top: 4px;
 }
