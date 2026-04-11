@@ -8,8 +8,8 @@ import {
 } from "react-router-dom";
 import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
-import aLevelCover from "../assets/home/image.png";
-import gcseCover from "../assets/home/gcsephysics.jpg";
+import aLevelCover from "../assets/home/Alevelcard.png";
+import gcseCover from "../assets/home/GCSEcard.png";
 
 const ALEVEL_QUALIFICATION = "ALEVEL_BIOLOGY";
 const GCSE_QUALIFICATION = "GCSE_SCIENCE";
@@ -681,20 +681,13 @@ export default function QuestionGenerator() {
     <div className="qg-root container">
       <header className="qg-header">
         <h1>Generate Practice Questions</h1>
-        <p className="muted">
-          Choose a topic, answer a full set of exam-style questions, and get
-          instant marks and feedback when you submit.
-        </p>
       </header>
 
       {!questions && !hasSelectedQualification && (
         <section className="qg-choice-card">
           <div className="qg-choice-header">
             <h2>Select your qualification</h2>
-            <p className="muted">
-              Pick the route you want to generate from, then you will be taken
-              to the exam board and topic options.
-            </p>
+            <p className="muted">Choose a level to start practising.</p>
           </div>
 
           <div className="qg-choice-grid">

@@ -376,9 +376,6 @@ export default function Account() {
               >
                 {isRefreshingStatus ? "Refreshing…" : "Refresh status"}
               </button>
-              <Link to="/question-generator" className="btn btn--subtle">
-                Open generator
-              </Link>
             </div>
           </article>
 
@@ -450,8 +447,9 @@ export default function Account() {
                   {isCreatingCheckout ? "Redirecting…" : "Upgrade for £1.99"}
                 </button>
                 <p className="account-note">
-                  You will be redirected to Stripe Checkout. Your plan updates
-                  and unlimited features will become available after payment.
+                  Secure checkout powered by Stripe. You will be redirected to
+                  Stripe's website to complete your purchase, and then back to
+                  your account page to confirm your new billing status.
                 </p>
                 <p className="account-note">
                   Paid access continues while the service remains available. See
@@ -481,9 +479,6 @@ export default function Account() {
             <div className="account-actions">
               <Link to="/progress" className="btn btn--primary">
                 Open progress page
-              </Link>
-              <Link to="/question-generator" className="btn btn--ghost">
-                Start a new test
               </Link>
             </div>
           </article>
