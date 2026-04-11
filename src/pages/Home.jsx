@@ -543,23 +543,36 @@ export default function Home() {
 
       <footer className="footerV2">
         <div className="container footerV2__inner">
-          <div>
+          <div className="footerV2__column footerV2__column--brand">
             <p className="footerV2__brand">Exam Builder</p>
             <p className="footerV2__copy">
-              Exam-focused science revision with question generation, marking,
-              saved sessions, and plan-based access.
+              AI-powered exam practice for OCR &amp; AQA students.
+            </p>
+            <p className="footerV2__copy">
+              Aligned with real exam mark schemes.
             </p>
           </div>
-          <nav className="footerNav">
+
+          <nav
+            className="footerV2__column footerV2__navGroup"
+            aria-label="Product"
+          >
+            <p className="footerV2__heading">Product</p>
             <Link className="link" to="/question-generator">
-              Generator
+              Start Practising
             </Link>
             <Link className="link" to="/progress">
               Progress
             </Link>
-            <Link className="link" to="/account">
-              Account
+            <Link className="link" to="/specification">
+              Specifications
             </Link>
+          </nav>
+          <nav
+            className="footerV2__column footerV2__navGroup"
+            aria-label="Legal"
+          >
+            <p className="footerV2__heading">Legal</p>
             <Link className="link" to="/terms">
               Terms
             </Link>
@@ -569,10 +582,22 @@ export default function Home() {
             <Link className="link" to="/refund-policy">
               Refund Policy
             </Link>
-            <Link className="link" to="/specification">
-              Specifications
+          </nav>
+
+          <nav
+            className="footerV2__column footerV2__navGroup"
+            aria-label="Account"
+          >
+            <p className="footerV2__heading">Account</p>
+            <Link className="link" to="/login">
+              Log In
             </Link>
           </nav>
+        </div>
+        <div className="container footerV2__bottom">
+          <p className="footerV2__copyright">
+            © 2026 Exam Builder. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>
