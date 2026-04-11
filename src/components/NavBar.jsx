@@ -67,7 +67,7 @@ export default function Navbar() {
                   isActive ? "nav-link is-active" : "nav-link"
                 }
               >
-                Generator
+                Start Practicing
               </NavLink>
               <NavLink
                 to="/progress"
