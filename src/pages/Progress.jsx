@@ -7,6 +7,14 @@ import "../styles/Account.modern.css";
 export default function Progress() {
   const { hasUnlimitedAccess } = useContext(UserContext) || {};
 
+  const handleScrollToTop = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <div className="account-root">
       <div className="account-shell container">
@@ -19,21 +27,37 @@ export default function Progress() {
               and subtopic performance across your completed tests.
             </p>
           </div>
-          <div className="account-actions">
-            <Link to="/question-generator" className="btn btn--primary">
-              Start another test
-            </Link>
-            <Link to="/account" className="btn btn--ghost">
-              Back to account
-            </Link>
-          </div>
         </header>
 
         <ResultsHistory
           showHeader={false}
           analyticsLocked={!hasUnlimitedAccess}
           upgradePath="/account"
+          afterOverviewAction={
+            <div className="account-actions account-actions--progressInline">
+              <Link to="/question-generator" className="btn btn--primary">
+                Start another test
+              </Link>
+            </div>
+          }
         />
+
+        <div className="account-actions account-actions--progressFooter">
+          <Link to="/account" className="btn btn--ghost">
+            Return to account
+          </Link>
+        </div>
+
+        <div className="account-progressTopControl">
+          <button
+            type="button"
+            className="account-progressTopButton"
+            onClick={handleScrollToTop}
+            aria-label="Back to top"
+          >
+            ↑
+          </button>
+        </div>
       </div>
     </div>
   );

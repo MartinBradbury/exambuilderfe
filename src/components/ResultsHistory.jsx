@@ -400,9 +400,7 @@ const getInsightText = (session) => {
 
 const formatAssessmentTitle = (topic) => {
   const baseTitle = String(topic || "Untitled topic").trim();
-  return /assessment$/i.test(baseTitle)
-    ? `🧠 ${baseTitle}`
-    : `🧠 ${baseTitle} Assessment`;
+  return /assessment$/i.test(baseTitle) ? baseTitle : `${baseTitle} Assessment`;
 };
 
 export default function ResultsHistory({
@@ -410,6 +408,7 @@ export default function ResultsHistory({
   showHeader = true,
   analyticsLocked = false,
   upgradePath = "/account",
+  afterOverviewAction = null,
 }) {
   const [sessions, setSessions] = useState([]);
   const [expandedSessionId, setExpandedSessionId] = useState(null);
@@ -1394,7 +1393,6 @@ export default function ResultsHistory({
                 <button
                   type="button"
                   className="account-results__overviewLock"
-                  onMouseEnter={handleLockedAnalyticsInteraction}
                   onClick={handleLockedAnalyticsInteraction}
                   aria-label="Upgrade to unlock progress analytics"
                 >
@@ -1412,6 +1410,12 @@ export default function ResultsHistory({
               )}
             </div>
           </section>
+
+          {afterOverviewAction ? (
+            <div className="account-results__betweenAction">
+              {afterOverviewAction}
+            </div>
+          ) : null}
 
           <div className="account-results__list">
             {sessionCards.map((session) => (
@@ -1470,13 +1474,13 @@ export default function ResultsHistory({
                     />
 
                     <div className="account-resultCard__feedbackBlock account-resultCard__feedbackBlock--insight">
-                      <h4>🧠 Insight</h4>
+                      <h4>Insight</h4>
                       <p>{getInsightText(session)}</p>
                     </div>
 
                     {session.feedback?.strengths?.length > 0 && (
                       <div className="account-resultCard__feedbackBlock">
-                        <h4>💪 What You Did Well</h4>
+                        <h4>What You Did Well</h4>
                         <ul>
                           {session.feedback.strengths.map((item, index) => (
                             <li key={`${session.id}-strength-${index}`}>
@@ -1489,7 +1493,7 @@ export default function ResultsHistory({
 
                     {session.feedback?.improvements?.length > 0 && (
                       <div className="account-resultCard__feedbackBlock">
-                        <h4>🎯 Next Steps</h4>
+                        <h4>Next Steps</h4>
                         <ul>
                           {session.feedback.improvements.map((item, index) => (
                             <li key={`${session.id}-improvement-${index}`}>
@@ -1504,7 +1508,7 @@ export default function ResultsHistory({
                       !session.feedback?.improvements?.length &&
                       session.feedback?.raw && (
                         <div className="account-resultCard__feedbackBlock">
-                          <h4>📝 Feedback</h4>
+                          <h4>Feedback</h4>
                           <p>{session.feedback.raw}</p>
                         </div>
                       )}

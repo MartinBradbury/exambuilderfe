@@ -136,6 +136,61 @@
   color: #ffb1b1;
 }
 
+.account-actions--progressInline,
+.account-actions--progressFooter {
+  width: 100%;
+}
+
+.account-actions--progressInline {
+  margin-top: 0;
+}
+
+.account-actions--progressFooter {
+  margin-top: 8px;
+}
+
+.account-progressTopControl {
+  display: flex;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.account-progressTopButton {
+  width: 56px;
+  height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(73, 209, 125, 0.28);
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(73, 209, 125, 0.2),
+    rgba(73, 209, 125, 0.08)
+  );
+  color: var(--text);
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.account-progressTopButton:hover {
+  transform: translateY(-2px);
+  border-color: rgba(73, 209, 125, 0.4);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.34);
+}
+
+.account-progressTopButton:focus-visible {
+  outline: 2px solid rgba(73, 209, 125, 0.72);
+  outline-offset: 3px;
+}
+
 .account-verification-notice {
   margin: 0;
 }
@@ -210,6 +265,10 @@
 .account-results__overview {
   display: grid;
   gap: 18px;
+}
+
+.account-results__betweenAction {
+  margin-top: 4px;
 }
 
 .account-results__overviewContent {
@@ -673,6 +732,11 @@
     width: 100%;
   }
 
+  .account-progressTopButton {
+    width: 52px;
+    height: 52px;
+  }
+
   .account-details div {
     flex-direction: column;
   }
@@ -723,6 +787,10 @@
   }
 
   .account-chartCard--bar .account-chartCard__control {
+    margin-top: 8px;
+  }
+
+  .account-results__betweenAction {
     margin-top: 8px;
   }
 
