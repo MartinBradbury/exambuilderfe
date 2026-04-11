@@ -680,58 +680,12 @@ export default function QuestionGenerator() {
   return (
     <div className="qg-root container">
       <header className="qg-header">
-        <h1>Generate Questions</h1>
+        <h1>Generate Practice Questions</h1>
         <p className="muted">
-          Choose your scope, generate questions, answer the full set, and get
-          one batch-marked feedback pass when you mark all answers.
+          Choose a topic, answer a full set of exam-style questions, and get
+          instant marks and feedback when you submit.
         </p>
-        {user && (
-          <div className="qg-access-summary" aria-live="polite">
-            <div className="qg-access-main">
-              <span className="qg-access-pill">
-                {hasUnlimitedAccess
-                  ? effectivePlanType === "paid"
-                    ? "Paid plan"
-                    : "Lifetime plan"
-                  : `${effectivePlanType || "free"} plan`}
-              </span>
-              <span className="qg-access-copy">
-                {hasUnlimitedAccess || numericRemaining == null
-                  ? "Unlimited question generation available."
-                  : `${numericRemaining} question${numericRemaining === 1 ? "" : "s"} remaining today.`}
-              </span>
-            </div>
-            {!hasUnlimitedAccess && (
-              <Link to="/account" className="btn btn--primary qg-upgrade-btn">
-                Upgrade
-              </Link>
-            )}
-          </div>
-        )}
       </header>
-
-      {upgradeState && (
-        <section className="qg-upgrade" aria-live="assertive">
-          <h2>Daily limit reached</h2>
-          <p>{upgradeState.error}</p>
-          <p>
-            Free access currently includes 1 generated question per day. Upgrade
-            through Stripe Checkout to remove the daily limit after the payment
-            webhook confirms your account.
-          </p>
-          <div className="qg-upgrade-actions">
-            <Link to="/account" className="btn btn--primary">
-              Upgrade now
-            </Link>
-            <Link to="/progress" className="btn btn--ghost">
-              View progress
-            </Link>
-            <Link to="/" className="btn btn--subtle">
-              Back to home
-            </Link>
-          </div>
-        </section>
-      )}
 
       {!questions && !hasSelectedQualification && (
         <section className="qg-choice-card">
