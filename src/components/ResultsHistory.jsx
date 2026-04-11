@@ -64,6 +64,7 @@ const formatLevelHeading = (levelKey) => {
 const OVERVIEW_LEVEL_ORDER = ["gcse", "a-level"];
 const OVERVIEW_EXAM_BOARD_ORDER = ["ocr", "aqa"];
 const OVERVIEW_ALL_TOPICS_VALUE = "__overall__";
+const TREND_MOVING_AVERAGE_WINDOW = 3;
 
 const getExamBoardKey = (value) => {
   const normalizedValue = normalizeText(value);
@@ -224,6 +225,13 @@ const getSessionMaxScore = (session) =>
 const getSessionDateValue = (session) =>
   session?.created_at || session?.date || null;
 
+const shouldIncludeInTrendData = (session) => {
+  const maxScore = getSessionMaxScore(session);
+  const score = getSessionScore(session);
+
+  return maxScore > 0 && score > 0;
+};
+
 const calculateMarksSummary = (results) => {
   const totals = results.reduce(
     (summary, result) => {
@@ -245,21 +253,43 @@ const calculateMarksSummary = (results) => {
 
 const buildLineChartData = (results) =>
   [...results]
+    .filter(shouldIncludeInTrendData)
     .sort((left, right) => {
       const leftDate = new Date(getSessionDateValue(left)).getTime() || 0;
       const rightDate = new Date(getSessionDateValue(right)).getTime() || 0;
       return leftDate - rightDate;
     })
-    .map((result, index) => ({
-      id: result.id ?? index,
-      label: formatCompactDate(getSessionDateValue(result)),
-      percentage: calculatePercentageScore(
+    .map((result, index, sortedResults) => {
+      const rawPercentage = calculatePercentageScore(
         getSessionScore(result),
         getSessionMaxScore(result),
-      ),
-      fullDate: formatSessionDate(getSessionDateValue(result)),
-      topic: result.topicLabel || getSessionTopic(result),
-    }));
+      );
+      const movingAverageWindow = sortedResults.slice(
+        Math.max(0, index - TREND_MOVING_AVERAGE_WINDOW + 1),
+        index + 1,
+      );
+      const movingAverage = Math.round(
+        movingAverageWindow.reduce(
+          (total, session) =>
+            total +
+            calculatePercentageScore(
+              getSessionScore(session),
+              getSessionMaxScore(session),
+            ),
+          0,
+        ) / movingAverageWindow.length,
+      );
+
+      return {
+        id: result.id ?? index,
+        label: formatCompactDate(getSessionDateValue(result)),
+        movingAverage,
+        rawPercentage,
+        fullDate: formatSessionDate(getSessionDateValue(result)),
+        topic: result.topicLabel || getSessionTopic(result),
+        sampleSize: movingAverageWindow.length,
+      };
+    });
 
 const groupAverageScoreByTopic = (results) => {
   const grouped = results.reduce((map, result) => {
@@ -351,6 +381,29 @@ const renderChartTooltip = ({ active, payload, label }) => {
     return null;
   }
 
+  const trendPayload = payload[0]?.payload;
+
+  if (
+    trendPayload &&
+    typeof trendPayload.movingAverage === "number" &&
+    typeof trendPayload.sampleSize === "number"
+  ) {
+    return (
+      <div className="account-chartTooltip">
+        <p className="account-chartTooltip__label">
+          {trendPayload.fullDate || label}
+        </p>
+        <p className="account-chartTooltip__value">
+          Current moving average: {trendPayload.movingAverage}%
+        </p>
+        <p className="account-chartTooltip__value">
+          Window size: {trendPayload.sampleSize} test
+          {trendPayload.sampleSize === 1 ? "" : "s"}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="account-chartTooltip">
       {label ? <p className="account-chartTooltip__label">{label}</p> : null}
@@ -361,7 +414,9 @@ const renderChartTooltip = ({ active, payload, label }) => {
             style={{ backgroundColor: item.color }}
           />
           {item.name}: {item.value}
-          {item.dataKey === "percentage" || item.dataKey === "averageScore"
+          {item.dataKey === "movingAverage" ||
+          item.dataKey === "rawPercentage" ||
+          item.dataKey === "averageScore"
             ? "%"
             : ""}
         </p>
@@ -423,7 +478,9 @@ export default function ResultsHistory({
   const [selectedOverviewMarksTopic, setSelectedOverviewMarksTopic] = useState(
     OVERVIEW_ALL_TOPICS_VALUE,
   );
-  const [selectedOverviewTopic, setSelectedOverviewTopic] = useState("");
+  const [selectedOverviewTopic, setSelectedOverviewTopic] = useState(
+    OVERVIEW_ALL_TOPICS_VALUE,
+  );
   const [overviewTopicCatalog, setOverviewTopicCatalog] = useState([]);
   const [overviewSubtopicCatalog, setOverviewSubtopicCatalog] = useState([]);
   const [isMobileViewport, setIsMobileViewport] = useState(() => {
@@ -650,14 +707,6 @@ export default function ResultsHistory({
     [selectedOverviewExamBoard, selectedOverviewSection],
   );
 
-  const selectedOverviewChartData = useMemo(
-    () => ({
-      scoreTrendData: buildLineChartData(selectedOverviewSessions),
-      topicOptions: groupAverageScoreByTopic(selectedOverviewSessions),
-    }),
-    [selectedOverviewSessions],
-  );
-
   const selectedOverviewMarksSessions = useMemo(() => {
     if (selectedOverviewMarksTopic === OVERVIEW_ALL_TOPICS_VALUE) {
       return selectedOverviewSessions;
@@ -670,40 +719,60 @@ export default function ResultsHistory({
     );
   }, [selectedOverviewMarksTopic, selectedOverviewSessions]);
 
+  const selectedOverviewScoreTrendData = useMemo(
+    () => buildLineChartData(selectedOverviewMarksSessions),
+    [selectedOverviewMarksSessions],
+  );
+
+  const selectedOverviewTopicPerformance = useMemo(
+    () => groupAverageScoreByTopic(selectedOverviewSessions),
+    [selectedOverviewSessions],
+  );
+
+  const selectedOverviewTrendTickInterval = useMemo(() => {
+    const dataPointCount = selectedOverviewScoreTrendData.length;
+
+    if (dataPointCount <= 0) {
+      return 0;
+    }
+
+    const maxVisibleTicks = isMobileViewport ? 4 : 6;
+
+    if (dataPointCount <= maxVisibleTicks) {
+      return 0;
+    }
+
+    return Math.ceil(dataPointCount / maxVisibleTicks) - 1;
+  }, [isMobileViewport, selectedOverviewScoreTrendData.length]);
+
   const selectedOverviewMarksSummaryData = useMemo(
     () => calculateMarksSummary(selectedOverviewMarksSessions),
     [selectedOverviewMarksSessions],
   );
 
-  const selectedOverviewSubtopicData = useMemo(
-    () =>
-      groupAverageScoreBySubtopic(
-        selectedOverviewSessions,
-        selectedOverviewTopic,
-        overviewSubtopicCatalog,
-      ),
-    [overviewSubtopicCatalog, selectedOverviewSessions, selectedOverviewTopic],
-  );
+  const selectedOverviewSubtopicData = useMemo(() => {
+    if (selectedOverviewTopic === OVERVIEW_ALL_TOPICS_VALUE) {
+      return [];
+    }
 
-  const selectedOverviewSubtopicChartData = useMemo(
-    () =>
-      selectedOverviewSubtopicData.map((entry) => ({
-        ...entry,
-        subtopicShortLabel: truncateChartLabel(
-          entry.subtopic,
-          isMobileViewport ? 9 : 30,
-        ),
-      })),
-    [isMobileViewport, selectedOverviewSubtopicData],
-  );
+    return groupAverageScoreBySubtopic(
+      selectedOverviewSessions,
+      selectedOverviewTopic,
+      overviewSubtopicCatalog,
+    );
+  }, [
+    overviewSubtopicCatalog,
+    selectedOverviewSessions,
+    selectedOverviewTopic,
+  ]);
 
   const selectedOverviewTopicOptions = useMemo(() => {
     if (!overviewTopicCatalog.length) {
-      return selectedOverviewChartData.topicOptions;
+      return selectedOverviewTopicPerformance;
     }
 
     const sessionTopicMap = new Map(
-      selectedOverviewChartData.topicOptions.map((entry) => [
+      selectedOverviewTopicPerformance.map((entry) => [
         normalizeText(entry.topic),
         entry,
       ]),
@@ -721,16 +790,47 @@ export default function ResultsHistory({
         }
       );
     });
-  }, [overviewTopicCatalog, selectedOverviewChartData.topicOptions]);
+  }, [overviewTopicCatalog, selectedOverviewTopicPerformance]);
 
-  const selectedOverviewTopicCatalogEntry = useMemo(
-    () =>
+  const selectedOverviewBarChartData = useMemo(() => {
+    if (selectedOverviewTopic === OVERVIEW_ALL_TOPICS_VALUE) {
+      return selectedOverviewTopicOptions.map((entry) => ({
+        ...entry,
+        chartLabel: entry.topic,
+        chartShortLabel: truncateChartLabel(
+          entry.topic,
+          isMobileViewport ? 9 : 30,
+        ),
+      }));
+    }
+
+    return selectedOverviewSubtopicData.map((entry) => ({
+      ...entry,
+      chartLabel: entry.subtopic,
+      chartShortLabel: truncateChartLabel(
+        entry.subtopic,
+        isMobileViewport ? 9 : 30,
+      ),
+    }));
+  }, [
+    isMobileViewport,
+    selectedOverviewSubtopicData,
+    selectedOverviewTopic,
+    selectedOverviewTopicOptions,
+  ]);
+
+  const selectedOverviewTopicCatalogEntry = useMemo(() => {
+    if (selectedOverviewTopic === OVERVIEW_ALL_TOPICS_VALUE) {
+      return null;
+    }
+
+    return (
       overviewTopicCatalog.find(
         (entry) =>
           normalizeText(entry.label) === normalizeText(selectedOverviewTopic),
-      ) || null,
-    [overviewTopicCatalog, selectedOverviewTopic],
-  );
+      ) || null
+    );
+  }, [overviewTopicCatalog, selectedOverviewTopic]);
 
   useEffect(() => {
     let isActive = true;
@@ -901,18 +1001,18 @@ export default function ResultsHistory({
     const nextTopicOptions = selectedOverviewTopicOptions;
 
     if (!nextTopicOptions.length) {
-      if (selectedOverviewTopic) {
-        setSelectedOverviewTopic("");
+      if (selectedOverviewTopic !== OVERVIEW_ALL_TOPICS_VALUE) {
+        setSelectedOverviewTopic(OVERVIEW_ALL_TOPICS_VALUE);
       }
       return;
     }
 
-    const hasSelectedTopic = nextTopicOptions.some(
-      (topic) => topic.topic === selectedOverviewTopic,
-    );
+    const hasSelectedTopic =
+      selectedOverviewTopic === OVERVIEW_ALL_TOPICS_VALUE ||
+      nextTopicOptions.some((topic) => topic.topic === selectedOverviewTopic);
 
     if (!hasSelectedTopic) {
-      setSelectedOverviewTopic(nextTopicOptions[0].topic);
+      setSelectedOverviewTopic(OVERVIEW_ALL_TOPICS_VALUE);
     }
   }, [selectedOverviewTopic, selectedOverviewTopicOptions]);
 
@@ -1121,7 +1221,7 @@ export default function ResultsHistory({
                       <div className="col-12 col-lg-4">
                         <article className="card account-card account-chartCard h-100">
                           <div className="account-chartCard__header">
-                            <div className="account-chartCard__headingRow">
+                            <div className="account-chartCard__headingRow account-chartCard__headingRow--top">
                               <div>
                                 <h4>Marks gained vs missed</h4>
                                 <p className="account-muted">
@@ -1194,24 +1294,19 @@ export default function ResultsHistory({
                       <div className="col-12 col-lg-8">
                         <article className="card account-card account-chartCard account-chartCard--trend h-100">
                           <div className="account-chartCard__header">
-                            <h4>Percentage score over time</h4>
+                            <h4>Moving average score over time</h4>
                             <p className="account-muted">
-                              See whether your{" "}
-                              {selectedOverviewSection.title.toLowerCase()}{" "}
-                              scores for{" "}
-                              {formatExamBoardHeading(
-                                selectedOverviewExamBoard,
-                              )}{" "}
-                              are improving over time.
+                              {selectedOverviewMarksTopic ===
+                              OVERVIEW_ALL_TOPICS_VALUE
+                                ? `See whether your ${selectedOverviewSection.title.toLowerCase()} scores for ${formatExamBoardHeading(selectedOverviewExamBoard)} are improving over time using a rolling average of your latest tests.`
+                                : `See whether your ${selectedOverviewMarksTopic} scores for ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} are improving over time using a rolling average of your latest tests.`}
                             </p>
                           </div>
                           <div className="account-chartCard__body account-chartCard__body--trend">
                             <div className="account-chartCard__chartCanvas account-chartCard__chartCanvas--trend">
                               <ResponsiveContainer width="100%" height="100%">
                                 <LineChart
-                                  data={
-                                    selectedOverviewChartData.scoreTrendData
-                                  }
+                                  data={selectedOverviewScoreTrendData}
                                   margin={{
                                     top: 8,
                                     right: 8,
@@ -1225,10 +1320,8 @@ export default function ResultsHistory({
                                   />
                                   <XAxis
                                     dataKey="label"
-                                    minTickGap={isMobileViewport ? 24 : 12}
-                                    interval={
-                                      isMobileViewport ? "preserveStartEnd" : 0
-                                    }
+                                    minTickGap={isMobileViewport ? 28 : 22}
+                                    interval={selectedOverviewTrendTickInterval}
                                     tick={{
                                       fill: CHART_COLORS.text,
                                       fontSize: isMobileViewport ? 10 : 12,
@@ -1246,8 +1339,8 @@ export default function ResultsHistory({
                                   <Tooltip content={renderChartTooltip} />
                                   <Line
                                     type="monotone"
-                                    dataKey="percentage"
-                                    name="Score"
+                                    dataKey="movingAverage"
+                                    name="Moving average"
                                     stroke={CHART_COLORS.line}
                                     strokeWidth={3}
                                     dot={{
@@ -1269,21 +1362,24 @@ export default function ResultsHistory({
                           <div className="account-chartCard__header">
                             <div className="account-chartCard__headingRow">
                               <div>
-                                <h4>Average score by subtopic</h4>
+                                <h4>
+                                  {selectedOverviewTopic ===
+                                  OVERVIEW_ALL_TOPICS_VALUE
+                                    ? "Average score by module"
+                                    : "Average score by subtopic"}
+                                </h4>
                                 <p className="account-muted">
-                                  Compare subtopic performance within your{" "}
-                                  {selectedOverviewSection.title.toLowerCase()}{" "}
-                                  {formatExamBoardHeading(
-                                    selectedOverviewExamBoard,
-                                  )}{" "}
-                                  topic choice.
+                                  {selectedOverviewTopic ===
+                                  OVERVIEW_ALL_TOPICS_VALUE
+                                    ? `Compare module performance across your ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} results.`
+                                    : `Compare subtopic performance within your ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} module choice.`}
                                 </p>
                               </div>
 
                               {selectedOverviewTopicOptions.length > 0 && (
                                 <div className="account-chartCard__control">
                                   <label htmlFor="results-overview-topic">
-                                    Topic
+                                    Module view
                                   </label>
                                   <select
                                     id="results-overview-topic"
@@ -1295,6 +1391,9 @@ export default function ResultsHistory({
                                       )
                                     }
                                   >
+                                    <option value={OVERVIEW_ALL_TOPICS_VALUE}>
+                                      Overall data
+                                    </option>
                                     {selectedOverviewTopicOptions.map(
                                       (topicOption) => (
                                         <option
@@ -1321,11 +1420,11 @@ export default function ResultsHistory({
                               >
                                 <ResponsiveContainer width="100%" height="100%">
                                   <BarChart
-                                    data={selectedOverviewSubtopicChartData}
+                                    data={selectedOverviewBarChartData}
                                     margin={{
                                       top: 8,
                                       right: 8,
-                                      bottom: isMobileViewport ? 52 : 64,
+                                      bottom: isMobileViewport ? 96 : 120,
                                       left: 8,
                                     }}
                                   >
@@ -1334,16 +1433,16 @@ export default function ResultsHistory({
                                       vertical={false}
                                     />
                                     <XAxis
-                                      dataKey="subtopicShortLabel"
+                                      dataKey="chartShortLabel"
                                       tick={{
                                         fill: CHART_COLORS.text,
                                         fontSize: isMobileViewport ? 9 : 12,
                                       }}
                                       interval={0}
-                                      angle={isMobileViewport ? -42 : -32}
+                                      angle={-90}
                                       textAnchor="end"
-                                      tickMargin={isMobileViewport ? 6 : 10}
-                                      height={isMobileViewport ? 64 : 72}
+                                      tickMargin={isMobileViewport ? 8 : 10}
+                                      height={isMobileViewport ? 92 : 116}
                                     />
                                     <YAxis
                                       domain={[0, 100]}

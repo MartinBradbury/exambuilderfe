@@ -507,6 +507,10 @@
   flex-wrap: wrap;
 }
 
+.account-chartCard__headingRow--top {
+  align-items: flex-start;
+}
+
 .account-chartCard__control {
   display: grid;
   gap: 8px;
@@ -516,11 +520,13 @@
 .account-chartCard__control label {
   font-weight: 700;
   font-size: 0.94rem;
+  color: var(--brand);
 }
 
 .account-chartCard__header h4 {
   margin: 0;
   font-size: 1.05rem;
+  color: var(--brand);
 }
 
 .account-chartCard__body {
