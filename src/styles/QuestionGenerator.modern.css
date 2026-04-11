@@ -369,6 +369,22 @@
   font-size: 0.92rem;
 }
 
+.qg-inlineLink {
+  color: var(--brand);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.qg-inlineLink:hover {
+  text-decoration: underline;
+}
+
+.qg-inlineLink:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 .qg-upgrade {
   margin-bottom: 18px;
   background: linear-gradient(

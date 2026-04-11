@@ -912,7 +912,11 @@ export default function QuestionGenerator() {
           {isFreePlan && (
             <p className="qg-hint">
               Need more than the shared free daily quota? Manage qualification
-              access from <Link to="/account">your account</Link>.
+              access from{" "}
+              <Link to="/account" className="qg-inlineLink">
+                your account
+              </Link>
+              .
             </p>
           )}
         </form>
