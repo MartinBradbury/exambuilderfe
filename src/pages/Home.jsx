@@ -8,8 +8,14 @@ export default function Home() {
   const { user, hasUnlimitedAccess, emailVerified } = useContext(UserContext);
   const needsEmailVerification = Boolean(user) && !emailVerified;
   const canUpgrade = Boolean(user) && !hasUnlimitedAccess && emailVerified;
-  const [isMobileHowItWorks, setIsMobileHowItWorks] = useState(false);
-  const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(true);
+  const isMobileViewport =
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 800px)").matches;
+  const [isMobileHowItWorks, setIsMobileHowItWorks] =
+    useState(isMobileViewport);
+  const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(
+    !isMobileViewport,
+  );
   const [activePreviewSlide, setActivePreviewSlide] = useState(0);
   const previewRailRef = useRef(null);
 
