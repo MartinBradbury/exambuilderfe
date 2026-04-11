@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Bar,
   BarChart,
@@ -405,7 +405,12 @@ const formatAssessmentTitle = (topic) => {
     : `🧠 ${baseTitle} Assessment`;
 };
 
-export default function ResultsHistory({ className = "", showHeader = true }) {
+export default function ResultsHistory({
+  className = "",
+  showHeader = true,
+  analyticsLocked = false,
+  upgradePath = "/account",
+}) {
   const [sessions, setSessions] = useState([]);
   const [expandedSessionId, setExpandedSessionId] = useState(null);
   const [error, setError] = useState("");
@@ -422,6 +427,15 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
   const [selectedOverviewTopic, setSelectedOverviewTopic] = useState("");
   const [overviewTopicCatalog, setOverviewTopicCatalog] = useState([]);
   const [overviewSubtopicCatalog, setOverviewSubtopicCatalog] = useState([]);
+  const navigate = useNavigate();
+
+  const handleLockedAnalyticsInteraction = () => {
+    if (!analyticsLocked) {
+      return;
+    }
+
+    navigate(upgradePath);
+  };
 
   useEffect(() => {
     let isActive = true;
@@ -1059,172 +1073,61 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
               )}
             </div>
 
-            {selectedOverviewSection ? (
-              <section
-                key={selectedOverviewSection.levelKey}
-                className="account-results__overviewGroup"
-              >
-                <div className="account-results__overviewGroupHeader">
-                  <h4>{selectedOverviewSection.title} charts</h4>
-                  <p className="account-muted">
-                    Only {selectedOverviewSection.title.toLowerCase()} sessions
-                    for {formatExamBoardHeading(selectedOverviewExamBoard)} are
-                    included in these charts.
-                  </p>
-                </div>
+            <div
+              className={`account-results__overviewContent${
+                analyticsLocked
+                  ? " account-results__overviewContent--locked"
+                  : ""
+              }`}
+            >
+              {selectedOverviewSection ? (
+                <section
+                  key={selectedOverviewSection.levelKey}
+                  className="account-results__overviewGroup"
+                >
+                  <div className="account-results__overviewGroupHeader">
+                    <h4>{selectedOverviewSection.title} charts</h4>
+                    <p className="account-muted">
+                      Only {selectedOverviewSection.title.toLowerCase()}{" "}
+                      sessions for{" "}
+                      {formatExamBoardHeading(selectedOverviewExamBoard)} are
+                      included in these charts.
+                    </p>
+                  </div>
 
-                {selectedOverviewSessions.length > 0 ? (
-                  <div className="row g-3">
-                    <div className="col-12 col-lg-4">
-                      <article className="card account-card account-chartCard h-100">
-                        <div className="account-chartCard__header">
-                          <div className="account-chartCard__headingRow">
-                            <div>
-                              <h4>Marks gained vs missed</h4>
-                              <p className="account-muted">
-                                {selectedOverviewMarksTopic ===
-                                OVERVIEW_ALL_TOPICS_VALUE
-                                  ? `Total marks across visible ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} sessions.`
-                                  : `Total marks for ${selectedOverviewMarksTopic} within visible ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} sessions.`}
-                              </p>
-                            </div>
+                  {selectedOverviewSessions.length > 0 ? (
+                    <div className="row g-3">
+                      <div className="col-12 col-lg-4">
+                        <article className="card account-card account-chartCard h-100">
+                          <div className="account-chartCard__header">
+                            <div className="account-chartCard__headingRow">
+                              <div>
+                                <h4>Marks gained vs missed</h4>
+                                <p className="account-muted">
+                                  {selectedOverviewMarksTopic ===
+                                  OVERVIEW_ALL_TOPICS_VALUE
+                                    ? `Total marks across visible ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} sessions.`
+                                    : `Total marks for ${selectedOverviewMarksTopic} within visible ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} sessions.`}
+                                </p>
+                              </div>
 
-                            <div className="account-chartCard__control">
-                              <label htmlFor="results-overview-marks-topic">
-                                Module filter
-                              </label>
-                              <select
-                                id="results-overview-marks-topic"
-                                className="account-results__input"
-                                value={selectedOverviewMarksTopic}
-                                onChange={(event) =>
-                                  setSelectedOverviewMarksTopic(
-                                    event.target.value,
-                                  )
-                                }
-                              >
-                                <option value={OVERVIEW_ALL_TOPICS_VALUE}>
-                                  Overall
-                                </option>
-                                {selectedOverviewTopicOptions.map(
-                                  (topicOption) => (
-                                    <option
-                                      key={topicOption.topic}
-                                      value={topicOption.topic}
-                                    >
-                                      {topicOption.topic}
-                                    </option>
-                                  ),
-                                )}
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="account-chartCard__body account-chartCard__body--donut">
-                          <ResponsiveContainer width="100%" height={260}>
-                            <PieChart>
-                              <Pie
-                                data={selectedOverviewMarksSummaryData}
-                                dataKey="value"
-                                nameKey="name"
-                                innerRadius={72}
-                                outerRadius={102}
-                                paddingAngle={4}
-                              >
-                                {selectedOverviewMarksSummaryData.map(
-                                  (entry) => (
-                                    <Cell key={entry.name} fill={entry.fill} />
-                                  ),
-                                )}
-                              </Pie>
-                              <Tooltip content={renderChartTooltip} />
-                              <Legend verticalAlign="bottom" />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </article>
-                    </div>
-
-                    <div className="col-12 col-lg-8">
-                      <article className="card account-card account-chartCard account-chartCard--trend h-100">
-                        <div className="account-chartCard__header">
-                          <h4>Percentage score over time</h4>
-                          <p className="account-muted">
-                            See whether your{" "}
-                            {selectedOverviewSection.title.toLowerCase()} scores
-                            for{" "}
-                            {formatExamBoardHeading(selectedOverviewExamBoard)}{" "}
-                            are improving over time.
-                          </p>
-                        </div>
-                        <div className="account-chartCard__body account-chartCard__body--trend">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart
-                              data={selectedOverviewChartData.scoreTrendData}
-                              margin={{ top: 8, right: 8, bottom: 8, left: 0 }}
-                            >
-                              <CartesianGrid
-                                stroke={CHART_COLORS.grid}
-                                vertical={false}
-                              />
-                              <XAxis
-                                dataKey="label"
-                                tick={{ fill: CHART_COLORS.text, fontSize: 12 }}
-                              />
-                              <YAxis
-                                domain={[0, 100]}
-                                tick={{ fill: CHART_COLORS.text, fontSize: 12 }}
-                                tickFormatter={(value) => `${value}%`}
-                              />
-                              <Tooltip content={renderChartTooltip} />
-                              <Line
-                                type="monotone"
-                                dataKey="percentage"
-                                name="Score"
-                                stroke={CHART_COLORS.line}
-                                strokeWidth={3}
-                                dot={{
-                                  r: 4,
-                                  strokeWidth: 0,
-                                  fill: CHART_COLORS.line,
-                                }}
-                                activeDot={{ r: 6 }}
-                              />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </article>
-                    </div>
-
-                    <div className="col-12">
-                      <article className="card account-card account-chartCard">
-                        <div className="account-chartCard__header">
-                          <div className="account-chartCard__headingRow">
-                            <div>
-                              <h4>Average score by subtopic</h4>
-                              <p className="account-muted">
-                                Compare subtopic performance within your{" "}
-                                {selectedOverviewSection.title.toLowerCase()}{" "}
-                                {formatExamBoardHeading(
-                                  selectedOverviewExamBoard,
-                                )}{" "}
-                                topic choice.
-                              </p>
-                            </div>
-
-                            {selectedOverviewTopicOptions.length > 0 && (
                               <div className="account-chartCard__control">
-                                <label htmlFor="results-overview-topic">
-                                  Topic
+                                <label htmlFor="results-overview-marks-topic">
+                                  Module filter
                                 </label>
                                 <select
-                                  id="results-overview-topic"
+                                  id="results-overview-marks-topic"
                                   className="account-results__input"
-                                  value={selectedOverviewTopic}
+                                  value={selectedOverviewMarksTopic}
                                   onChange={(event) =>
-                                    setSelectedOverviewTopic(event.target.value)
+                                    setSelectedOverviewMarksTopic(
+                                      event.target.value,
+                                    )
                                   }
                                 >
+                                  <option value={OVERVIEW_ALL_TOPICS_VALUE}>
+                                    Overall
+                                  </option>
                                   {selectedOverviewTopicOptions.map(
                                     (topicOption) => (
                                       <option
@@ -1237,86 +1140,246 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
                                   )}
                                 </select>
                               </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="account-chartCard__body account-chartCard__body--barChart">
-                          <div className="account-chartCard__scrollX">
-                            <div
-                              className="account-chartCard__chartCanvas"
-                              style={{
-                                minWidth: `${Math.max(
-                                  selectedOverviewSubtopicData.length * 88,
-                                  560,
-                                )}px`,
-                              }}
-                            >
-                              <ResponsiveContainer width="100%" height={360}>
-                                <BarChart
-                                  data={selectedOverviewSubtopicData}
-                                  margin={{
-                                    top: 8,
-                                    right: 8,
-                                    bottom: 64,
-                                    left: 8,
-                                  }}
-                                >
-                                  <CartesianGrid
-                                    stroke={CHART_COLORS.grid}
-                                    vertical={false}
-                                  />
-                                  <XAxis
-                                    dataKey="subtopicShortLabel"
-                                    tick={{
-                                      fill: CHART_COLORS.text,
-                                      fontSize: 12,
-                                    }}
-                                    interval={0}
-                                    angle={-32}
-                                    textAnchor="end"
-                                    height={72}
-                                  />
-                                  <YAxis
-                                    domain={[0, 100]}
-                                    tick={{
-                                      fill: CHART_COLORS.text,
-                                      fontSize: 12,
-                                    }}
-                                    tickFormatter={(value) => `${value}%`}
-                                  />
-                                  <Tooltip content={renderChartTooltip} />
-                                  <Bar
-                                    dataKey="averageScore"
-                                    name="Average"
-                                    fill={CHART_COLORS.bar}
-                                    radius={[8, 8, 0, 0]}
-                                  />
-                                </BarChart>
-                              </ResponsiveContainer>
                             </div>
                           </div>
-                        </div>
-                      </article>
+                          <div className="account-chartCard__body account-chartCard__body--donut">
+                            <ResponsiveContainer width="100%" height={260}>
+                              <PieChart>
+                                <Pie
+                                  data={selectedOverviewMarksSummaryData}
+                                  dataKey="value"
+                                  nameKey="name"
+                                  innerRadius={72}
+                                  outerRadius={102}
+                                  paddingAngle={4}
+                                >
+                                  {selectedOverviewMarksSummaryData.map(
+                                    (entry) => (
+                                      <Cell
+                                        key={entry.name}
+                                        fill={entry.fill}
+                                      />
+                                    ),
+                                  )}
+                                </Pie>
+                                <Tooltip content={renderChartTooltip} />
+                                <Legend verticalAlign="bottom" />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </article>
+                      </div>
+
+                      <div className="col-12 col-lg-8">
+                        <article className="card account-card account-chartCard account-chartCard--trend h-100">
+                          <div className="account-chartCard__header">
+                            <h4>Percentage score over time</h4>
+                            <p className="account-muted">
+                              See whether your{" "}
+                              {selectedOverviewSection.title.toLowerCase()}{" "}
+                              scores for{" "}
+                              {formatExamBoardHeading(
+                                selectedOverviewExamBoard,
+                              )}{" "}
+                              are improving over time.
+                            </p>
+                          </div>
+                          <div className="account-chartCard__body account-chartCard__body--trend">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart
+                                data={selectedOverviewChartData.scoreTrendData}
+                                margin={{
+                                  top: 8,
+                                  right: 8,
+                                  bottom: 8,
+                                  left: 0,
+                                }}
+                              >
+                                <CartesianGrid
+                                  stroke={CHART_COLORS.grid}
+                                  vertical={false}
+                                />
+                                <XAxis
+                                  dataKey="label"
+                                  tick={{
+                                    fill: CHART_COLORS.text,
+                                    fontSize: 12,
+                                  }}
+                                />
+                                <YAxis
+                                  domain={[0, 100]}
+                                  tick={{
+                                    fill: CHART_COLORS.text,
+                                    fontSize: 12,
+                                  }}
+                                  tickFormatter={(value) => `${value}%`}
+                                />
+                                <Tooltip content={renderChartTooltip} />
+                                <Line
+                                  type="monotone"
+                                  dataKey="percentage"
+                                  name="Score"
+                                  stroke={CHART_COLORS.line}
+                                  strokeWidth={3}
+                                  dot={{
+                                    r: 4,
+                                    strokeWidth: 0,
+                                    fill: CHART_COLORS.line,
+                                  }}
+                                  activeDot={{ r: 6 }}
+                                />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </article>
+                      </div>
+
+                      <div className="col-12">
+                        <article className="card account-card account-chartCard">
+                          <div className="account-chartCard__header">
+                            <div className="account-chartCard__headingRow">
+                              <div>
+                                <h4>Average score by subtopic</h4>
+                                <p className="account-muted">
+                                  Compare subtopic performance within your{" "}
+                                  {selectedOverviewSection.title.toLowerCase()}{" "}
+                                  {formatExamBoardHeading(
+                                    selectedOverviewExamBoard,
+                                  )}{" "}
+                                  topic choice.
+                                </p>
+                              </div>
+
+                              {selectedOverviewTopicOptions.length > 0 && (
+                                <div className="account-chartCard__control">
+                                  <label htmlFor="results-overview-topic">
+                                    Topic
+                                  </label>
+                                  <select
+                                    id="results-overview-topic"
+                                    className="account-results__input"
+                                    value={selectedOverviewTopic}
+                                    onChange={(event) =>
+                                      setSelectedOverviewTopic(
+                                        event.target.value,
+                                      )
+                                    }
+                                  >
+                                    {selectedOverviewTopicOptions.map(
+                                      (topicOption) => (
+                                        <option
+                                          key={topicOption.topic}
+                                          value={topicOption.topic}
+                                        >
+                                          {topicOption.topic}
+                                        </option>
+                                      ),
+                                    )}
+                                  </select>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="account-chartCard__body account-chartCard__body--barChart">
+                            <div className="account-chartCard__scrollX">
+                              <div
+                                className="account-chartCard__chartCanvas"
+                                style={{
+                                  minWidth: `${Math.max(
+                                    selectedOverviewSubtopicData.length * 88,
+                                    560,
+                                  )}px`,
+                                }}
+                              >
+                                <ResponsiveContainer width="100%" height={360}>
+                                  <BarChart
+                                    data={selectedOverviewSubtopicData}
+                                    margin={{
+                                      top: 8,
+                                      right: 8,
+                                      bottom: 64,
+                                      left: 8,
+                                    }}
+                                  >
+                                    <CartesianGrid
+                                      stroke={CHART_COLORS.grid}
+                                      vertical={false}
+                                    />
+                                    <XAxis
+                                      dataKey="subtopicShortLabel"
+                                      tick={{
+                                        fill: CHART_COLORS.text,
+                                        fontSize: 12,
+                                      }}
+                                      interval={0}
+                                      angle={-32}
+                                      textAnchor="end"
+                                      height={72}
+                                    />
+                                    <YAxis
+                                      domain={[0, 100]}
+                                      tick={{
+                                        fill: CHART_COLORS.text,
+                                        fontSize: 12,
+                                      }}
+                                      tickFormatter={(value) => `${value}%`}
+                                    />
+                                    <Tooltip content={renderChartTooltip} />
+                                    <Bar
+                                      dataKey="averageScore"
+                                      name="Average"
+                                      fill={CHART_COLORS.bar}
+                                      radius={[8, 8, 0, 0]}
+                                    />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </div>
+                            </div>
+                          </div>
+                        </article>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <article className="account-card">
-                    <p className="account-muted">
-                      No {selectedOverviewSection.title.toLowerCase()} sessions
-                      for {formatExamBoardHeading(selectedOverviewExamBoard)}{" "}
-                      match the current filters.
-                    </p>
-                  </article>
-                )}
-              </section>
-            ) : (
-              <article className="account-card">
-                <p className="account-muted">
-                  Performance charts are available when sessions are tagged as
-                  GCSE or A level.
-                </p>
-              </article>
-            )}
+                  ) : (
+                    <article className="account-card">
+                      <p className="account-muted">
+                        No {selectedOverviewSection.title.toLowerCase()}{" "}
+                        sessions for{" "}
+                        {formatExamBoardHeading(selectedOverviewExamBoard)}{" "}
+                        match the current filters.
+                      </p>
+                    </article>
+                  )}
+                </section>
+              ) : (
+                <article className="account-card">
+                  <p className="account-muted">
+                    Performance charts are available when sessions are tagged as
+                    GCSE or A level.
+                  </p>
+                </article>
+              )}
+
+              {analyticsLocked && (
+                <button
+                  type="button"
+                  className="account-results__overviewLock"
+                  onMouseEnter={handleLockedAnalyticsInteraction}
+                  onClick={handleLockedAnalyticsInteraction}
+                  aria-label="Upgrade to unlock progress analytics"
+                >
+                  <span className="account-results__overviewLockCard">
+                    <strong>Upgrade to unlock progress analytics</strong>
+                    <span>
+                      Paid accounts can explore score trends, marks breakdowns,
+                      and module-level performance data.
+                    </span>
+                    <span className="account-results__overviewLockAction">
+                      Go to upgrade
+                    </span>
+                  </span>
+                </button>
+              )}
+            </div>
           </section>
 
           <div className="account-results__list">

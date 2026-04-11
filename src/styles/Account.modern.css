@@ -212,6 +212,62 @@
   gap: 18px;
 }
 
+.account-results__overviewContent {
+  position: relative;
+}
+
+.account-results__overviewContent--locked {
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+.account-results__overviewContent--locked .account-results__overviewGroup,
+.account-results__overviewContent--locked .account-card {
+  filter: blur(10px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.account-results__overviewLock {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  border: 0;
+  background: rgba(7, 11, 17, 0.28);
+  cursor: pointer;
+}
+
+.account-results__overviewLockCard {
+  display: grid;
+  gap: 10px;
+  max-width: 420px;
+  padding: 22px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(12, 18, 26, 0.9);
+  color: var(--text);
+  text-align: center;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+}
+
+.account-results__overviewLockCard strong {
+  font-size: 1.05rem;
+}
+
+.account-results__overviewLockAction {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: rgba(73, 209, 125, 0.16);
+  color: var(--brand);
+  font-weight: 800;
+}
+
 .account-results__overviewHeader {
   display: flex;
   align-items: end;

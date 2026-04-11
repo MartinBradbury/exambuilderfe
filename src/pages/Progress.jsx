@@ -1,8 +1,12 @@
+import { useContext } from "react";
 import { Link } from "react-router-dom";
 import ResultsHistory from "../components/ResultsHistory";
+import { UserContext } from "../context/UserContextObject";
 import "../styles/Account.modern.css";
 
 export default function Progress() {
+  const { hasUnlimitedAccess } = useContext(UserContext) || {};
+
   return (
     <div className="account-root">
       <div className="account-shell container">
@@ -25,7 +29,11 @@ export default function Progress() {
           </div>
         </header>
 
-        <ResultsHistory showHeader={false} />
+        <ResultsHistory
+          showHeader={false}
+          analyticsLocked={!hasUnlimitedAccess}
+          upgradePath="/account"
+        />
       </div>
     </div>
   );
