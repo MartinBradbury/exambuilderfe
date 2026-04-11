@@ -3,6 +3,12 @@
   --surface: #0f1720;
   --card: #121a23;
   --card-strong: #15202a;
+  --chart-card-start: rgba(15, 21, 30, 0.96);
+  --chart-card-end: rgba(10, 15, 22, 0.96);
+  --chart-tooltip-bg: rgba(11, 17, 24, 0.96);
+  --chart-tooltip-border: rgba(255, 255, 255, 0.1);
+  --chart-grid: rgba(255, 255, 255, 0.08);
+  --chart-text: #d7e1ea;
   --text: #e6edf3;
   --muted: #a7b4c2;
   --brand: #49d17d;
@@ -25,6 +31,12 @@
   --surface: #ffffff;
   --card: #ffffff;
   --card-strong: #eef4ef;
+  --chart-card-start: rgba(255, 255, 255, 0.98);
+  --chart-card-end: rgba(243, 247, 244, 0.98);
+  --chart-tooltip-bg: rgba(255, 255, 255, 0.98);
+  --chart-tooltip-border: rgba(14, 23, 38, 0.08);
+  --chart-grid: rgba(14, 23, 38, 0.08);
+  --chart-text: #203040;
   --text: #0e1726;
   --muted: #5b6b7a;
   --brand: #2fb765;
@@ -42,6 +54,12 @@
     --surface: #ffffff;
     --card: #ffffff;
     --card-strong: #eef4ef;
+    --chart-card-start: rgba(255, 255, 255, 0.98);
+    --chart-card-end: rgba(243, 247, 244, 0.98);
+    --chart-tooltip-bg: rgba(255, 255, 255, 0.98);
+    --chart-tooltip-border: rgba(14, 23, 38, 0.08);
+    --chart-grid: rgba(14, 23, 38, 0.08);
+    --chart-text: #203040;
     --text: #0e1726;
     --muted: #5b6b7a;
     --brand: #2fb765;

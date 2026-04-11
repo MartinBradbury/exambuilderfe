@@ -900,6 +900,41 @@
   cursor: not-allowed;
 }
 
+:root[data-theme="light"] .account-results__resetButton {
+  border-color: rgba(176, 42, 55, 0.32);
+  background: rgba(176, 42, 55, 0.12);
+  color: #8f1f2b;
+}
+
+:root[data-theme="light"] .account-results__resetButton:hover:not(:disabled) {
+  background: rgba(176, 42, 55, 0.18);
+  border-color: rgba(176, 42, 55, 0.44);
+  color: #741722;
+}
+
+:root[data-theme="light"] .account-results__resetButton:focus-visible {
+  box-shadow: 0 0 0 4px rgba(176, 42, 55, 0.16);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .account-results__resetButton {
+    border-color: rgba(176, 42, 55, 0.32);
+    background: rgba(176, 42, 55, 0.12);
+    color: #8f1f2b;
+  }
+
+  :root:not([data-theme="dark"])
+    .account-results__resetButton:hover:not(:disabled) {
+    background: rgba(176, 42, 55, 0.18);
+    border-color: rgba(176, 42, 55, 0.44);
+    color: #741722;
+  }
+
+  :root:not([data-theme="dark"]) .account-results__resetButton:focus-visible {
+    box-shadow: 0 0 0 4px rgba(176, 42, 55, 0.16);
+  }
+}
+
 @media (min-width: 721px) {
   .account-results__overviewHeader {
     display: grid;
@@ -987,8 +1022,8 @@
   height: 100%;
   background: linear-gradient(
     180deg,
-    rgba(15, 21, 30, 0.96),
-    rgba(10, 15, 22, 0.96)
+    var(--chart-card-start),
+    var(--chart-card-end)
   );
 }
 
@@ -1069,6 +1104,20 @@
   color: #ffdada;
 }
 
+:root[data-theme="light"] .account-chartCard__note--warning {
+  border-color: rgba(176, 42, 55, 0.24);
+  background: rgba(176, 42, 55, 0.1);
+  color: #7a1520;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .account-chartCard__note--warning {
+    border-color: rgba(176, 42, 55, 0.24);
+    background: rgba(176, 42, 55, 0.1);
+    color: #7a1520;
+  }
+}
+
 .account-chartCard__body {
   min-height: 260px;
 }
@@ -1111,8 +1160,8 @@
 .account-chartTooltip {
   padding: 10px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(11, 17, 24, 0.96);
+  border: 1px solid var(--chart-tooltip-border);
+  background: var(--chart-tooltip-bg);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
 }
 

@@ -32,8 +32,8 @@ const CHART_COLORS = {
   missed: "#ff6b6b",
   line: "#6fd3ff",
   bar: "#f7b955",
-  grid: "rgba(255, 255, 255, 0.08)",
-  text: "#d7e1ea",
+  grid: "var(--chart-grid)",
+  text: "var(--chart-text)",
 };
 
 const normalizeText = (value) =>
