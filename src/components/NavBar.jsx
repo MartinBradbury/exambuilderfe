@@ -38,6 +38,17 @@ export default function Navbar() {
   return (
     <header className={`site-navbarV2 ${open ? "is-open" : ""}`}>
       <div className="container nav-inner">
+        {user ? (
+          <Link
+            to="/account"
+            className="mobile-accountButton"
+            aria-label="Go to account"
+            onClick={closeMenu}
+          >
+            <span className="avatar">{initials}</span>
+          </Link>
+        ) : null}
+
         {/* Brand */}
         <Link to="/" className="brand" onClick={closeMenu}>
           <span className="brand-dot" aria-hidden="true" />

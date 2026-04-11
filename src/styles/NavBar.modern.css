@@ -192,11 +192,32 @@
   height: 36px;
 }
 
+.mobile-accountButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.mobile-accountButton .avatar {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(73, 209, 125, 0.26);
+  box-shadow: 0 0 0 3px rgba(73, 209, 125, 0.12);
+}
+
+.mobile-accountButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--ring);
+  border-radius: 999px;
+}
+
 /* Hamburger */
 .hamburger {
   display: none;
   width: 42px;
   height: 42px;
+  flex-direction: column;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--outline);
@@ -269,13 +290,13 @@
   .nav-actions {
     display: none;
   } /* hidden on small screens; username shows in drawer */
+  .mobile-accountButton {
+    display: inline-flex;
+  }
   .hamburger {
     display: inline-flex;
   }
   .site-navbarV2.is-open .mobile-drawer {
     display: block;
-  }
-  .nav-inner {
-    grid-template-columns: auto 1fr auto;
   }
 }
