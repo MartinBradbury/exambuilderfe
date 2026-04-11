@@ -1301,6 +1301,12 @@ export default function ResultsHistory({
                                 ? `See whether your ${selectedOverviewSection.title.toLowerCase()} scores for ${formatExamBoardHeading(selectedOverviewExamBoard)} are improving over time using a rolling average of your latest tests.`
                                 : `See whether your ${selectedOverviewMarksTopic} scores for ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} are improving over time using a rolling average of your latest tests.`}
                             </p>
+                            <p className="account-muted account-chartCard__note">
+                              This graph uses the module filter from Marks
+                              gained vs missed. The more tests you have, the
+                              more reliable the trend – aim for at least 5 tests
+                              for a clearer picture.
+                            </p>
                           </div>
                           <div className="account-chartCard__body account-chartCard__body--trend">
                             <div className="account-chartCard__chartCanvas account-chartCard__chartCanvas--trend">

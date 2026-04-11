@@ -529,6 +529,20 @@
   color: var(--brand);
 }
 
+.account-chartCard__note {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 10px;
+  padding: 0.45rem 0.7rem;
+  border-radius: 12px;
+  border: 1px solid rgba(73, 209, 125, 0.22);
+  background: rgba(73, 209, 125, 0.08);
+  color: var(--text);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
 .account-chartCard__body {
   min-height: 260px;
 }
