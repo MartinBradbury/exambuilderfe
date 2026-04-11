@@ -13,9 +13,7 @@ export default function Home() {
     window.matchMedia("(max-width: 800px)").matches;
   const [isMobileHowItWorks, setIsMobileHowItWorks] =
     useState(isMobileViewport);
-  const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(
-    !isMobileViewport,
-  );
+  const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(!isMobileViewport);
   const [activePreviewSlide, setActivePreviewSlide] = useState(0);
   const previewRailRef = useRef(null);
 
