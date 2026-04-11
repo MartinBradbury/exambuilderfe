@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import EmailVerificationNotice from "../components/EmailVerificationNotice";
 import "../styles/Home.modern.css";
 import { UserContext } from "../context/UserContextObject";
-import DevNotes from "../components/DevNotes";
 
 export default function Home() {
   const { user, hasUnlimitedAccess, emailVerified } = useContext(UserContext);
@@ -23,51 +22,29 @@ export default function Home() {
         <div className="heroV2__bg" aria-hidden="true" />
         <div className="container heroV2__inner">
           <div className="heroV2__copy">
-            <p className="heroV2__eyebrow">
-              Revision built around real exam practice
-            </p>
+            {/* Hero messaging now prioritises the core student outcome and a single dominant CTA. */}
+            <p className="heroV2__eyebrow">Exam practice that improves marks</p>
             <h1>
-              Generate science questions, write your answer, and see exactly how
-              you would score.
+              Practice real exam questions and get instant marks and feedback.
             </h1>
             <p className="lead">
-              Exam Builder helps OCR and AQA students practise topic-specific,
-              exam-style questions with instant feedback, mark-scheme guidance,
-              and saved results across sessions.
+              Built for OCR and AQA students. Improve your exam performance
+              with targeted practice, mark schemes, and progress tracking.
             </p>
 
-            <div className="ctaRow">
+            <div className="heroV2__ctaBlock">
               {user ? (
-                <Link to="/question-generator" className="btn btn--primary">
-                  Open Generator
+                <Link to="/question-generator" className="btn btn--primary btn--heroPrimary">
+                  Start Practising
                 </Link>
               ) : (
-                <Link to="/register" className="btn btn--primary">
-                  Start Free
+                <Link to="/register" className="btn btn--primary btn--heroPrimary">
+                  Start Practising
                 </Link>
               )}
-              <a href="#preview" className="btn btn--subtle">
-                See Product Preview
+              <a href="#how-it-works" className="heroV2__secondaryLink">
+                See how it works →
               </a>
-              {user ? (
-                canUpgrade ? (
-                  <Link to="/account" className="btn btn--ghost">
-                    Upgrade Plan
-                  </Link>
-                ) : needsEmailVerification ? (
-                  <Link to="/account" className="btn btn--ghost">
-                    Verify Email to Upgrade
-                  </Link>
-                ) : (
-                  <Link to="/account" className="btn btn--ghost">
-                    View Account
-                  </Link>
-                )
-              ) : (
-                <Link to="/login" className="btn btn--ghost">
-                  Log In
-                </Link>
-              )}
             </div>
 
             {needsEmailVerification && (
@@ -78,35 +55,18 @@ export default function Home() {
               />
             )}
 
-            <div className="heroV2__flow" aria-label="How it works">
-              <span>1. Choose topic</span>
-              <span>2. Answer exam-style questions</span>
-              <span>3. Get marks and feedback</span>
-            </div>
-
-            <div className="heroV2__proof">
-              <div>
-                <strong>Supported now</strong>
-                <span>OCR and AQA science revision workflows</span>
+            {/* Lightweight trust points reduce friction without competing with the primary CTA. */}
+            <div className="heroV2__trustRow row row-cols-1 row-cols-md-3 g-3" aria-label="Key benefits">
+              <div className="col">
+                <div className="heroV2__trustItem">Instant AI marking</div>
               </div>
-              <div>
-                <strong>Question styles</strong>
-                <span>Topic drills, mark schemes, and 6-mark practice</span>
+              <div className="col">
+                <div className="heroV2__trustItem">Based on real exam mark schemes</div>
               </div>
-              <div>
-                <strong>Built for progression</strong>
-                <span>
-                  Topic drills, saved attempts, and feedback that stays easy to
-                  revisit.
-                </span>
+              <div className="col">
+                <div className="heroV2__trustItem">Track your progress over time</div>
               </div>
             </div>
-
-            <ul className="heroV2__highlights">
-              <li>OCR and AQA science workflows</li>
-              <li>Mark-scheme-driven feedback</li>
-              <li>Saved sessions and results</li>
-            </ul>
           </div>
 
           <aside
@@ -114,6 +74,7 @@ export default function Home() {
             id="preview"
             aria-label="Product preview"
           >
+            {/* Product preview keeps the landing page feeling like a real tool rather than a concept. */}
             <div className="heroPanel heroPanel--question">
               <div className="heroPanel__topline">
                 <span className="heroPanel__tag">Live preview</span>
@@ -154,95 +115,91 @@ export default function Home() {
       <section className="proofStrip">
         <div className="container proofStrip__grid">
           <article>
-            <strong>Exam-board specific</strong>
+            <strong>Built for OCR and AQA</strong>
             <p>
-              Built around OCR and AQA science revision rather than generic quiz
-              content.
+              Practise with revision workflows designed around the exam boards
+              you actually sit.
             </p>
           </article>
           <article>
-            <strong>Mark-scheme driven</strong>
+            <strong>Real feedback, fast</strong>
             <p>
-              Answers are checked against structured points so students can see
-              what is missing.
+              See where marks were earned and what to improve without waiting
+              for manual marking.
             </p>
           </article>
           <article>
-            <strong>Progress saved</strong>
+            <strong>Revision you can measure</strong>
             <p>
-              Completed sessions and scores are stored so revision becomes
-              trackable over time.
+              Track completed sessions and performance trends so every practice
+              session moves you forward.
             </p>
           </article>
         </div>
       </section>
 
-      <section className="previewV2 container" aria-labelledby="preview-title">
-        <div className="sectionHeading">
-          <p className="sectionEyebrow">See the workflow</p>
-          <h2 id="preview-title">
-            A homepage that shows the product, not just the promise
-          </h2>
+      <section
+        className="previewV2 container"
+        id="how-it-works"
+        aria-labelledby="preview-title"
+      >
+        <div className="sectionHeading sectionHeading--centered">
+          <p className="sectionEyebrow">How it works</p>
+          <h2 id="preview-title">A simple revision flow students can use immediately</h2>
           <p>
-            The core loop is simple: pick a topic, answer a realistic question,
-            compare against the mark scheme, then review saved performance
-            later.
+            Pick a topic, answer exam-style questions, and get fast feedback
+            that helps you improve on the next attempt.
           </p>
         </div>
 
-        <div className="previewGrid">
-          <article className="previewCard previewCard--steps">
-            <h3>How students use it</h3>
-            <ol className="stepList">
-              <li>
-                <strong>Pick a topic and subtopic.</strong>
-                <span>
-                  Drill a single module instead of revising everything at once.
-                </span>
-              </li>
-              <li>
-                <strong>Answer exam-style questions.</strong>
-                <span>
-                  Work through structured questions and longer 6-mark responses.
-                </span>
-              </li>
-              <li>
-                <strong>Review feedback immediately.</strong>
-                <span>
-                  See score, missing points, and where your explanation needs
-                  more precision.
-                </span>
-              </li>
-            </ol>
-          </article>
+        <div className="previewGrid row g-4 align-items-stretch">
+          <div className="col-12 col-lg-6">
+            <article className="previewCard previewCard--steps h-100">
+              <h3>How students use it</h3>
+              <ol className="stepList">
+                <li>
+                  <strong>1. Choose a topic</strong>
+                  <span>
+                    Focus on the exact module or subtopic you want to improve.
+                  </span>
+                </li>
+                <li>
+                  <strong>2. Answer exam-style questions</strong>
+                  <span>
+                    Practise structured responses and longer written answers in
+                    the format that wins marks.
+                  </span>
+                </li>
+                <li>
+                  <strong>3. Get instant marks and feedback</strong>
+                  <span>
+                    See your score, the missing points, and what to improve next.
+                  </span>
+                </li>
+                <li>
+                  <strong>4. Track progress and improvements</strong>
+                  <span>
+                    Revisit past sessions and see how your scores improve over time.
+                  </span>
+                </li>
+              </ol>
+            </article>
+          </div>
 
-          <article className="previewCard previewCard--plans">
-            <h3>Plans in practice</h3>
-            <div className="planMiniGrid">
-              <div className="planMiniCard">
-                <span className="planMiniCard__label">Free plan</span>
-                <strong>1 generated question per day</strong>
-                <p>
-                  Enough to test the workflow and practise one focused response
-                  daily.
-                </p>
-              </div>
-              <div className="planMiniCard planMiniCard--accent">
-                <span className="planMiniCard__label">Paid plan</span>
-                <strong>£1.99 for unlimited revision access</strong>
-                <p>
-                  Upgrade for unlimited questions, feedback after submitting
-                  answers, and full review of completed work in your results
-                  section.
-                </p>
-                <ul className="planMiniCard__benefits">
-                  <li>Unlimited questions generated</li>
-                  <li>Feedback given when you submit questions</li>
-                  <li>Review results any time in the results section</li>
-                </ul>
-              </div>
-            </div>
-          </article>
+          <div className="col-12 col-lg-6">
+            <article className="previewCard previewCard--feedback h-100">
+              <h3>Get AI feedback like a real examiner</h3>
+              <p className="previewCard__intro">
+                The feedback is designed to show how your answer performed
+                against the mark scheme, not just whether it was broadly right.
+              </p>
+              <ul className="planMiniCard__benefits homeFeatureList">
+                <li>See exactly where you gained marks</li>
+                <li>Understand what you missed</li>
+                <li>Improve your exam technique</li>
+              </ul>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -251,72 +208,40 @@ export default function Home() {
         aria-labelledby="features-title"
       >
         <div className="sectionHeading sectionHeading--centered">
-          <p className="sectionEyebrow">Why it feels useful fast</p>
-          <h2 id="features-title">
-            Designed around exam outcomes, not generic study tools
-          </h2>
+          <p className="sectionEyebrow">Why students use it</p>
+          <h2 id="features-title">Built to improve exam performance, not just generate questions</h2>
         </div>
 
-        <div className="featureGrid">
-          <article className="featureCard">
-            <div className="featureIcon">🧠</div>
-            <h3>Topic-specific drilling</h3>
-            <p>
-              Move straight into the module or subtopic you need, instead of
-              wading through unrelated practice.
-            </p>
-          </article>
+        <div className="featureGrid row g-4">
+          <div className="col-12 col-md-4">
+            <article className="featureCard h-100">
+              <h3>Target weak topics</h3>
+              <p>
+                Revise the exact area that is costing you marks instead of
+                working through generic quizzes.
+              </p>
+            </article>
+          </div>
 
-          <article className="featureCard">
-            <div className="featureIcon">✍</div>
-            <h3>Exam-style writing practice</h3>
-            <p>
-              Train the skill that matters most: turning subject knowledge into
-              marks on longer written responses.
-            </p>
-          </article>
+          <div className="col-12 col-md-4">
+            <article className="featureCard h-100">
+              <h3>Practise exam writing</h3>
+              <p>
+                Build confidence with structured questions and longer responses
+                that reflect real exam pressure.
+              </p>
+            </article>
+          </div>
 
-          <article className="featureCard">
-            <div className="featureIcon">📊</div>
-            <h3>Saved sessions and review</h3>
-            <p>
-              Revisit what you answered, what you scored, and which topics keep
-              costing you marks.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <section
-        className="audienceV2 container"
-        aria-labelledby="audience-title"
-      >
-        <div className="sectionHeading">
-          <p className="sectionEyebrow">Who this is for</p>
-          <h2 id="audience-title">Built for students revising with purpose</h2>
-        </div>
-        <div className="audienceGrid">
-          <article className="audienceCard">
-            <h3>OCR Biology students</h3>
-            <p>
-              Practise structured responses against the topics you are actually
-              tested on.
-            </p>
-          </article>
-          <article className="audienceCard">
-            <h3>AQA science revision</h3>
-            <p>
-              Use the same workflow for chemistry and physics as coverage
-              continues to expand.
-            </p>
-          </article>
-          <article className="audienceCard">
-            <h3>Students chasing marks</h3>
-            <p>
-              Focus on what gains marks fastest: better phrasing, better
-              structure, better recall.
-            </p>
-          </article>
+          <div className="col-12 col-md-4">
+            <article className="featureCard h-100">
+              <h3>Track progress clearly</h3>
+              <p>
+                Review saved sessions, spot patterns in your scores, and keep
+                your revision focused on improvement.
+              </p>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -324,14 +249,12 @@ export default function Home() {
         className="specsTeaserV2 container"
         aria-labelledby="spec-teaser-title"
       >
-        <div className="sectionHeading">
+        <div className="sectionHeading sectionHeading--centered">
           <p className="sectionEyebrow">Specification links</p>
-          <h2 id="spec-teaser-title">
-            Revision should still map back to the official course content
-          </h2>
+          <h2 id="spec-teaser-title">Keep your practice tied to the course content</h2>
           <p>
-            The specification links now live on a dedicated page, grouped more
-            clearly by qualification and exam board.
+            Use the specification page to align your revision with the topics
+            and exam board content you need to cover.
           </p>
         </div>
         <div className="specsTeaserCard">
@@ -339,8 +262,7 @@ export default function Home() {
             <strong>GCSE and A-Level Biology specifications</strong>
             <p>
               Browse OCR Gateway combined and separate science, AQA combined and
-              separate science, plus OCR and AQA A-Level Biology from one clean
-              reference page.
+              separate science, plus OCR and AQA A-Level Biology in one place.
             </p>
           </div>
           <Link to="/specification" className="btn btn--primary">
@@ -355,23 +277,23 @@ export default function Home() {
             <p className="sectionEyebrow">Start revising smarter</p>
             <h2>
               {needsEmailVerification
-                ? "Verify your email first, then upgrade when you are ready for unlimited access."
+                ? "Verify your email, then start turning practice into better exam answers."
                 : canUpgrade
-                  ? "Use one question to diagnose a weak spot, or upgrade for £1.99 to unlock the full revision workflow."
+                  ? "Start with focused practice, then upgrade when you want the full revision workflow."
                   : hasUnlimitedAccess
                     ? "Unlimited access is already active on this account."
-                    : "Use one question to diagnose a weak spot before you upgrade."}
+                    : "Start practising now and build better exam performance one topic at a time."}
             </h2>
             <p className="closingCta__copy">
-              Paid access includes unlimited generated questions, feedback on
-              submitted answers, and full results review for completed work.
+              Practise exam-style questions, review feedback quickly, and use
+              saved progress to keep revision focused on what improves marks.
             </p>
           </div>
           <div className="closingCta__actions">
             {user ? (
               <>
                 <Link to="/question-generator" className="btn btn--primary">
-                  Go to Generator
+                  Start Practising
                 </Link>
                 {needsEmailVerification ? (
                   <Link to="/account" className="btn btn--ghost">
@@ -388,7 +310,7 @@ export default function Home() {
             ) : (
               <>
                 <Link to="/register" className="btn btn--primary">
-                  Create Free Account
+                  Start Practising
                 </Link>
                 <Link to="/login" className="btn btn--ghost">
                   Log In

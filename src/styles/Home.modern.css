@@ -137,11 +137,11 @@ body {
   margin: 20px 0 0;
 }
 
-.ctaRow {
-  display: flex;
-  gap: 0.9rem;
-  flex-wrap: wrap;
-  margin: 28px 0 22px;
+.heroV2__ctaBlock {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  margin: 30px 0 24px;
 }
 
 .btn {
@@ -185,6 +185,24 @@ body {
   background: rgba(255, 255, 255, 0.1);
 }
 
+.btn--heroPrimary {
+  min-width: 220px;
+  min-height: 54px;
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow: 0 16px 36px rgba(73, 209, 125, 0.22);
+}
+
+.heroV2__secondaryLink {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.heroV2__secondaryLink:hover {
+  color: var(--brand);
+}
+
 .planStatusPill {
   display: inline-flex;
   align-items: center;
@@ -199,6 +217,22 @@ body {
 
 .home-verification-notice {
   margin: 0 0 22px;
+}
+
+.heroV2__trustRow {
+  margin-top: 10px;
+}
+
+.heroV2__trustItem {
+  display: flex;
+  align-items: center;
+  min-height: 54px;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--outline);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-weight: 600;
 }
 
 .heroV2__flow {
@@ -401,9 +435,7 @@ body {
 }
 
 .previewGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  gap: 18px;
+  display: flex;
 }
 
 .previewCard,
@@ -423,6 +455,15 @@ body {
 
 .previewCard--plans {
   background: linear-gradient(180deg, rgba(73, 209, 125, 0.08), var(--card));
+}
+
+.previewCard--feedback {
+  background: linear-gradient(180deg, rgba(73, 209, 125, 0.1), var(--card));
+}
+
+.previewCard__intro {
+  margin: 0;
+  color: var(--muted);
 }
 
 .previewCard h3,
@@ -491,19 +532,16 @@ body {
   color: var(--muted);
 }
 
+.homeFeatureList {
+  margin-top: 18px;
+}
+
 .planMiniCard__benefits li + li {
   margin-top: 8px;
 }
 
 .featureGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.2rem;
-}
-
-.featureIcon {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
+  margin-top: 0;
 }
 
 .audienceGrid {
@@ -707,6 +745,11 @@ body {
     font-size: 1rem;
   }
 
+  .btn--heroPrimary {
+    min-width: 0;
+    width: 100%;
+  }
+
   .heroV2__proof {
     grid-template-columns: 1fr;
   }
@@ -752,17 +795,26 @@ body {
     padding: 34px 0 10px;
   }
 
-  .ctaRow,
+  .heroV2__ctaBlock,
   .heroV2__flow,
   .closingCta__actions,
   .specsTeaserCard {
     flex-direction: column;
   }
 
-  .ctaRow .btn,
+  .heroV2__ctaBlock .btn,
   .closingCta__actions .btn,
   .specsTeaserCard .btn {
     width: 100%;
+    justify-content: center;
+  }
+
+  .heroV2__ctaBlock {
+    justify-items: stretch;
+  }
+
+  .heroV2__secondaryLink {
+    display: inline-flex;
     justify-content: center;
   }
 
