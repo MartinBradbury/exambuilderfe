@@ -1408,7 +1408,7 @@ export default function ResultsHistory({
                                 className="account-chartCard__chartCanvas account-chartCard__chartCanvas--bar"
                                 style={{
                                   minWidth: "100%",
-                                  height: `${isMobileViewport ? 440 : 540}px`,
+                                  height: `${isMobileViewport ? 360 : 440}px`,
                                 }}
                               >
                                 <ResponsiveContainer width="100%" height="100%">
@@ -1417,7 +1417,7 @@ export default function ResultsHistory({
                                     margin={{
                                       top: 8,
                                       right: 8,
-                                      bottom: isMobileViewport ? 96 : 120,
+                                      bottom: isMobileViewport ? 72 : 88,
                                       left: 8,
                                     }}
                                   >
@@ -1438,8 +1438,8 @@ export default function ResultsHistory({
                                       interval={0}
                                       angle={-90}
                                       textAnchor="end"
-                                      tickMargin={isMobileViewport ? 8 : 10}
-                                      height={isMobileViewport ? 92 : 116}
+                                      tickMargin={isMobileViewport ? 6 : 8}
+                                      height={isMobileViewport ? 68 : 84}
                                     />
                                     <YAxis
                                       domain={[0, 100]}

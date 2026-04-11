@@ -575,7 +575,7 @@
 }
 
 .account-chartCard__body--barChart {
-  min-height: 640px;
+  min-height: 500px;
   margin-bottom: 0px;
 }
 
@@ -596,7 +596,7 @@
 }
 
 .account-chartCard__chartCanvas--bar {
-  height: 540px;
+  height: 440px;
 }
 
 .account-chartTooltip {
@@ -862,7 +862,7 @@
   }
 
   .account-chartCard__body--barChart {
-    min-height: 440px;
+    min-height: 360px;
     min-height: 0;
   }
 
@@ -885,7 +885,7 @@
   }
 
   .account-chartCard__chartCanvas--bar {
-    height: 440px;
+    height: 360px;
   }
 
   .account-chartCard--bar {
