@@ -311,6 +311,77 @@
   gap: 16px;
 }
 
+.account-summaryCard {
+  display: grid;
+  gap: 16px;
+}
+
+.account-summaryTabs {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.account-summaryTab {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease;
+}
+
+.account-summaryTab--active {
+  background: linear-gradient(
+    135deg,
+    rgba(73, 209, 125, 0.22),
+    rgba(111, 211, 255, 0.18)
+  );
+  color: var(--text);
+}
+
+.account-summaryViewport {
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.account-summaryTrack {
+  display: flex;
+  transition: transform 220ms ease;
+  will-change: transform;
+}
+
+.account-summarySlide {
+  display: grid;
+  flex: 0 0 100%;
+  gap: 14px;
+  min-width: 0;
+  padding-right: 2px;
+}
+
+.account-summarySlideHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.account-summarySlideHeader strong {
+  font-size: 1rem;
+  color: var(--text);
+}
+
 .account-summaryMetrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -342,6 +413,32 @@
   align-items: center;
 }
 
+.account-summaryEmpty--panel {
+  min-height: 172px;
+  padding: 18px;
+  border: 1px dashed var(--outline);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.account-summaryDots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.account-summaryDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.account-summaryDot--active {
+  width: 20px;
+  background: var(--brand);
+}
+
 .account-summaryFooter {
   margin-top: auto;
 }
@@ -349,6 +446,11 @@
 .account-summaryCta {
   color: var(--brand);
   font-weight: 800;
+  text-decoration: none;
+}
+
+.account-summaryCta:hover {
+  text-decoration: underline;
 }
 
 .account-trackingMeta {
@@ -518,6 +620,16 @@
 .account-results__overviewControlLabel {
   font-weight: 700;
   font-size: 0.94rem;
+
+  @media (max-width: 640px) {
+    .account-summaryTabs {
+      width: 100%;
+    }
+
+    .account-summaryMetrics {
+      grid-template-columns: 1fr;
+    }
+  }
 }
 
 .account-results__boardSwitch {

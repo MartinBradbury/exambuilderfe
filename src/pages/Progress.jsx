@@ -1,11 +1,13 @@
 import { useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import ResultsHistory from "../components/ResultsHistory";
 import { UserContext } from "../context/UserContextObject";
 import "../styles/Account.modern.css";
 
 export default function Progress() {
   const { hasAnyPaidAccess } = useContext(UserContext) || {};
+  const location = useLocation();
+  const initialOverviewLevel = location.state?.initialOverviewLevel || null;
 
   const handleScrollToTop = () => {
     if (typeof window === "undefined") {
@@ -33,6 +35,7 @@ export default function Progress() {
           showHeader={false}
           analyticsLocked={!hasAnyPaidAccess}
           upgradePath="/account"
+          initialOverviewLevel={initialOverviewLevel}
           afterOverviewAction={
             <div className="account-actions account-actions--progressInline">
               <Link to="/question-generator" className="btn btn--primary">

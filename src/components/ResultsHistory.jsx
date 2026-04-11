@@ -504,6 +504,7 @@ export default function ResultsHistory({
   showHeader = true,
   analyticsLocked = false,
   upgradePath = "/account",
+  initialOverviewLevel = null,
   afterOverviewAction = null,
 }) {
   const { user, refreshCurrentUser, hasAccessToQualification } =
@@ -791,6 +792,17 @@ export default function ResultsHistory({
       return;
     }
 
+    if (
+      initialOverviewLevel &&
+      overviewSections.some(
+        (section) => section.levelKey === initialOverviewLevel,
+      )
+    ) {
+      setSelectedOverviewLevel(initialOverviewLevel);
+      setHasAutoSelectedOverviewLevel(true);
+      return;
+    }
+
     const preferredLevelKey = accessibleOverviewLevelKeys.includes(
       latestSessionLevelKey,
     )
@@ -810,6 +822,7 @@ export default function ResultsHistory({
   }, [
     accessibleOverviewLevelKeys,
     hasAutoSelectedOverviewLevel,
+    initialOverviewLevel,
     latestSessionLevelKey,
     overviewSections,
   ]);

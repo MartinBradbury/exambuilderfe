@@ -14,6 +14,7 @@ import {
 } from "../lib/access";
 import {
   buildPerformanceSummary,
+  getSessionLevel,
   isSessionOnOrAfterDate,
 } from "../lib/performance";
 import "../styles/Account.modern.css";
@@ -37,6 +38,38 @@ const formatTrackingDate = (value) => {
 
 const formatMetricValue = (value, suffix = "") =>
   value == null ? "--" : `${value}${suffix}`;
+
+const getSessionQualification = (session) => {
+  const normalizedLevel = String(getSessionLevel(session) || "")
+    .trim()
+    .toLowerCase();
+
+  if (normalizedLevel.includes("gcse")) {
+    return GCSE_QUALIFICATION;
+  }
+
+  if (
+    normalizedLevel.includes("a level") ||
+    normalizedLevel.includes("alevel") ||
+    normalizedLevel.includes("as and a level")
+  ) {
+    return ALEVEL_QUALIFICATION;
+  }
+
+  return null;
+};
+
+const getOverviewLevelForQualification = (qualification) => {
+  if (qualification === GCSE_QUALIFICATION) {
+    return "gcse";
+  }
+
+  if (qualification === ALEVEL_QUALIFICATION) {
+    return "a-level";
+  }
+
+  return null;
+};
 
 const SectionTitle = ({ title }) => (
   <div className="account-sectionTitle">
@@ -78,6 +111,10 @@ export default function Account() {
     useState(false);
   const [isStartingNewTrackingPeriod, setIsStartingNewTrackingPeriod] =
     useState(false);
+  const [activeSummaryQualification, setActiveSummaryQualification] = useState(
+    GCSE_QUALIFICATION,
+  );
+  const summaryTouchStartXRef = useRef(null);
 
   const isLoggedIn = Boolean(user);
   const planLabel = useMemo(() => getAccessPlanLabel(user), [user]);
@@ -275,31 +312,130 @@ export default function Account() {
     [trackedPerformanceSessions],
   );
 
-  const summaryItems = useMemo(
-    () => [
-      {
-        label: "Average score",
-        value: formatMetricValue(performanceSummary.averageScore, "%"),
+  const performanceSummaryByQualification = useMemo(() => {
+    const groupedSessions = trackedPerformanceSessions.reduce(
+      (groups, session) => {
+        const qualification = getSessionQualification(session);
+
+        if (!qualification) {
+          return groups;
+        }
+
+        groups[qualification].push(session);
+        return groups;
       },
       {
-        label: "Questions answered",
-        value: formatMetricValue(performanceSummary.totalQuestionsAnswered),
+        [GCSE_QUALIFICATION]: [],
+        [ALEVEL_QUALIFICATION]: [],
       },
-      {
-        label: "Strongest topic",
-        value: performanceSummary.strongestTopic || "--",
-      },
-      {
-        label: "Weakest topic",
-        value: performanceSummary.weakestTopic || "--",
-      },
-      {
-        label: "Last score",
-        value: formatMetricValue(performanceSummary.lastScore, "%"),
-      },
-    ],
-    [performanceSummary],
+    );
+
+    return {
+      [GCSE_QUALIFICATION]: buildPerformanceSummary(
+        groupedSessions[GCSE_QUALIFICATION],
+      ),
+      [ALEVEL_QUALIFICATION]: buildPerformanceSummary(
+        groupedSessions[ALEVEL_QUALIFICATION],
+      ),
+    };
+  }, [trackedPerformanceSessions]);
+
+  const summaryCards = useMemo(
+    () =>
+      [GCSE_QUALIFICATION, ALEVEL_QUALIFICATION].map((qualification) => {
+        const summary = performanceSummaryByQualification[qualification];
+
+        return {
+          qualification,
+          title: getQualificationLabel(qualification),
+          summary,
+          items: [
+            {
+              label: "Average score",
+              value: formatMetricValue(summary.averageScore, "%"),
+            },
+            {
+              label: "Questions answered",
+              value: formatMetricValue(summary.totalQuestionsAnswered),
+            },
+            {
+              label: "Strongest topic",
+              value: summary.strongestTopic || "--",
+            },
+            {
+              label: "Weakest topic",
+              value: summary.weakestTopic || "--",
+            },
+            {
+              label: "Last score",
+              value: formatMetricValue(summary.lastScore, "%"),
+            },
+          ],
+        };
+      }),
+    [performanceSummaryByQualification],
   );
+
+  useEffect(() => {
+    const currentCard = summaryCards.find(
+      (card) => card.qualification === activeSummaryQualification,
+    );
+
+    if (currentCard?.summary.trackedTestsCount > 0) {
+      return;
+    }
+
+    const nextCardWithData = summaryCards.find(
+      (card) => card.summary.trackedTestsCount > 0,
+    );
+
+    if (nextCardWithData) {
+      setActiveSummaryQualification(nextCardWithData.qualification);
+    }
+  }, [activeSummaryQualification, summaryCards]);
+
+  const showSummaryQualification = (qualification) => {
+    setActiveSummaryQualification(qualification);
+  };
+
+  const activeSummaryIndex = Math.max(
+    0,
+    summaryCards.findIndex(
+      (card) => card.qualification === activeSummaryQualification,
+    ),
+  );
+
+  const handleSummaryTouchStart = (event) => {
+    if (!event.touches?.length) {
+      return;
+    }
+
+    summaryTouchStartXRef.current = event.touches[0].clientX;
+  };
+
+  const handleSummaryTouchEnd = (event) => {
+    const touchStartX = summaryTouchStartXRef.current;
+    summaryTouchStartXRef.current = null;
+
+    if (touchStartX == null || !event.changedTouches?.length) {
+      return;
+    }
+
+    const touchEndX = event.changedTouches[0].clientX;
+    const deltaX = touchEndX - touchStartX;
+    const swipeThreshold = 40;
+
+    if (Math.abs(deltaX) < swipeThreshold) {
+      return;
+    }
+
+    const nextIndex =
+      deltaX < 0
+        ? Math.min(summaryCards.length - 1, activeSummaryIndex + 1)
+        : Math.max(0, activeSummaryIndex - 1);
+
+    showSummaryQualification(summaryCards[nextIndex].qualification);
+  };
 
   const handleRefreshStatus = async () => {
     if (!refreshCurrentUser) {
@@ -555,11 +691,34 @@ export default function Account() {
           </div>
 
           <div className="col-12 col-lg-6">
-            <Link
-              to="/progress"
-              className="account-card account-card--interactive account-summaryLink h-100"
-            >
+            <article className="account-card account-summaryCard h-100">
               <SectionTitle title="Performance Summary" />
+
+              <div
+                className="account-summaryTabs"
+                role="tablist"
+                aria-label="Performance summary by qualification"
+              >
+                {summaryCards.map((card) => {
+                  const isActive =
+                    card.qualification === activeSummaryQualification;
+
+                  return (
+                    <button
+                      key={card.qualification}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      className={`account-summaryTab${
+                        isActive ? " account-summaryTab--active" : ""
+                      }`}
+                      onClick={() => showSummaryQualification(card.qualification)}
+                    >
+                      {card.title}
+                    </button>
+                  );
+                })}
+              </div>
 
               {isLoadingPerformance ? (
                 <p className="account-muted">Loading summary…</p>
@@ -570,22 +729,85 @@ export default function Account() {
                   Complete a test to start building your summary.
                 </p>
               ) : (
-                <div className="account-summaryMetrics">
-                  {summaryItems.map((item) => (
-                    <div key={item.label} className="account-summaryMetric">
-                      <span>{item.label}</span>
-                      <strong>{item.value}</strong>
+                <>
+                  <div
+                    className="account-summaryViewport"
+                    onTouchStart={handleSummaryTouchStart}
+                    onTouchEnd={handleSummaryTouchEnd}
+                  >
+                    <div
+                      className="account-summaryTrack"
+                      style={{
+                        transform: `translateX(-${activeSummaryIndex * 100}%)`,
+                      }}
+                    >
+                      {summaryCards.map((card) => (
+                        <section
+                          key={card.qualification}
+                          className="account-summarySlide"
+                          aria-label={`${card.title} summary`}
+                        >
+                          <div className="account-summarySlideHeader">
+                            <div>
+                              <p className="account-muted">{card.title}</p>
+                              <strong>
+                                {card.summary.trackedTestsCount} tracked test
+                                {card.summary.trackedTestsCount === 1 ? "" : "s"}
+                              </strong>
+                            </div>
+                          </div>
+
+                          {card.summary.trackedTestsCount === 0 ? (
+                            <p className="account-muted account-summaryEmpty account-summaryEmpty--panel">
+                              No tracked {card.title.toLowerCase()} tests yet.
+                            </p>
+                          ) : (
+                            <div className="account-summaryMetrics">
+                              {card.items.map((item) => (
+                                <div
+                                  key={`${card.qualification}-${item.label}`}
+                                  className="account-summaryMetric"
+                                >
+                                  <span>{item.label}</span>
+                                  <strong>{item.value}</strong>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </section>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+
+                  <div className="account-summaryDots" aria-hidden="true">
+                    {summaryCards.map((card) => (
+                      <span
+                        key={`${card.qualification}-dot`}
+                        className={`account-summaryDot${
+                          activeSummaryQualification === card.qualification
+                            ? " account-summaryDot--active"
+                            : ""
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
               )}
 
               <div className="account-summaryFooter">
-                <span className="account-summaryCta">
+                <Link
+                  to="/progress"
+                  state={{
+                    initialOverviewLevel: getOverviewLevelForQualification(
+                      activeSummaryQualification,
+                    ),
+                  }}
+                  className="account-summaryCta"
+                >
                   View detailed progress -&gt;
-                </span>
+                </Link>
               </div>
-            </Link>
+            </article>
           </div>
 
           <div className="col-12 col-lg-6">
@@ -632,7 +854,11 @@ export default function Account() {
               {!hasFullAccess ? (
                 <>
                   <p className="account-price">Per qualification: £1.99</p>
-                  <div className="account-upgradeOptions" role="radiogroup" aria-label="Select qualification to unlock">
+                  <div
+                    className="account-upgradeOptions"
+                    role="radiogroup"
+                    aria-label="Select qualification to unlock"
+                  >
                     {missingUpgradeQualifications.map((option) => (
                       <label
                         key={option}
@@ -655,7 +881,8 @@ export default function Account() {
                         <span>
                           <strong>{getQualificationLabel(option)}</strong>
                           <small>
-                            Unlock unlimited question generation for this qualification.
+                            Unlock unlimited question generation for this
+                            qualification.
                           </small>
                         </span>
                       </label>
