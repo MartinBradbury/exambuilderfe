@@ -21,7 +21,7 @@ export default function Home() {
     {
       key: "question",
       tag: "Live preview",
-      meta: "OCR Biology • 6 marks",
+      meta: "OCR Biology • 4 marks",
       title: "Question preview",
       content: (
         <>
