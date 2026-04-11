@@ -1,7 +1,6 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import EmailVerificationNotice from "../components/EmailVerificationNotice";
-import ResultsHistory from "../components/ResultsHistory";
 import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
 import "../styles/Account.modern.css";
@@ -413,7 +412,7 @@ export default function Account() {
                 <ul className="account-benefits">
                   <li>Unlimited questions generated</li>
                   <li>Feedback given when you submit questions</li>
-                  <li>Review results any time in the results section</li>
+                  <li>Review your progress any time in the progress page</li>
                 </ul>
                 <label className="account-checkbox">
                   <input
@@ -471,9 +470,24 @@ export default function Account() {
               </p>
             )}
           </article>
-        </section>
 
-        <ResultsHistory />
+          <article className="account-card">
+            <h2>Progress</h2>
+            <p className="account-muted">
+              View saved sessions, compare performance trends, and drill into
+              module and subtopic data from one dedicated progress page.
+            </p>
+
+            <div className="account-actions">
+              <Link to="/progress" className="btn btn--primary">
+                Open progress page
+              </Link>
+              <Link to="/question-generator" className="btn btn--ghost">
+                Start a new test
+              </Link>
+            </div>
+          </article>
+        </section>
       </div>
     </div>
   );

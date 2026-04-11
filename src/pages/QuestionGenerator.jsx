@@ -636,7 +636,7 @@ export default function QuestionGenerator() {
 
       setAllowNavigation(true);
       setHasSubmitted(true);
-      navigate("/account#results");
+      navigate("/progress");
     } catch (err) {
       console.error(err);
       alert("Failed to save session.");
@@ -723,8 +723,8 @@ export default function QuestionGenerator() {
             <Link to="/account" className="btn btn--primary">
               Upgrade now
             </Link>
-            <Link to="/account#results" className="btn btn--ghost">
-              View saved results
+            <Link to="/progress" className="btn btn--ghost">
+              View progress
             </Link>
             <Link to="/" className="btn btn--subtle">
               Back to home

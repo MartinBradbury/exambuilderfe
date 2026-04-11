@@ -57,12 +57,12 @@ export default function Navbar() {
                 Generator
               </NavLink>
               <NavLink
-                to="/account#results"
+                to="/progress"
                 className={({ isActive }) =>
                   isActive ? "nav-link is-active" : "nav-link"
                 }
               >
-                Results
+                Progress
               </NavLink>
               <NavLink
                 to="/account"
@@ -142,11 +142,11 @@ export default function Navbar() {
                 Generator
               </NavLink>
               <NavLink
-                to="/account#results"
+                to="/progress"
                 className="mobile-link"
                 onClick={closeMenu}
               >
-                Results
+                Progress
               </NavLink>
               <NavLink
                 to="/account"

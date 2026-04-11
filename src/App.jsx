@@ -18,6 +18,7 @@ import RefundPolicy from "./pages/RefundPolicy";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
 import Specification from "./pages/Specification";
+import Progress from "./pages/Progress";
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
             <Route path="paid-plan-terms" element={<PaidPlanTerms />} />
             <Route path="refund-policy" element={<RefundPolicy />} />
             <Route path="account" element={<Account />} />
+            <Route path="progress" element={<Progress />} />
             <Route path="question-generator" element={<QuestionGenerator />} />
             <Route path="my-results" element={<ViewResults />} />
           </Route>
