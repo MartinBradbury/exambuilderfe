@@ -61,6 +61,8 @@ const formatLevelHeading = (levelKey) => {
   return "Other";
 };
 
+const OVERVIEW_LEVEL_ORDER = ["gcse", "a-level"];
+
 const truncateChartLabel = (value, maxLength = 24) => {
   const label = String(value || "").trim();
 
@@ -292,6 +294,7 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
   const [sortOrder, setSortOrder] = useState("newest");
   const [examBoardFilter, setExamBoardFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedOverviewLevel, setSelectedOverviewLevel] = useState("gcse");
 
   useEffect(() => {
     let isActive = true;
@@ -425,17 +428,47 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
       return groups;
     }, {});
 
-    return Object.entries(groupedSessions)
-      .map(([levelKey, levelSessions]) => ({
+    return OVERVIEW_LEVEL_ORDER.map((levelKey) => {
+      const levelSessions = groupedSessions[levelKey];
+
+      if (!levelSessions?.length) {
+        return null;
+      }
+
+      return {
         levelKey,
         title: formatLevelHeading(levelKey),
         sessions: levelSessions,
         marksSummaryData: calculateMarksSummary(levelSessions),
         scoreTrendData: buildLineChartData(levelSessions),
         averageTopicData: groupAverageScoreByTopic(levelSessions),
-      }))
-      .sort((left, right) => left.title.localeCompare(right.title));
+      };
+    }).filter(Boolean);
   }, [sessionCards]);
+
+  const selectedOverviewSection = useMemo(
+    () =>
+      overviewSections.find(
+        (section) => section.levelKey === selectedOverviewLevel,
+      ) ||
+      overviewSections[0] ||
+      null,
+    [overviewSections, selectedOverviewLevel],
+  );
+
+  useEffect(() => {
+    if (!overviewSections.length) {
+      return;
+    }
+
+    const hasSelectedSection = overviewSections.some(
+      (section) => section.levelKey === selectedOverviewLevel,
+    );
+
+    if (!hasSelectedSection) {
+      setSelectedOverviewLevel(overviewSections[0].levelKey);
+    }
+  }, [overviewSections, selectedOverviewLevel]);
 
   useEffect(() => {
     if (sessionCards.length === 0) {
@@ -553,7 +586,6 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
 
       {!loading && !error && sessionCards.length > 0 && (
         <>
-          {/* Performance Overview: insert this new analytics section above the existing results card list. */}
           <section className="account-results__overview">
             <div className="account-results__overviewHeader">
               <div>
@@ -564,18 +596,38 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
                   cards below.
                 </p>
               </div>
+
+              {overviewSections.length > 0 && (
+                <div className="account-results__overviewControl">
+                  <label htmlFor="results-overview-level">Qualification</label>
+                  <select
+                    id="results-overview-level"
+                    className="account-results__input"
+                    value={selectedOverviewSection?.levelKey || ""}
+                    onChange={(event) =>
+                      setSelectedOverviewLevel(event.target.value)
+                    }
+                  >
+                    {overviewSections.map((section) => (
+                      <option key={section.levelKey} value={section.levelKey}>
+                        {section.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
-            {overviewSections.map((section) => (
+            {selectedOverviewSection ? (
               <section
-                key={section.levelKey}
+                key={selectedOverviewSection.levelKey}
                 className="account-results__overviewGroup"
               >
                 <div className="account-results__overviewGroupHeader">
-                  <h4>{section.title} charts</h4>
+                  <h4>{selectedOverviewSection.title} charts</h4>
                   <p className="account-muted">
-                    Only {section.title.toLowerCase()} sessions are included in
-                    these charts.
+                    Only {selectedOverviewSection.title.toLowerCase()} sessions
+                    are included in these charts.
                   </p>
                 </div>
 
@@ -586,23 +638,26 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
                         <h4>Marks gained vs missed</h4>
                         <p className="account-muted">
                           Total marks across visible{" "}
-                          {section.title.toLowerCase()} sessions.
+                          {selectedOverviewSection.title.toLowerCase()}{" "}
+                          sessions.
                         </p>
                       </div>
                       <div className="account-chartCard__body account-chartCard__body--donut">
                         <ResponsiveContainer width="100%" height={260}>
                           <PieChart>
                             <Pie
-                              data={section.marksSummaryData}
+                              data={selectedOverviewSection.marksSummaryData}
                               dataKey="value"
                               nameKey="name"
                               innerRadius={72}
                               outerRadius={102}
                               paddingAngle={4}
                             >
-                              {section.marksSummaryData.map((entry) => (
-                                <Cell key={entry.name} fill={entry.fill} />
-                              ))}
+                              {selectedOverviewSection.marksSummaryData.map(
+                                (entry) => (
+                                  <Cell key={entry.name} fill={entry.fill} />
+                                ),
+                              )}
                             </Pie>
                             <Tooltip content={renderChartTooltip} />
                             <Legend verticalAlign="bottom" />
@@ -617,13 +672,16 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
                       <div className="account-chartCard__header">
                         <h4>Percentage score over time</h4>
                         <p className="account-muted">
-                          See whether your {section.title.toLowerCase()} scores
+                          See whether your{" "}
+                          {selectedOverviewSection.title.toLowerCase()} scores
                           are improving over time.
                         </p>
                       </div>
                       <div className="account-chartCard__body">
                         <ResponsiveContainer width="100%" height={260}>
-                          <LineChart data={section.scoreTrendData}>
+                          <LineChart
+                            data={selectedOverviewSection.scoreTrendData}
+                          >
                             <CartesianGrid
                               stroke={CHART_COLORS.grid}
                               vertical={false}
@@ -663,13 +721,14 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
                         <h4>Average score by topic</h4>
                         <p className="account-muted">
                           Compare topic performance within your{" "}
-                          {section.title.toLowerCase()} attempts.
+                          {selectedOverviewSection.title.toLowerCase()}{" "}
+                          attempts.
                         </p>
                       </div>
                       <div className="account-chartCard__body">
                         <ResponsiveContainer width="100%" height={340}>
                           <BarChart
-                            data={section.averageTopicData}
+                            data={selectedOverviewSection.averageTopicData}
                             layout="vertical"
                             margin={{ top: 8, right: 8, bottom: 8, left: 24 }}
                           >
@@ -703,10 +762,16 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
                   </div>
                 </div>
               </section>
-            ))}
+            ) : (
+              <article className="account-card">
+                <p className="account-muted">
+                  Performance charts are available when sessions are tagged as
+                  GCSE or A level.
+                </p>
+              </article>
+            )}
           </section>
 
-          {/* Existing results card list stays in place below the new overview section. */}
           <div className="account-results__list">
             {sessionCards.map((session) => (
               <article
