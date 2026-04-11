@@ -532,6 +532,8 @@ export default function ResultsHistory({
   const [loading, setLoading] = useState(true);
   const [performanceResetError, setPerformanceResetError] = useState("");
   const [isResettingPerformance, setIsResettingPerformance] = useState(false);
+  const [hasAutoSelectedOverviewLevel, setHasAutoSelectedOverviewLevel] =
+    useState(false);
   const [sortOrder, setSortOrder] = useState("newest");
   const [examBoardFilter, setExamBoardFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -736,6 +738,25 @@ export default function ResultsHistory({
     }).filter(Boolean);
   }, [sessionCards]);
 
+  const latestSessionLevelKey = useMemo(() => {
+    const latestSession = sessions.reduce((latest, session) => {
+      const sessionLevelKey = getLevelKey(getSessionLevel(session));
+
+      if (sessionLevelKey === "other") {
+        return latest;
+      }
+
+      const latestTime = latest
+        ? new Date(getSessionDateValue(latest)).getTime() || 0
+        : -Infinity;
+      const sessionTime = new Date(getSessionDateValue(session)).getTime() || 0;
+
+      return sessionTime > latestTime ? session : latest;
+    }, null);
+
+    return latestSession ? getLevelKey(getSessionLevel(latestSession)) : null;
+  }, [sessions]);
+
   const selectedOverviewSection = useMemo(
     () =>
       overviewSections.find(
@@ -745,6 +766,24 @@ export default function ResultsHistory({
       null,
     [overviewSections, selectedOverviewLevel],
   );
+
+  useEffect(() => {
+    if (hasAutoSelectedOverviewLevel || !overviewSections.length) {
+      return;
+    }
+
+    const preferredLevelKey = overviewSections.some(
+      (section) => section.levelKey === latestSessionLevelKey,
+    )
+      ? latestSessionLevelKey
+      : overviewSections[0].levelKey;
+
+    if (preferredLevelKey) {
+      setSelectedOverviewLevel(preferredLevelKey);
+    }
+
+    setHasAutoSelectedOverviewLevel(true);
+  }, [hasAutoSelectedOverviewLevel, latestSessionLevelKey, overviewSections]);
 
   useEffect(() => {
     if (!overviewSections.length) {
