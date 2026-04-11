@@ -71,6 +71,18 @@ const formatLevelHeading = (levelKey) => {
   return "Other";
 };
 
+const getQualificationForLevelKey = (levelKey) => {
+  if (levelKey === "gcse") {
+    return "GCSE_SCIENCE";
+  }
+
+  if (levelKey === "a-level") {
+    return "ALEVEL_BIOLOGY";
+  }
+
+  return null;
+};
+
 const OVERVIEW_LEVEL_ORDER = ["gcse", "a-level"];
 const OVERVIEW_EXAM_BOARD_ORDER = ["ocr", "aqa"];
 const OVERVIEW_ALL_TOPICS_VALUE = "__overall__";
@@ -494,7 +506,8 @@ export default function ResultsHistory({
   upgradePath = "/account",
   afterOverviewAction = null,
 }) {
-  const { user, refreshCurrentUser } = useContext(UserContext) || {};
+  const { user, refreshCurrentUser, hasAccessToQualification } =
+    useContext(UserContext) || {};
   const [sessions, setSessions] = useState([]);
   const [expandedSessionId, setExpandedSessionId] = useState(null);
   const [error, setError] = useState("");
@@ -738,23 +751,68 @@ export default function ResultsHistory({
     [overviewSections, selectedOverviewLevel],
   );
 
+  const accessibleOverviewLevelKeys = useMemo(
+    () =>
+      overviewSections
+        .filter((section) => {
+          const qualification = getQualificationForLevelKey(section.levelKey);
+
+          if (!qualification) {
+            return true;
+          }
+
+          return hasAccessToQualification?.(qualification) ?? false;
+        })
+        .map((section) => section.levelKey),
+    [hasAccessToQualification, overviewSections],
+  );
+
+  const selectedOverviewAnalyticsLocked = useMemo(() => {
+    if (analyticsLocked) {
+      return true;
+    }
+
+    const qualification = getQualificationForLevelKey(
+      selectedOverviewSection?.levelKey,
+    );
+
+    if (!qualification) {
+      return false;
+    }
+
+    return !(hasAccessToQualification?.(qualification) ?? false);
+  }, [analyticsLocked, hasAccessToQualification, selectedOverviewSection]);
+
+  const selectedOverviewLockedLabel =
+    selectedOverviewSection?.title || "this qualification";
+
   useEffect(() => {
     if (hasAutoSelectedOverviewLevel || !overviewSections.length) {
       return;
     }
 
-    const preferredLevelKey = overviewSections.some(
-      (section) => section.levelKey === latestSessionLevelKey,
+    const preferredLevelKey = accessibleOverviewLevelKeys.includes(
+      latestSessionLevelKey,
     )
       ? latestSessionLevelKey
-      : overviewSections[0].levelKey;
+      : accessibleOverviewLevelKeys[0] ||
+        (overviewSections.some(
+          (section) => section.levelKey === latestSessionLevelKey,
+        )
+          ? latestSessionLevelKey
+          : overviewSections[0].levelKey);
 
     if (preferredLevelKey) {
       setSelectedOverviewLevel(preferredLevelKey);
     }
 
     setHasAutoSelectedOverviewLevel(true);
-  }, [hasAutoSelectedOverviewLevel, latestSessionLevelKey, overviewSections]);
+  }, [
+    accessibleOverviewLevelKeys,
+    hasAutoSelectedOverviewLevel,
+    latestSessionLevelKey,
+    overviewSections,
+  ]);
 
   useEffect(() => {
     if (!overviewSections.length) {
@@ -1352,7 +1410,7 @@ export default function ResultsHistory({
 
             <div
               className={`account-results__overviewContent${
-                analyticsLocked
+                selectedOverviewAnalyticsLocked
                   ? " account-results__overviewContent--locked"
                   : ""
               }`}
@@ -1646,18 +1704,21 @@ export default function ResultsHistory({
                 </article>
               )}
 
-              {analyticsLocked && (
+              {selectedOverviewAnalyticsLocked && (
                 <button
                   type="button"
                   className="account-results__overviewLock"
                   onClick={handleLockedAnalyticsInteraction}
-                  aria-label="Upgrade to unlock progress analytics"
+                  aria-label={`Upgrade to unlock ${selectedOverviewLockedLabel} analytics`}
                 >
                   <span className="account-results__overviewLockCard">
-                    <strong>Upgrade to unlock progress analytics</strong>
+                    <strong>
+                      Upgrade to unlock {selectedOverviewLockedLabel} analytics
+                    </strong>
                     <span>
-                      Paid accounts can explore score trends, marks breakdowns,
-                      and module-level performance data.
+                      Buy {selectedOverviewLockedLabel} access to view score
+                      trends, marks breakdowns, and module-level performance
+                      data for this qualification.
                     </span>
                     <span className="account-results__overviewLockAction">
                       Go to upgrade
