@@ -17,6 +17,15 @@ import {
 } from "recharts";
 import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
+import {
+  calculatePercentageScore,
+  getSessionDateValue,
+  getSessionLevel,
+  getSessionMaxScore,
+  getSessionScore,
+  getSessionTopic,
+  isSessionOnOrAfterDate,
+} from "../lib/performance";
 
 const CHART_COLORS = {
   gained: "#49d17d",
@@ -142,12 +151,6 @@ const truncateChartLabel = (value, maxLength = 24) => {
   return `${label.slice(0, maxLength - 1)}…`;
 };
 
-const getSessionLevel = (session) =>
-  session?.level || session?.qualification_label || "Not recorded";
-
-const getSessionTopic = (session) =>
-  session?.topic_name || session?.topic || "Untitled topic";
-
 const getSessionSubtopic = (session) =>
   session?.subtopic_name ||
   session?.subtopic ||
@@ -215,41 +218,6 @@ const formatCompactDate = (value) => {
     month: "short",
     year: "numeric",
   });
-};
-
-const calculatePercentageScore = (score, total) => {
-  const numericScore = Number(score) || 0;
-  const numericTotal = Number(total) || 0;
-
-  if (numericTotal <= 0) {
-    return 0;
-  }
-
-  return Math.round((numericScore / numericTotal) * 100);
-};
-
-const getSessionScore = (session) =>
-  Number(session?.total_score ?? session?.score ?? 0) || 0;
-
-const getSessionMaxScore = (session) =>
-  Number(session?.total_available ?? session?.max_score ?? 0) || 0;
-
-const getSessionDateValue = (session) =>
-  session?.created_at || session?.date || null;
-
-const isSessionOnOrAfterDate = (session, dateValue) => {
-  if (!dateValue) {
-    return true;
-  }
-
-  const trackingStartTime = new Date(dateValue).getTime();
-  const sessionTime = new Date(getSessionDateValue(session)).getTime();
-
-  if (Number.isNaN(trackingStartTime) || Number.isNaN(sessionTime)) {
-    return true;
-  }
-
-  return sessionTime >= trackingStartTime;
 };
 
 const shouldIncludeInTrendData = (session) => {

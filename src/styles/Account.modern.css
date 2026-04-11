@@ -67,6 +67,26 @@
   margin-top: 0;
 }
 
+.account-card--interactive {
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.account-card--interactive:hover {
+  transform: translateY(-2px);
+  border-color: rgba(73, 209, 125, 0.34);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.3);
+}
+
+.account-card--interactive:focus-visible {
+  outline: 2px solid rgba(73, 209, 125, 0.72);
+  outline-offset: 3px;
+}
+
 .account-card--accent {
   background: linear-gradient(
     180deg,
@@ -79,6 +99,32 @@
   max-width: 640px;
   margin: 0 auto;
   text-align: center;
+}
+
+.account-sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.account-sectionTitle h2 {
+  margin: 0;
+}
+
+.account-sectionIcon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid rgba(73, 209, 125, 0.24);
+  background: rgba(73, 209, 125, 0.1);
+  color: var(--brand);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
 .account-details {
@@ -237,6 +283,105 @@
 .account-note {
   margin: 6px 0 0;
   color: var(--muted);
+}
+
+.account-summaryLink {
+  display: grid;
+  gap: 16px;
+}
+
+.account-summaryMetrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.account-summaryMetric {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--outline);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.account-summaryMetric span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.account-summaryMetric strong {
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.account-summaryEmpty {
+  min-height: 96px;
+  display: grid;
+  align-items: center;
+}
+
+.account-summaryFooter {
+  margin-top: auto;
+}
+
+.account-summaryCta {
+  color: var(--brand);
+  font-weight: 800;
+}
+
+.account-trackingMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 0 12px;
+  border-bottom: 1px dashed var(--outline);
+}
+
+.account-trackingMeta + .account-trackingMeta {
+  margin-top: 12px;
+}
+
+.account-trackingMeta strong {
+  text-align: right;
+}
+
+.account-modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(5, 8, 12, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+.account-modalCard {
+  width: min(520px, 100%);
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(
+    180deg,
+    rgba(15, 21, 30, 0.98),
+    rgba(10, 15, 22, 0.98)
+  );
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.38);
+}
+
+.account-modalCard h2 {
+  margin: 0;
+}
+
+.account-modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .account-results {
@@ -855,6 +1000,31 @@
 
   .account-details dd {
     text-align: left;
+  }
+
+  .account-sectionTitle {
+    align-items: flex-start;
+  }
+
+  .account-summaryMetrics {
+    grid-template-columns: 1fr;
+  }
+
+  .account-trackingMeta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .account-trackingMeta strong {
+    text-align: left;
+  }
+
+  .account-modalActions {
+    flex-direction: column-reverse;
+  }
+
+  .account-modalActions .btn {
+    width: 100%;
   }
 
   .account-results__header {

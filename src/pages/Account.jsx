@@ -3,6 +3,10 @@ import { Link, useSearchParams } from "react-router-dom";
 import EmailVerificationNotice from "../components/EmailVerificationNotice";
 import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
+import {
+  buildPerformanceSummary,
+  isSessionOnOrAfterDate,
+} from "../lib/performance";
 import "../styles/Account.modern.css";
 
 const RETRY_DELAYS_MS = [1500, 3000];
@@ -27,11 +31,38 @@ const getPlanLabel = (planType, hasUnlimitedAccess) => {
   return `${planType.charAt(0).toUpperCase() + planType.slice(1)} plan`;
 };
 
+const formatTrackingDate = (value) => {
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "Not available";
+  }
+
+  return parsed.toLocaleString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const formatMetricValue = (value, suffix = "") =>
+  value == null ? "--" : `${value}${suffix}`;
+
+const SectionTitle = ({ icon, title }) => (
+  <div className="account-sectionTitle">
+    <span className="account-sectionIcon" aria-hidden="true">
+      {icon}
+    </span>
+    <h2>{title}</h2>
+  </div>
+);
+
 export default function Account() {
   const {
     user,
     authReady,
     refreshCurrentUser,
+    logout,
     planType,
     emailVerified,
     hasUnlimitedAccess,
@@ -47,6 +78,14 @@ export default function Account() {
   const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
   const [hasAcceptedPurchaseTerms, setHasAcceptedPurchaseTerms] =
     useState(false);
+  const [performanceSessions, setPerformanceSessions] = useState([]);
+  const [isLoadingPerformance, setIsLoadingPerformance] = useState(true);
+  const [performanceError, setPerformanceError] = useState("");
+  const [trackingResetError, setTrackingResetError] = useState("");
+  const [isTrackingResetModalOpen, setIsTrackingResetModalOpen] =
+    useState(false);
+  const [isStartingNewTrackingPeriod, setIsStartingNewTrackingPeriod] =
+    useState(false);
 
   const isLoggedIn = Boolean(user);
   const planLabel = useMemo(
@@ -57,6 +96,8 @@ export default function Account() {
   const canUpgrade = Boolean(user) && !hasUnlimitedAccess && emailVerified;
   const numericRemaining =
     questionsRemainingToday == null ? null : Number(questionsRemainingToday);
+  const performanceTrackingStartDate =
+    user?.performance_tracking_start_date || user?.stats_reset_at || null;
 
   useEffect(() => {
     return () => {
@@ -97,9 +138,9 @@ export default function Account() {
         const refreshedUser = await refreshCurrentUser();
         const paidAfterRefresh = Boolean(
           refreshedUser?.has_unlimited_access ||
-          refreshedUser?.lifetime_unlocked ||
-          refreshedUser?.plan_type === "paid" ||
-          refreshedUser?.plan_type === "lifetime",
+            refreshedUser?.lifetime_unlocked ||
+            refreshedUser?.plan_type === "paid" ||
+            refreshedUser?.plan_type === "lifetime",
         );
 
         if (!isActive) {
@@ -127,9 +168,9 @@ export default function Account() {
               const retriedUser = await refreshCurrentUser();
               const paidAfterRetry = Boolean(
                 retriedUser?.has_unlimited_access ||
-                retriedUser?.lifetime_unlocked ||
-                retriedUser?.plan_type === "paid" ||
-                retriedUser?.plan_type === "lifetime",
+                  retriedUser?.lifetime_unlocked ||
+                  retriedUser?.plan_type === "paid" ||
+                  retriedUser?.plan_type === "lifetime",
               );
 
               if (paidAfterRetry && isActive) {
@@ -164,6 +205,88 @@ export default function Account() {
       isActive = false;
     };
   }, [authReady, checkoutState, isLoggedIn, refreshCurrentUser]);
+
+  useEffect(() => {
+    if (!authReady || !isLoggedIn) {
+      setPerformanceSessions([]);
+      setIsLoadingPerformance(false);
+      return;
+    }
+
+    let isActive = true;
+
+    const fetchPerformanceSessions = async () => {
+      setIsLoadingPerformance(true);
+      setPerformanceError("");
+
+      try {
+        const response = await api.get("/api/user-sessions/");
+
+        if (!isActive) {
+          return;
+        }
+
+        setPerformanceSessions(Array.isArray(response.data) ? response.data : []);
+      } catch (error) {
+        console.error("Unable to load performance sessions", error);
+
+        if (isActive) {
+          setPerformanceError(
+            "Unable to load your performance summary right now.",
+          );
+        }
+      } finally {
+        if (isActive) {
+          setIsLoadingPerformance(false);
+        }
+      }
+    };
+
+    fetchPerformanceSessions();
+
+    return () => {
+      isActive = false;
+    };
+  }, [authReady, isLoggedIn]);
+
+  const trackedPerformanceSessions = useMemo(
+    () =>
+      performanceSessions.filter((session) =>
+        isSessionOnOrAfterDate(session, performanceTrackingStartDate),
+      ),
+    [performanceSessions, performanceTrackingStartDate],
+  );
+
+  const performanceSummary = useMemo(
+    () => buildPerformanceSummary(trackedPerformanceSessions),
+    [trackedPerformanceSessions],
+  );
+
+  const summaryItems = useMemo(
+    () => [
+      {
+        label: "Average score",
+        value: formatMetricValue(performanceSummary.averageScore, "%"),
+      },
+      {
+        label: "Questions answered",
+        value: formatMetricValue(performanceSummary.totalQuestionsAnswered),
+      },
+      {
+        label: "Strongest topic",
+        value: performanceSummary.strongestTopic || "--",
+      },
+      {
+        label: "Weakest topic",
+        value: performanceSummary.weakestTopic || "--",
+      },
+      {
+        label: "Last score",
+        value: formatMetricValue(performanceSummary.lastScore, "%"),
+      },
+    ],
+    [performanceSummary],
+  );
 
   const handleRefreshStatus = async () => {
     if (!refreshCurrentUser) {
@@ -264,6 +387,28 @@ export default function Account() {
     }
   };
 
+  const handleConfirmTrackingReset = async () => {
+    if (isStartingNewTrackingPeriod) {
+      return;
+    }
+
+    setTrackingResetError("");
+    setIsStartingNewTrackingPeriod(true);
+
+    try {
+      await api.post("/accounts/reset-performance-tracking/");
+      await refreshCurrentUser?.();
+      setIsTrackingResetModalOpen(false);
+    } catch (error) {
+      console.error("Unable to start a new tracking period", error);
+      setTrackingResetError(
+        "Unable to start a new tracking period right now. Please try again.",
+      );
+    } finally {
+      setIsStartingNewTrackingPeriod(false);
+    }
+  };
+
   if (!authReady) {
     return (
       <div className="account-root">
@@ -284,7 +429,7 @@ export default function Account() {
           <section className="account-card account-card--centered">
             <h1>Account</h1>
             <p className="account-muted">
-              Sign in to manage your plan and billing status.
+              Sign in to manage your plan and performance.
             </p>
             <div className="account-actions">
               <Link to="/login" className="btn btn--primary">
@@ -305,11 +450,11 @@ export default function Account() {
       <div className="account-shell container">
         <header className="account-header">
           <div>
-            <p className="account-eyebrow">Billing</p>
-            <h1>Account</h1>
+            <p className="account-eyebrow">Account</p>
+            <h1>Your plan and performance</h1>
             <p className="account-muted">
-              Manage your plan and confirm billing status after returning from
-              checkout.
+              Review your access, summary stats, and tracking settings at a
+              glance.
             </p>
           </div>
           <div className="account-plan-chip">{planLabel}</div>
@@ -341,149 +486,259 @@ export default function Account() {
           </section>
         )}
 
-        <section className="account-grid">
-          <article className="account-card">
-            <h2>Current access</h2>
-            <dl className="account-details">
-              <div>
-                <dt>Plan</dt>
-                <dd>{planLabel}</dd>
-              </div>
-              <div>
-                <dt>Unlimited access</dt>
-                <dd>{hasUnlimitedAccess ? "Enabled" : "Not yet"}</dd>
-              </div>
-              <div>
-                <dt>Email verification</dt>
-                <dd>{emailVerified ? "Verified" : "Pending"}</dd>
-              </div>
-              <div>
-                <dt>Daily quota</dt>
-                <dd>
-                  {hasUnlimitedAccess || numericRemaining == null
-                    ? "Unlimited on current plan"
-                    : `${numericRemaining} question${numericRemaining === 1 ? "" : "s"} remaining today`}
-                </dd>
-              </div>
-            </dl>
+        {trackingResetError && (
+          <section
+            className="account-banner account-banner--error"
+            aria-live="assertive"
+          >
+            {trackingResetError}
+          </section>
+        )}
 
-            <div className="account-actions">
-              <button
-                type="button"
-                className="btn btn--ghost"
-                onClick={handleRefreshStatus}
-                disabled={isRefreshingStatus}
-              >
-                {isRefreshingStatus ? "Refreshing…" : "Refresh status"}
-              </button>
-            </div>
-          </article>
+        <section className="row g-3">
+          <div className="col-12 col-lg-6">
+            <article className="account-card h-100">
+              <SectionTitle icon="PL" title="Profile / Plan" />
+              <dl className="account-details">
+                <div>
+                  <dt>Email</dt>
+                  <dd>{user?.email || "Not available"}</dd>
+                </div>
+                <div>
+                  <dt>Plan</dt>
+                  <dd>{planLabel}</dd>
+                </div>
+                <div>
+                  <dt>Unlimited access</dt>
+                  <dd>{hasUnlimitedAccess ? "Enabled" : "Not yet"}</dd>
+                </div>
+                <div>
+                  <dt>Email verification</dt>
+                  <dd>{emailVerified ? "Verified" : "Pending"}</dd>
+                </div>
+                <div>
+                  <dt>Daily quota</dt>
+                  <dd>
+                    {hasUnlimitedAccess || numericRemaining == null
+                      ? "Unlimited on current plan"
+                      : `${numericRemaining} question${numericRemaining === 1 ? "" : "s"} remaining today`}
+                  </dd>
+                </div>
+              </dl>
+            </article>
+          </div>
 
-          <article className="account-card account-card--accent">
-            <h2>
-              {needsEmailVerification
-                ? "Verify your email to upgrade"
-                : canUpgrade
-                  ? "Upgrade to paid"
-                  : hasUnlimitedAccess
-                    ? planType === "lifetime"
-                      ? "Lifetime plan active"
-                      : "Paid plan active"
-                    : "Current plan"}
-            </h2>
-            <p className="account-muted">
-              {needsEmailVerification
-                ? "Your free plan is active, but billing is locked until you verify your email address."
-                : canUpgrade
-                  ? "You are on the free plan. Upgrade for £1.99 to unlock the full paid workflow."
-                  : hasUnlimitedAccess
-                    ? planType === "lifetime"
-                      ? "You have lifetime access. Unlimited questions unlocked."
-                      : "You are on the paid plan. Unlimited questions unlocked."
-                    : "Your current plan status is shown above."}
-            </p>
+          <div className="col-12 col-lg-6">
+            <Link
+              to="/progress"
+              className="account-card account-card--interactive account-summaryLink h-100"
+            >
+              <SectionTitle icon="PF" title="Performance Summary" />
 
-            {canUpgrade && (
-              <>
-                <p className="account-price">Paid plan price: £1.99</p>
-                <ul className="account-benefits">
-                  <li>Unlimited questions generated</li>
-                  <li>Feedback given when you submit questions</li>
-                  <li>Review your progress any time in the progress page</li>
-                </ul>
-                <label className="account-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={hasAcceptedPurchaseTerms}
-                    onChange={(event) => {
-                      setHasAcceptedPurchaseTerms(event.target.checked);
-                      if (event.target.checked) {
-                        setCheckoutError("");
-                      }
-                    }}
-                  />
-                  <span>
-                    I agree to the <Link to="/terms">Terms of Service</Link>,{" "}
-                    <Link to="/paid-plan-terms">Paid Plan Terms</Link>, and{" "}
-                    <Link to="/refund-policy">Refund Policy</Link>.
-                  </span>
-                </label>
-              </>
-            )}
+              {isLoadingPerformance ? (
+                <p className="account-muted">Loading summary…</p>
+              ) : performanceError ? (
+                <p className="account-muted">{performanceError}</p>
+              ) : performanceSummary.trackedTestsCount === 0 ? (
+                <p className="account-muted account-summaryEmpty">
+                  Complete a test to start building your summary.
+                </p>
+              ) : (
+                <div className="account-summaryMetrics">
+                  {summaryItems.map((item) => (
+                    <div key={item.label} className="account-summaryMetric">
+                      <span>{item.label}</span>
+                      <strong>{item.value}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-            {needsEmailVerification ? (
-              <p className="account-note">
-                Check your inbox and junk mail, then use the resend action above
-                if you need a fresh verification email.
-              </p>
-            ) : canUpgrade ? (
+              <div className="account-summaryFooter">
+                <span className="account-summaryCta">View detailed progress -&gt;</span>
+              </div>
+            </Link>
+          </div>
+
+          <div className="col-12 col-lg-6">
+            <article className="account-card h-100">
+              <SectionTitle icon="TR" title="Performance Tracking" />
+              <div className="account-trackingMeta">
+                <p className="account-muted">Tracking start date</p>
+                <strong>
+                  {performanceTrackingStartDate
+                    ? formatTrackingDate(performanceTrackingStartDate)
+                    : "Tracking all saved results"}
+                </strong>
+              </div>
+              <div className="account-trackingMeta">
+                <p className="account-muted">Tracked tests</p>
+                <strong>{performanceSummary.trackedTestsCount}</strong>
+              </div>
               <div className="account-actions">
                 <button
                   type="button"
-                  className="btn btn--primary"
-                  onClick={handleUpgrade}
-                  disabled={isCreatingCheckout || !hasAcceptedPurchaseTerms}
+                  className="btn btn--ghost"
+                  onClick={() => setIsTrackingResetModalOpen(true)}
                 >
-                  {isCreatingCheckout ? "Redirecting…" : "Upgrade for £1.99"}
+                  Start New Tracking Period
                 </button>
-                <p className="account-note">
-                  Secure checkout powered by Stripe. You will be redirected to
-                  Stripe's website to complete your purchase, and then back to
-                  your account page to confirm your new billing status.
-                </p>
-                <p className="account-note">
-                  Paid access continues while the service remains available. See
-                  the <Link to="/paid-plan-terms">Paid Plan Terms</Link> and{" "}
-                  <Link to="/refund-policy">Refund Policy</Link> for details.
-                </p>
               </div>
-            ) : hasUnlimitedAccess ? (
               <p className="account-note">
-                This account already has unlimited access. No upgrade is
-                required.
+                Past results stay saved. New averages start from today.
               </p>
-            ) : (
-              <p className="account-note">
-                Refresh your account status if your plan was updated recently.
+            </article>
+          </div>
+
+          <div className="col-12 col-lg-6">
+            <article className="account-card account-card--accent h-100">
+              <SectionTitle icon="UP" title="Upgrade Plan" />
+              <p className="account-muted">
+                {needsEmailVerification
+                  ? "Verify your email to unlock checkout."
+                  : hasUnlimitedAccess
+                    ? "Unlimited access is already active on this account."
+                    : "Secure checkout powered by Stripe. Upgrade instantly to unlock full access."}
               </p>
-            )}
-          </article>
 
-          <article className="account-card">
-            <h2>Progress</h2>
-            <p className="account-muted">
-              View saved sessions, compare performance trends, and drill into
-              module and subtopic data from one dedicated progress page.
-            </p>
+              {!hasUnlimitedAccess ? (
+                <>
+                  <p className="account-price">Pro plan: £1.99</p>
+                  <ul className="account-benefits">
+                    <li>Unlimited questions</li>
+                    <li>Full AI feedback</li>
+                    <li>Advanced performance tracking</li>
+                  </ul>
+                </>
+              ) : null}
 
-            <div className="account-actions">
-              <Link to="/progress" className="btn btn--primary">
-                Open progress page
-              </Link>
-            </div>
-          </article>
+              {canUpgrade ? (
+                <>
+                  <label className="account-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={hasAcceptedPurchaseTerms}
+                      onChange={(event) => {
+                        setHasAcceptedPurchaseTerms(event.target.checked);
+                        if (event.target.checked) {
+                          setCheckoutError("");
+                        }
+                      }}
+                    />
+                    <span>
+                      I agree to the <Link to="/terms">Terms of Service</Link>,{" "}
+                      <Link to="/paid-plan-terms">Paid Plan Terms</Link>, and{" "}
+                      <Link to="/refund-policy">Refund Policy</Link>.
+                    </span>
+                  </label>
+
+                  <div className="account-actions">
+                    <button
+                      type="button"
+                      className="btn btn--primary"
+                      onClick={handleUpgrade}
+                      disabled={isCreatingCheckout || !hasAcceptedPurchaseTerms}
+                    >
+                      {isCreatingCheckout ? "Redirecting…" : "Upgrade to Pro"}
+                    </button>
+                  </div>
+                </>
+              ) : needsEmailVerification ? (
+                <p className="account-note">
+                  Verify your email first, then come back to upgrade.
+                </p>
+              ) : hasUnlimitedAccess ? (
+                <p className="account-note">
+                  No upgrade needed. Your plan already includes full access.
+                </p>
+              ) : (
+                <p className="account-note">
+                  Refresh your account if your plan changed recently.
+                </p>
+              )}
+            </article>
+          </div>
+
+          <div className="col-12">
+            <article className="account-card">
+              <SectionTitle icon="ST" title="Account Settings" />
+              <p className="account-muted">
+                Refresh account data, review terms, or sign out.
+              </p>
+              <div className="account-actions">
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  onClick={handleRefreshStatus}
+                  disabled={isRefreshingStatus}
+                >
+                  {isRefreshingStatus ? "Refreshing…" : "Refresh account status"}
+                </button>
+                <Link to="/terms" className="btn btn--ghost">
+                  Terms of Service
+                </Link>
+                <Link to="/refund-policy" className="btn btn--ghost">
+                  Refund Policy
+                </Link>
+                <button
+                  type="button"
+                  className="btn btn--subtle"
+                  onClick={() => logout?.()}
+                >
+                  Log out
+                </button>
+              </div>
+            </article>
+          </div>
         </section>
       </div>
+
+      {isTrackingResetModalOpen ? (
+        <div
+          className="account-modalOverlay"
+          role="presentation"
+          onClick={() => {
+            if (!isStartingNewTrackingPeriod) {
+              setIsTrackingResetModalOpen(false);
+            }
+          }}
+        >
+          <div
+            className="account-modalCard"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tracking-reset-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="account-eyebrow">Performance Tracking</p>
+            <h2 id="tracking-reset-title">Start a new tracking period?</h2>
+            <p className="account-muted">
+              Your past results will still be saved, but your averages and
+              performance insights will restart from today.
+            </p>
+            <div className="account-modalActions">
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => setIsTrackingResetModalOpen(false)}
+                disabled={isStartingNewTrackingPeriod}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={handleConfirmTrackingReset}
+                disabled={isStartingNewTrackingPeriod}
+              >
+                {isStartingNewTrackingPeriod
+                  ? "Starting…"
+                  : "Start New Tracking Period"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
