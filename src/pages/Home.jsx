@@ -13,10 +13,9 @@ export default function Home() {
   return (
     <div className="home-root">
       <div className="announcement" role="status" aria-live="polite">
-        <span className="badge">Alpha</span>
         <span>
-          OCR and AQA question generation is live now, with more subjects and
-          long-answer modes rolling out next.
+          OCR and AQA question generation is now live, with more
+          subject-specific questions and long-answer essay modes coming soon.
         </span>
       </div>
 
