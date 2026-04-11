@@ -4,7 +4,7 @@ export default function PaidPlanTerms() {
   return (
     <LegalPageLayout
       title="Paid Plan Terms"
-      intro="These terms apply specifically to the £1.99 paid upgrade and explain what access the purchase gives, how long it lasts, and how service availability affects that access."
+      intro="These terms apply to the paid qualification upgrades, including single-qualification access at £1.99 and the GCSE + A-level bundle at £2.99, and explain what access the purchase gives, how long it lasts, and how service availability affects that access."
       lastUpdated="8 April 2026"
     >
       <section>
@@ -19,8 +19,9 @@ export default function PaidPlanTerms() {
       <section>
         <h2>Price and purchase</h2>
         <p>
-          The current paid plan price is £1.99. The price shown at checkout is
-          the amount charged for the purchase.
+          The current single-qualification paid plan price is £1.99. The GCSE +
+          A-level bundle price is £2.99. The price shown at checkout is the
+          amount charged for the selected purchase.
         </p>
       </section>
 

@@ -1,5 +1,6 @@
 export const ALEVEL_QUALIFICATION = "ALEVEL_BIOLOGY";
 export const GCSE_QUALIFICATION = "GCSE_SCIENCE";
+export const BOTH_QUALIFICATIONS = "BOTH";
 
 const GCSE_ACCESS_KEYS = [
   "has_gcse_access",
@@ -57,6 +58,10 @@ const normalizeBoolean = (value) => {
 };
 
 export const getQualificationLabel = (qualification) => {
+  if (qualification === BOTH_QUALIFICATIONS) {
+    return "GCSE + A-level";
+  }
+
   if (qualification === GCSE_QUALIFICATION) {
     return "GCSE Science";
   }
@@ -108,6 +113,10 @@ export const getQualificationAccessState = (user) => {
 export const hasAccessToQualification = (user, qualification) => {
   const { hasGcseAccess, hasALevelAccess } = getQualificationAccessState(user);
 
+  if (qualification === BOTH_QUALIFICATIONS) {
+    return hasGcseAccess && hasALevelAccess;
+  }
+
   if (qualification === GCSE_QUALIFICATION) {
     return hasGcseAccess;
   }
@@ -155,6 +164,14 @@ export const getMissingUpgradeQualifications = (user) => {
   }
 
   return missingQualifications;
+};
+
+export const getCheckoutPrice = (qualification) => {
+  if (qualification === BOTH_QUALIFICATIONS) {
+    return "£2.99";
+  }
+
+  return "£1.99";
 };
 
 export const pickEntitlementUpdates = (payload) => {

@@ -5,7 +5,9 @@ import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
 import {
   ALEVEL_QUALIFICATION,
+  BOTH_QUALIFICATIONS,
   GCSE_QUALIFICATION,
+  getCheckoutPrice,
   getAccessPlanLabel,
   getMissingUpgradeQualifications,
   getQualificationLabel,
@@ -71,6 +73,21 @@ const getOverviewLevelForQualification = (qualification) => {
   return null;
 };
 
+const getCheckoutOptions = (missingQualifications) => {
+  const missingGcse = missingQualifications.includes(GCSE_QUALIFICATION);
+  const missingALevel = missingQualifications.includes(ALEVEL_QUALIFICATION);
+
+  if (missingGcse && missingALevel) {
+    return [
+      BOTH_QUALIFICATIONS,
+      GCSE_QUALIFICATION,
+      ALEVEL_QUALIFICATION,
+    ];
+  }
+
+  return missingQualifications;
+};
+
 const SectionTitle = ({ title }) => (
   <div className="account-sectionTitle">
     <h2>{title}</h2>
@@ -123,6 +140,10 @@ export default function Account() {
     () => getMissingUpgradeQualifications(user),
     [user],
   );
+  const checkoutOptions = useMemo(
+    () => getCheckoutOptions(missingUpgradeQualifications),
+    [missingUpgradeQualifications],
+  );
   const canUpgrade =
     Boolean(user) && missingUpgradeQualifications.length > 0 && emailVerified;
   const numericRemaining =
@@ -132,6 +153,7 @@ export default function Account() {
   const selectedCheckoutLabel = getQualificationLabel(
     selectedCheckoutQualification,
   );
+  const selectedCheckoutPrice = getCheckoutPrice(selectedCheckoutQualification);
   const checkoutStatus = useMemo(
     () => getQualificationAccessState(user),
     [user],
@@ -139,12 +161,12 @@ export default function Account() {
 
   useEffect(() => {
     if (
-      missingUpgradeQualifications.length > 0 &&
-      !missingUpgradeQualifications.includes(selectedCheckoutQualification)
+      checkoutOptions.length > 0 &&
+      !checkoutOptions.includes(selectedCheckoutQualification)
     ) {
-      setSelectedCheckoutQualification(missingUpgradeQualifications[0]);
+      setSelectedCheckoutQualification(checkoutOptions[0]);
     }
-  }, [missingUpgradeQualifications, selectedCheckoutQualification]);
+  }, [checkoutOptions, selectedCheckoutQualification]);
 
   useEffect(() => {
     return () => {
@@ -853,13 +875,17 @@ export default function Account() {
 
               {!hasFullAccess ? (
                 <>
-                  <p className="account-price">Per qualification: £1.99</p>
+                  <p className="account-price">
+                    {selectedCheckoutQualification === BOTH_QUALIFICATIONS
+                      ? "Bundle: £2.99"
+                      : "Single qualification: £1.99"}
+                  </p>
                   <div
                     className="account-upgradeOptions"
                     role="radiogroup"
                     aria-label="Select qualification to unlock"
                   >
-                    {missingUpgradeQualifications.map((option) => (
+                    {checkoutOptions.map((option) => (
                       <label
                         key={option}
                         className={`account-upgradeOption ${
@@ -881,18 +907,26 @@ export default function Account() {
                         <span>
                           <strong>{getQualificationLabel(option)}</strong>
                           <small>
-                            Unlock unlimited question generation for this
-                            qualification.
+                            {option === BOTH_QUALIFICATIONS
+                              ? "Unlock GCSE and A-level access together in one checkout."
+                              : "Unlock unlimited question generation for this qualification."}
                           </small>
                         </span>
                       </label>
                     ))}
                   </div>
                   <ul className="account-benefits">
-                    <li>Unlimited questions for {selectedCheckoutLabel}</li>
+                    <li>
+                      {selectedCheckoutQualification === BOTH_QUALIFICATIONS
+                        ? "Unlimited questions for GCSE and A-level"
+                        : `Unlimited questions for ${selectedCheckoutLabel}`}
+                    </li>
                     <li>Full AI feedback</li>
                     <li>Advanced performance tracking</li>
                   </ul>
+                  <p className="account-note">
+                    {selectedCheckoutLabel} price: {selectedCheckoutPrice}
+                  </p>
                   {checkoutStatus.hasAnyPaidAccess && !checkoutStatus.hasFullAccess ? (
                     <p className="account-note">
                       You already have {hasGcseAccess ? "GCSE" : "A-level"} access. Buy the other qualification here if you want both.
