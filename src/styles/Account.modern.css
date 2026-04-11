@@ -400,6 +400,22 @@
   gap: 14px;
 }
 
+@media (min-width: 721px) {
+  .account-results__overviewHeader {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .account-results__overviewControls {
+    flex-wrap: nowrap;
+  }
+
+  .account-results__overviewControl {
+    min-width: 200px;
+  }
+}
+
 .account-results__overviewGroup + .account-results__overviewGroup {
   padding-top: 6px;
   border-top: 1px solid var(--outline);
