@@ -789,6 +789,13 @@ export default function ResultsHistory({
     [performanceTrackingStartDate, selectedOverviewMarksSessions],
   );
 
+  const selectedOverviewTrackedTestsCount =
+    selectedOverviewAnalyticsSessions.length;
+  const selectedOverviewTrackedTestsLabel = `${selectedOverviewTrackedTestsCount} test${selectedOverviewTrackedTestsCount === 1 ? "" : "s"}`;
+  const shouldShowResetWarning =
+    Boolean(performanceTrackingStartDate) &&
+    selectedOverviewTrackedTestsCount === 0;
+
   const selectedOverviewScoreTrendData = useMemo(
     () => buildLineChartData(selectedOverviewAnalyticsSessions),
     [selectedOverviewAnalyticsSessions],
@@ -944,7 +951,7 @@ export default function ResultsHistory({
     setPerformanceResetError("");
 
     try {
-      await api.post("/accounts/user/reset-performance-tracking/");
+      await api.post("/accounts/reset-performance-tracking/");
 
       if (refreshCurrentUser) {
         await refreshCurrentUser();
@@ -1394,11 +1401,16 @@ export default function ResultsHistory({
                     </p>
 
                     {performanceTrackingStartDate ? (
-                      <p className="account-muted account-chartCard__note account-chartCard__note--reset">
-                        Performance averages reset on{" "}
-                        {formatSessionDate(performanceTrackingStartDate)}. Older
-                        sessions still appear below, but they are excluded from
-                        these charts.
+                      <p
+                        className={`account-muted account-chartCard__note account-chartCard__note--reset${
+                          shouldShowResetWarning
+                            ? " account-chartCard__note--warning"
+                            : ""
+                        }`}
+                      >
+                        {shouldShowResetWarning
+                          ? `Performance averages were reset on ${formatSessionDate(performanceTrackingStartDate)}. Complete your next test to start tracking fresh data.`
+                          : `Tracking performance data from ${formatSessionDate(performanceTrackingStartDate)}. Currently tracking ${selectedOverviewTrackedTestsLabel} since reset.`}
                       </p>
                     ) : null}
                   </div>
@@ -1593,15 +1605,16 @@ export default function ResultsHistory({
                         </article>
                       </div>
                     </div>
-                  ) : (
+                  ) : !performanceTrackingStartDate ? (
                     <article className="account-card">
                       <p className="account-muted">
-                        {performanceTrackingStartDate
-                          ? `Your averages were reset on ${formatSessionDate(performanceTrackingStartDate)}. Complete a new test to start building fresh charts from that point onward.`
-                          : `No ${selectedOverviewSection.title.toLowerCase()} sessions for ${formatExamBoardHeading(selectedOverviewExamBoard)} match the current filters.`}
+                        No {selectedOverviewSection.title.toLowerCase()}{" "}
+                        sessions for{" "}
+                        {formatExamBoardHeading(selectedOverviewExamBoard)}
+                        match the current filters.
                       </p>
                     </article>
-                  )}
+                  ) : null}
                 </section>
               ) : (
                 <article className="account-card">

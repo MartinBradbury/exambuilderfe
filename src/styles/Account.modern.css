@@ -608,6 +608,12 @@
 .account-chartCard__note--reset {
   width: 100%;
   margin-top: 0;
+  border-color: rgba(111, 211, 255, 0.18);
+  background: rgba(111, 211, 255, 0.08);
+  color: var(--muted);
+}
+
+.account-chartCard__note--warning {
   border-color: rgba(255, 107, 107, 0.24);
   background: rgba(255, 107, 107, 0.08);
   color: #ffdada;
