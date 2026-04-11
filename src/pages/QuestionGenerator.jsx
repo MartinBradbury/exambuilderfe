@@ -8,11 +8,14 @@ import {
 } from "react-router-dom";
 import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
+import {
+  ALEVEL_QUALIFICATION,
+  GCSE_QUALIFICATION,
+  getQualificationLabel,
+  pickEntitlementUpdates,
+} from "../lib/access";
 import aLevelCover from "../assets/home/Alevelcard.png";
 import gcseCover from "../assets/home/GCSEcard.png";
-
-const ALEVEL_QUALIFICATION = "ALEVEL_BIOLOGY";
-const GCSE_QUALIFICATION = "GCSE_SCIENCE";
 const GCSE_SUBJECT_OPTIONS = ["BIOLOGY", "CHEMISTRY", "PHYSICS"];
 const GCSE_TIER_OPTIONS = ["FOUNDATION", "HIGHER"];
 const SESSION_LEAVE_MESSAGE =
@@ -26,7 +29,7 @@ const normalizeTopicName = (value) =>
 export default function QuestionGenerator() {
   const {
     user,
-    hasUnlimitedAccess,
+    hasAccessToQualification,
     questionsRemainingToday,
     updateEntitlement,
     authReady,
@@ -75,8 +78,11 @@ export default function QuestionGenerator() {
   const numericRemaining =
     questionsRemainingToday == null ? null : Number(questionsRemainingToday);
   const effectivePlanType = user?.plan_type || null;
-  const isFreePlan = effectivePlanType === "free" && !hasUnlimitedAccess;
-  const generationBlocked = !hasUnlimitedAccess && numericRemaining === 0;
+  const hasSelectedQualificationAccess =
+    hasAccessToQualification?.(qualification) || false;
+  const isFreePlan = !hasSelectedQualificationAccess;
+  const generationBlocked =
+    !hasSelectedQualificationAccess && numericRemaining === 0;
   const questionCountOptions = useMemo(
     () => (isFreePlan ? [1] : [1, 2, 3, 4, 5, 6]),
     [isFreePlan],
@@ -166,16 +172,7 @@ export default function QuestionGenerator() {
       return;
     }
 
-    const nextEntitlement = {};
-
-    if (payload.plan_type !== undefined) {
-      nextEntitlement.plan_type = payload.plan_type;
-    }
-
-    if (payload.questions_remaining_today !== undefined) {
-      nextEntitlement.questions_remaining_today =
-        payload.questions_remaining_today;
-    }
+    const nextEntitlement = pickEntitlementUpdates(payload);
 
     if (Object.keys(nextEntitlement).length > 0) {
       updateEntitlement(nextEntitlement);
@@ -447,10 +444,13 @@ export default function QuestionGenerator() {
 
     if (generationBlocked) {
       setUpgradeState({
-        error: "You have already used your free question for today.",
+        error: `You have already used your free question for today. Upgrade ${getQualificationLabel(qualification)} access to remove the daily limit for this qualification.`,
         plan_type: effectivePlanType,
         questions_remaining_today: numericRemaining,
       });
+      setError(
+        `You have already used your free question for today. Upgrade ${getQualificationLabel(qualification)} access from your account page to continue now.`,
+      );
       return;
     }
 
@@ -881,8 +881,9 @@ export default function QuestionGenerator() {
               </select>
               {isFreePlan && (
                 <p className="qg-hint">
-                  Free accounts are currently limited to 1 generated question
-                  per day.
+                  {hasSelectedQualificationAccess
+                    ? ""
+                    : `${getQualificationLabel(qualification)} is currently on the free tier for this account, so this qualification is limited to 1 generated question per day until upgraded.`}
                 </p>
               )}
             </div>
@@ -903,7 +904,17 @@ export default function QuestionGenerator() {
             )}
           </button>
 
+          {upgradeState?.error && (
+            <p className="qg-error">{upgradeState.error}</p>
+          )}
           {error && <p className="qg-error">{error}</p>}
+
+          {isFreePlan && (
+            <p className="qg-hint">
+              Need more than the shared free daily quota? Manage qualification
+              access from <Link to="/account">your account</Link>.
+            </p>
+          )}
         </form>
       )}
 

@@ -2,14 +2,17 @@ import { useState, useContext, useMemo } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import "../styles/NavBar.modern.css";
 import { UserContext } from "../context/UserContextObject";
+import {
+  getAccessPlanLabel,
+  getMissingUpgradeQualifications,
+} from "../lib/access";
 
 export default function Navbar() {
-  const { user, logout, hasUnlimitedAccess } = useContext(UserContext) || {};
+  const { user, logout } = useContext(UserContext) || {};
   const navigate = useNavigate();
-  const showUpgradeCta = Boolean(user) && !hasUnlimitedAccess;
-  const membershipLabel = hasUnlimitedAccess
-    ? "Full Access"
-    : "Free Plan - Limited";
+  const showUpgradeCta =
+    Boolean(user) && getMissingUpgradeQualifications(user).length > 0;
+  const membershipLabel = getAccessPlanLabel(user);
 
   const displayName = useMemo(() => {
     if (user?.username) return user.username;
@@ -106,7 +109,7 @@ export default function Navbar() {
                     to="/account"
                     className="btn btn--primary nav-upgrade"
                   >
-                    Unlock Full Access
+                    Unlock Access
                   </NavLink>
                 )}
                 <button
@@ -187,7 +190,7 @@ export default function Navbar() {
                     className="btn btn--primary"
                     onClick={closeMenu}
                   >
-                    Unlock Full Access
+                    Unlock Access
                   </NavLink>
                 )}
                 <button

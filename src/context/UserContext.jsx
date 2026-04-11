@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { AUTH_LOGOUT_EVENT, api } from "../lib/api";
+import {
+  getQualificationAccessState,
+  hasAccessToQualification,
+} from "../lib/access";
 import { UserContext } from "./UserContextObject";
 
 export const UserProvider = ({ children }) => {
@@ -125,12 +129,8 @@ export const UserProvider = ({ children }) => {
   const contextValue = useMemo(() => {
     const planType = user?.plan_type ?? null;
     const emailVerified = Boolean(user?.email_verified);
-    const hasUnlimitedAccess = Boolean(
-      user?.has_unlimited_access ||
-      user?.lifetime_unlocked ||
-      planType === "paid" ||
-      planType === "lifetime",
-    );
+    const { hasGcseAccess, hasALevelAccess, hasAnyPaidAccess, hasFullAccess } =
+      getQualificationAccessState(user);
 
     return {
       user,
@@ -142,7 +142,13 @@ export const UserProvider = ({ children }) => {
       planType,
       emailVerified,
       emailVerifiedAt: user?.email_verified_at ?? null,
-      hasUnlimitedAccess,
+      hasUnlimitedAccess: hasFullAccess,
+      hasGcseAccess,
+      hasALevelAccess,
+      hasAnyPaidAccess,
+      hasFullAccess,
+      hasAccessToQualification: (qualification) =>
+        hasAccessToQualification(user, qualification),
       questionsRemainingToday: user?.questions_remaining_today ?? null,
     };
   }, [authReady, login, logout, refreshCurrentUser, updateEntitlement, user]);

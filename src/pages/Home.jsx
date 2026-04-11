@@ -3,11 +3,15 @@ import { Link } from "react-router-dom";
 import EmailVerificationNotice from "../components/EmailVerificationNotice";
 import "../styles/Home.modern.css";
 import { UserContext } from "../context/UserContextObject";
+import { getMissingUpgradeQualifications } from "../lib/access";
 
 export default function Home() {
-  const { user, hasUnlimitedAccess, emailVerified } = useContext(UserContext);
+  const { user, hasFullAccess, emailVerified } = useContext(UserContext);
   const needsEmailVerification = Boolean(user) && !emailVerified;
-  const canUpgrade = Boolean(user) && !hasUnlimitedAccess && emailVerified;
+  const canUpgrade =
+    Boolean(user) &&
+    getMissingUpgradeQualifications(user).length > 0 &&
+    emailVerified;
   const isMobileViewport =
     typeof window !== "undefined" &&
     window.matchMedia("(max-width: 800px)").matches;
@@ -171,7 +175,7 @@ export default function Home() {
               <EmailVerificationNotice
                 className="home-verification-notice"
                 title="Billing is locked until you verify your email"
-                description="Your free account is active now. Verify your email to unlock paid checkout and unlimited access upgrades."
+                description="Your free account is active now. Verify your email to unlock GCSE and A-level access upgrades."
               />
             )}
 
@@ -499,9 +503,9 @@ export default function Home() {
               {needsEmailVerification
                 ? "Verify your email, then start turning practice into better exam answers."
                 : canUpgrade
-                  ? "Start with focused practice, then upgrade when you want the full revision workflow."
-                  : hasUnlimitedAccess
-                    ? "Unlimited access is already active on this account."
+                  ? "Start with focused practice, then unlock the qualification access you need when you want more."
+                  : hasFullAccess
+                    ? "GCSE and A-level access are already active on this account."
                     : "Start practising now and build better exam performance one topic at a time."}
             </h2>
             <p className="closingCta__copy">
@@ -520,9 +524,9 @@ export default function Home() {
                     Verify Email
                   </Link>
                 ) : (
-                  !hasUnlimitedAccess && (
+                  !hasFullAccess && (
                     <Link to="/account" className="btn btn--ghost">
-                      Upgrade for £1.99
+                      Unlock Access from £1.99
                     </Link>
                   )
                 )}

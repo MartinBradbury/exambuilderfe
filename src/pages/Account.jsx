@@ -4,32 +4,22 @@ import EmailVerificationNotice from "../components/EmailVerificationNotice";
 import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
 import {
+  ALEVEL_QUALIFICATION,
+  GCSE_QUALIFICATION,
+  getAccessPlanLabel,
+  getMissingUpgradeQualifications,
+  getQualificationLabel,
+  getQualificationAccessState,
+  hasAccessToQualification,
+} from "../lib/access";
+import {
   buildPerformanceSummary,
   isSessionOnOrAfterDate,
 } from "../lib/performance";
 import "../styles/Account.modern.css";
 
 const RETRY_DELAYS_MS = [1500, 3000];
-
-const getPlanLabel = (planType, hasUnlimitedAccess) => {
-  if (hasUnlimitedAccess && planType === "lifetime") {
-    return "Lifetime plan";
-  }
-
-  if (hasUnlimitedAccess && planType === "paid") {
-    return "Paid plan";
-  }
-
-  if (hasUnlimitedAccess) {
-    return "Paid plan";
-  }
-
-  if (!planType) {
-    return "Free plan";
-  }
-
-  return `${planType.charAt(0).toUpperCase() + planType.slice(1)} plan`;
-};
+const PENDING_CHECKOUT_KEY = "pendingCheckoutQualification";
 
 const formatTrackingDate = (value) => {
   const parsed = new Date(value);
@@ -62,7 +52,10 @@ export default function Account() {
     logout,
     planType,
     emailVerified,
-    hasUnlimitedAccess,
+    hasGcseAccess,
+    hasALevelAccess,
+    hasAnyPaidAccess,
+    hasFullAccess,
     questionsRemainingToday,
   } = useContext(UserContext) || {};
   const [searchParams] = useSearchParams();
@@ -75,6 +68,8 @@ export default function Account() {
   const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
   const [hasAcceptedPurchaseTerms, setHasAcceptedPurchaseTerms] =
     useState(false);
+  const [selectedCheckoutQualification, setSelectedCheckoutQualification] =
+    useState(ALEVEL_QUALIFICATION);
   const [performanceSessions, setPerformanceSessions] = useState([]);
   const [isLoadingPerformance, setIsLoadingPerformance] = useState(true);
   const [performanceError, setPerformanceError] = useState("");
@@ -85,16 +80,34 @@ export default function Account() {
     useState(false);
 
   const isLoggedIn = Boolean(user);
-  const planLabel = useMemo(
-    () => getPlanLabel(planType, hasUnlimitedAccess),
-    [hasUnlimitedAccess, planType],
-  );
+  const planLabel = useMemo(() => getAccessPlanLabel(user), [user]);
   const needsEmailVerification = isLoggedIn && !emailVerified;
-  const canUpgrade = Boolean(user) && !hasUnlimitedAccess && emailVerified;
+  const missingUpgradeQualifications = useMemo(
+    () => getMissingUpgradeQualifications(user),
+    [user],
+  );
+  const canUpgrade =
+    Boolean(user) && missingUpgradeQualifications.length > 0 && emailVerified;
   const numericRemaining =
     questionsRemainingToday == null ? null : Number(questionsRemainingToday);
   const performanceTrackingStartDate =
     user?.performance_tracking_start_date || user?.stats_reset_at || null;
+  const selectedCheckoutLabel = getQualificationLabel(
+    selectedCheckoutQualification,
+  );
+  const checkoutStatus = useMemo(
+    () => getQualificationAccessState(user),
+    [user],
+  );
+
+  useEffect(() => {
+    if (
+      missingUpgradeQualifications.length > 0 &&
+      !missingUpgradeQualifications.includes(selectedCheckoutQualification)
+    ) {
+      setSelectedCheckoutQualification(missingUpgradeQualifications[0]);
+    }
+  }, [missingUpgradeQualifications, selectedCheckoutQualification]);
 
   useEffect(() => {
     return () => {
@@ -112,9 +125,8 @@ export default function Account() {
     retryTimeoutsRef.current = [];
 
     if (checkoutState === "cancelled") {
-      setStatusBanner(
-        "Checkout was cancelled. Your account is still on the free plan.",
-      );
+      window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
+      setStatusBanner("Checkout was cancelled. Your access has not changed.");
       return;
     }
 
@@ -124,6 +136,8 @@ export default function Account() {
     }
 
     let isActive = true;
+    const pendingQualification =
+      window.sessionStorage.getItem(PENDING_CHECKOUT_KEY) || null;
 
     const checkStatus = async () => {
       if (!refreshCurrentUser) {
@@ -133,20 +147,20 @@ export default function Account() {
       setIsRefreshingStatus(true);
       try {
         const refreshedUser = await refreshCurrentUser();
-        const paidAfterRefresh = Boolean(
-          refreshedUser?.has_unlimited_access ||
-          refreshedUser?.lifetime_unlocked ||
-          refreshedUser?.plan_type === "paid" ||
-          refreshedUser?.plan_type === "lifetime",
-        );
+        const accessActivated = pendingQualification
+          ? hasAccessToQualification(refreshedUser, pendingQualification)
+          : getQualificationAccessState(refreshedUser).hasAnyPaidAccess;
 
         if (!isActive) {
           return;
         }
 
-        if (paidAfterRefresh) {
+        if (accessActivated) {
+          window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
           setStatusBanner(
-            "Payment received. Your account has been upgraded to the paid plan and unlimited access is now active.",
+            pendingQualification
+              ? `Payment received. ${getQualificationLabel(pendingQualification)} access is now active.`
+              : "Payment received. Your access has been updated.",
           );
           return;
         }
@@ -163,16 +177,16 @@ export default function Account() {
 
             try {
               const retriedUser = await refreshCurrentUser();
-              const paidAfterRetry = Boolean(
-                retriedUser?.has_unlimited_access ||
-                retriedUser?.lifetime_unlocked ||
-                retriedUser?.plan_type === "paid" ||
-                retriedUser?.plan_type === "lifetime",
-              );
+              const accessActivatedAfterRetry = pendingQualification
+                ? hasAccessToQualification(retriedUser, pendingQualification)
+                : getQualificationAccessState(retriedUser).hasAnyPaidAccess;
 
-              if (paidAfterRetry && isActive) {
+              if (accessActivatedAfterRetry && isActive) {
+                window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
                 setStatusBanner(
-                  "Payment received. Your account has been upgraded to the paid plan and unlimited access is now active.",
+                  pendingQualification
+                    ? `Payment received. ${getQualificationLabel(pendingQualification)} access is now active.`
+                    : "Payment received. Your access has been updated.",
                 );
               }
             } catch (error) {
@@ -313,7 +327,7 @@ export default function Account() {
           "You must accept the purchase terms before continuing.",
         );
       } else if (!canUpgrade) {
-        setCheckoutError("This account already has unlimited access.");
+        setCheckoutError("This account already has access to both qualifications.");
       }
       return;
     }
@@ -325,9 +339,15 @@ export default function Account() {
     const cancelUrl = `${window.location.origin}/account?checkout=cancelled`;
 
     try {
+      window.sessionStorage.setItem(
+        PENDING_CHECKOUT_KEY,
+        selectedCheckoutQualification,
+      );
+
       const { data } = await api.post(
         "/accounts/billing/create-checkout-session/",
         {
+          qualification: selectedCheckoutQualification,
           success_url: successUrl,
           cancel_url: cancelUrl,
         },
@@ -341,9 +361,10 @@ export default function Account() {
     } catch (error) {
       console.error("Unable to create checkout session", error);
       if (error.response?.status === 409) {
+        window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
         setCheckoutError(
           error.response?.data?.detail ||
-            "This account already has unlimited access.",
+            `This account already has ${selectedCheckoutLabel.toLowerCase()} access.`,
         );
 
         try {
@@ -360,6 +381,7 @@ export default function Account() {
       }
 
       if (error.response?.status === 403) {
+        window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
         setCheckoutError(
           error.response?.data?.detail ||
             "Please verify your email before starting checkout.",
@@ -378,6 +400,7 @@ export default function Account() {
         return;
       }
 
+      window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
       setCheckoutError(
         error.response?.data?.detail ||
           "Unable to start payment setup right now. Please try again.",
@@ -462,7 +485,7 @@ export default function Account() {
         {statusBanner && (
           <section
             className={`account-banner ${
-              hasUnlimitedAccess
+              hasAnyPaidAccess
                 ? "account-banner--success"
                 : "account-banner--info"
             }`}
@@ -508,18 +531,22 @@ export default function Account() {
                   <dd>{planLabel}</dd>
                 </div>
                 <div>
-                  <dt>Unlimited access</dt>
-                  <dd>{hasUnlimitedAccess ? "Enabled" : "Not yet"}</dd>
+                  <dt>A-level access</dt>
+                  <dd>{hasALevelAccess ? "Enabled" : "Not yet"}</dd>
+                </div>
+                <div>
+                  <dt>GCSE access</dt>
+                  <dd>{hasGcseAccess ? "Enabled" : "Not yet"}</dd>
                 </div>
                 <div>
                   <dt>Email verification</dt>
                   <dd>{emailVerified ? "Verified" : "Pending"}</dd>
                 </div>
                 <div>
-                  <dt>Daily quota</dt>
+                  <dt>Free daily quota</dt>
                   <dd>
-                    {hasUnlimitedAccess || numericRemaining == null
-                      ? "Unlimited on current plan"
+                    {numericRemaining == null
+                      ? "Not available"
                       : `${numericRemaining} question${numericRemaining === 1 ? "" : "s"} remaining today`}
                   </dd>
                 </div>
@@ -597,19 +624,53 @@ export default function Account() {
               <p className="account-muted">
                 {needsEmailVerification
                   ? "Verify your email to unlock checkout."
-                  : hasUnlimitedAccess
-                    ? "Unlimited access is already active on this account."
-                    : "Secure checkout powered by Stripe. Upgrade instantly to unlock full access."}
+                  : hasFullAccess
+                    ? "GCSE and A-level access are already active on this account."
+                    : "Secure checkout powered by Stripe. Unlock the qualification access you need instantly."}
               </p>
 
-              {!hasUnlimitedAccess ? (
+              {!hasFullAccess ? (
                 <>
-                  <p className="account-price">Pro plan: £1.99</p>
+                  <p className="account-price">Per qualification: £1.99</p>
+                  <div className="account-upgradeOptions" role="radiogroup" aria-label="Select qualification to unlock">
+                    {missingUpgradeQualifications.map((option) => (
+                      <label
+                        key={option}
+                        className={`account-upgradeOption ${
+                          selectedCheckoutQualification === option
+                            ? "account-upgradeOption--active"
+                            : ""
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="checkoutQualification"
+                          value={option}
+                          checked={selectedCheckoutQualification === option}
+                          onChange={(event) => {
+                            setSelectedCheckoutQualification(event.target.value);
+                            setCheckoutError("");
+                          }}
+                        />
+                        <span>
+                          <strong>{getQualificationLabel(option)}</strong>
+                          <small>
+                            Unlock unlimited question generation for this qualification.
+                          </small>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
                   <ul className="account-benefits">
-                    <li>Unlimited questions</li>
+                    <li>Unlimited questions for {selectedCheckoutLabel}</li>
                     <li>Full AI feedback</li>
                     <li>Advanced performance tracking</li>
                   </ul>
+                  {checkoutStatus.hasAnyPaidAccess && !checkoutStatus.hasFullAccess ? (
+                    <p className="account-note">
+                      You already have {hasGcseAccess ? "GCSE" : "A-level"} access. Buy the other qualification here if you want both.
+                    </p>
+                  ) : null}
                 </>
               ) : null}
 
@@ -641,7 +702,9 @@ export default function Account() {
                       onClick={handleUpgrade}
                       disabled={isCreatingCheckout || !hasAcceptedPurchaseTerms}
                     >
-                      {isCreatingCheckout ? "Redirecting…" : "Upgrade to Pro"}
+                      {isCreatingCheckout
+                        ? "Redirecting..."
+                        : `Unlock ${selectedCheckoutLabel}`}
                     </button>
                   </div>
                 </>
@@ -649,9 +712,9 @@ export default function Account() {
                 <p className="account-note">
                   Verify your email first, then come back to upgrade.
                 </p>
-              ) : hasUnlimitedAccess ? (
+              ) : hasFullAccess ? (
                 <p className="account-note">
-                  No upgrade needed. Your plan already includes full access.
+                  No upgrade needed. Your plan already includes both qualifications.
                 </p>
               ) : (
                 <p className="account-note">

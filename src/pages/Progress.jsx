@@ -5,7 +5,7 @@ import { UserContext } from "../context/UserContextObject";
 import "../styles/Account.modern.css";
 
 export default function Progress() {
-  const { hasUnlimitedAccess } = useContext(UserContext) || {};
+  const { hasAnyPaidAccess } = useContext(UserContext) || {};
 
   const handleScrollToTop = () => {
     if (typeof window === "undefined") {
@@ -31,7 +31,7 @@ export default function Progress() {
 
         <ResultsHistory
           showHeader={false}
-          analyticsLocked={!hasUnlimitedAccess}
+          analyticsLocked={!hasAnyPaidAccess}
           upgradePath="/account"
           afterOverviewAction={
             <div className="account-actions account-actions--progressInline">
