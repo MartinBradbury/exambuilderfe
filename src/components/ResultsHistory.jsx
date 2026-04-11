@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Bar,
@@ -15,6 +15,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
 
 const CHART_COLORS = {
@@ -234,6 +235,21 @@ const getSessionMaxScore = (session) =>
 
 const getSessionDateValue = (session) =>
   session?.created_at || session?.date || null;
+
+const isSessionOnOrAfterDate = (session, dateValue) => {
+  if (!dateValue) {
+    return true;
+  }
+
+  const trackingStartTime = new Date(dateValue).getTime();
+  const sessionTime = new Date(getSessionDateValue(session)).getTime();
+
+  if (Number.isNaN(trackingStartTime) || Number.isNaN(sessionTime)) {
+    return true;
+  }
+
+  return sessionTime >= trackingStartTime;
+};
 
 const shouldIncludeInTrendData = (session) => {
   const maxScore = getSessionMaxScore(session);
@@ -509,10 +525,13 @@ export default function ResultsHistory({
   upgradePath = "/account",
   afterOverviewAction = null,
 }) {
+  const { user, refreshCurrentUser } = useContext(UserContext) || {};
   const [sessions, setSessions] = useState([]);
   const [expandedSessionId, setExpandedSessionId] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [performanceResetError, setPerformanceResetError] = useState("");
+  const [isResettingPerformance, setIsResettingPerformance] = useState(false);
   const [sortOrder, setSortOrder] = useState("newest");
   const [examBoardFilter, setExamBoardFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -532,6 +551,8 @@ export default function ResultsHistory({
     return window.matchMedia("(max-width: 720px)").matches;
   });
   const navigate = useNavigate();
+  const performanceTrackingStartDate =
+    user?.performance_tracking_start_date || null;
 
   const handleLockedAnalyticsInteraction = () => {
     if (!analyticsLocked) {
@@ -760,14 +781,27 @@ export default function ResultsHistory({
     );
   }, [selectedOverviewMarksTopic, selectedOverviewSessions]);
 
+  const selectedOverviewAnalyticsSessions = useMemo(
+    () =>
+      selectedOverviewMarksSessions.filter((session) =>
+        isSessionOnOrAfterDate(session, performanceTrackingStartDate),
+      ),
+    [performanceTrackingStartDate, selectedOverviewMarksSessions],
+  );
+
   const selectedOverviewScoreTrendData = useMemo(
-    () => buildLineChartData(selectedOverviewMarksSessions),
-    [selectedOverviewMarksSessions],
+    () => buildLineChartData(selectedOverviewAnalyticsSessions),
+    [selectedOverviewAnalyticsSessions],
   );
 
   const selectedOverviewTopicPerformance = useMemo(
     () => groupAverageScoreByTopic(selectedOverviewSessions),
     [selectedOverviewSessions],
+  );
+
+  const selectedOverviewResetTopicPerformance = useMemo(
+    () => groupAverageScoreByTopic(selectedOverviewAnalyticsSessions),
+    [selectedOverviewAnalyticsSessions],
   );
 
   const selectedOverviewTrendTickInterval = useMemo(() => {
@@ -787,8 +821,8 @@ export default function ResultsHistory({
   }, [isMobileViewport, selectedOverviewScoreTrendData.length]);
 
   const selectedOverviewMarksSummaryData = useMemo(
-    () => calculateMarksSummary(selectedOverviewMarksSessions),
-    [selectedOverviewMarksSessions],
+    () => calculateMarksSummary(selectedOverviewAnalyticsSessions),
+    [selectedOverviewAnalyticsSessions],
   );
 
   const selectedOverviewSubtopicData = useMemo(() => {
@@ -797,14 +831,14 @@ export default function ResultsHistory({
     }
 
     return groupAverageScoreBySubtopic(
-      selectedOverviewSessions,
+      selectedOverviewAnalyticsSessions,
       selectedOverviewMarksTopic,
       overviewSubtopicCatalog,
     );
   }, [
+    selectedOverviewAnalyticsSessions,
     overviewSubtopicCatalog,
     selectedOverviewMarksTopic,
-    selectedOverviewSessions,
   ]);
 
   const selectedOverviewTopicOptions = useMemo(() => {
@@ -833,9 +867,35 @@ export default function ResultsHistory({
     });
   }, [overviewTopicCatalog, selectedOverviewTopicPerformance]);
 
+  const selectedOverviewResetTopicOptions = useMemo(() => {
+    if (!overviewTopicCatalog.length) {
+      return selectedOverviewResetTopicPerformance;
+    }
+
+    const sessionTopicMap = new Map(
+      selectedOverviewResetTopicPerformance.map((entry) => [
+        normalizeText(entry.topic),
+        entry,
+      ]),
+    );
+
+    return overviewTopicCatalog.map((entry) => {
+      const existing = sessionTopicMap.get(normalizeText(entry.label));
+
+      return (
+        existing || {
+          topic: entry.label,
+          topicShortLabel: truncateChartLabel(entry.label),
+          averageScore: 0,
+          attempts: 0,
+        }
+      );
+    });
+  }, [overviewTopicCatalog, selectedOverviewResetTopicPerformance]);
+
   const selectedOverviewBarChartData = useMemo(() => {
     if (selectedOverviewMarksTopic === OVERVIEW_ALL_TOPICS_VALUE) {
-      return selectedOverviewTopicOptions.map((entry, index) => ({
+      return selectedOverviewResetTopicOptions.map((entry, index) => ({
         ...entry,
         chartKey: `topic-${index}-${normalizeText(entry.topic)}`,
         chartLabel: entry.topic,
@@ -859,8 +919,45 @@ export default function ResultsHistory({
     isMobileViewport,
     selectedOverviewMarksTopic,
     selectedOverviewSubtopicData,
-    selectedOverviewTopicOptions,
+    selectedOverviewResetTopicOptions,
   ]);
+
+  const handleResetPerformanceTracking = async () => {
+    if (!selectedOverviewMarksSessions.length || isResettingPerformance) {
+      return;
+    }
+
+    const scopeLabel =
+      selectedOverviewMarksTopic === OVERVIEW_ALL_TOPICS_VALUE
+        ? `${selectedOverviewSection?.title || "selected"} ${formatExamBoardHeading(selectedOverviewExamBoard)} performance stats`
+        : `${selectedOverviewMarksTopic} performance stats for ${selectedOverviewSection?.title || "selected"} ${formatExamBoardHeading(selectedOverviewExamBoard)}`;
+
+    const confirmed = window.confirm(
+      `Reset ${scopeLabel}?\n\nYour full history will still be shown below, but the performance charts will only include tests completed after this reset.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsResettingPerformance(true);
+    setPerformanceResetError("");
+
+    try {
+      await api.post("/accounts/user/reset-performance-tracking/");
+
+      if (refreshCurrentUser) {
+        await refreshCurrentUser();
+      }
+    } catch (resetError) {
+      console.error("Unable to reset performance tracking", resetError);
+      setPerformanceResetError(
+        "Unable to reset your performance averages right now. Please try again.",
+      );
+    } finally {
+      setIsResettingPerformance(false);
+    }
+  };
 
   const selectedOverviewTopicCatalogEntry = useMemo(() => {
     if (selectedOverviewMarksTopic === OVERVIEW_ALL_TOPICS_VALUE) {
@@ -1131,6 +1228,12 @@ export default function ResultsHistory({
         </article>
       )}
 
+      {!loading && !error && performanceResetError && (
+        <article className="account-banner account-banner--error">
+          {performanceResetError}
+        </article>
+      )}
+
       {!loading && !error && sessionCards.length === 0 && (
         <article className="account-card account-card--centered">
           <h3>No saved sessions yet</h3>
@@ -1242,30 +1345,46 @@ export default function ResultsHistory({
                   </div>
 
                   <div className="account-results__overviewSharedControls">
-                    <div className="account-chartCard__control account-chartCard__control--shared">
-                      <label htmlFor="results-overview-marks-topic">
-                        Module filter
-                      </label>
-                      <select
-                        id="results-overview-marks-topic"
-                        className="account-results__input"
-                        value={selectedOverviewMarksTopic}
-                        onChange={(event) =>
-                          setSelectedOverviewMarksTopic(event.target.value)
+                    <div className="account-results__overviewSharedTop">
+                      <div className="account-chartCard__control account-chartCard__control--shared">
+                        <label htmlFor="results-overview-marks-topic">
+                          Module filter
+                        </label>
+                        <select
+                          id="results-overview-marks-topic"
+                          className="account-results__input"
+                          value={selectedOverviewMarksTopic}
+                          onChange={(event) =>
+                            setSelectedOverviewMarksTopic(event.target.value)
+                          }
+                        >
+                          <option value={OVERVIEW_ALL_TOPICS_VALUE}>
+                            Overall
+                          </option>
+                          {selectedOverviewTopicOptions.map((topicOption) => (
+                            <option
+                              key={topicOption.topic}
+                              value={topicOption.topic}
+                            >
+                              {topicOption.topic}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="account-results__resetButton"
+                        onClick={handleResetPerformanceTracking}
+                        disabled={
+                          !selectedOverviewMarksSessions.length ||
+                          isResettingPerformance
                         }
                       >
-                        <option value={OVERVIEW_ALL_TOPICS_VALUE}>
-                          Overall
-                        </option>
-                        {selectedOverviewTopicOptions.map((topicOption) => (
-                          <option
-                            key={topicOption.topic}
-                            value={topicOption.topic}
-                          >
-                            {topicOption.topic}
-                          </option>
-                        ))}
-                      </select>
+                        {isResettingPerformance
+                          ? "Resetting…"
+                          : "Reset averages"}
+                      </button>
                     </div>
 
                     <p className="account-muted account-chartCard__note account-chartCard__note--shared">
@@ -1273,9 +1392,18 @@ export default function ResultsHistory({
                       you have, the more reliable the trend - aim for at least 5
                       tests for a clearer picture.
                     </p>
+
+                    {performanceTrackingStartDate ? (
+                      <p className="account-muted account-chartCard__note account-chartCard__note--reset">
+                        Performance averages reset on{" "}
+                        {formatSessionDate(performanceTrackingStartDate)}. Older
+                        sessions still appear below, but they are excluded from
+                        these charts.
+                      </p>
+                    ) : null}
                   </div>
 
-                  {selectedOverviewSessions.length > 0 ? (
+                  {selectedOverviewAnalyticsSessions.length > 0 ? (
                     <div className="row g-3">
                       <div className="col-12 col-lg-4">
                         <article className="card account-card account-chartCard h-100">
@@ -1468,10 +1596,9 @@ export default function ResultsHistory({
                   ) : (
                     <article className="account-card">
                       <p className="account-muted">
-                        No {selectedOverviewSection.title.toLowerCase()}{" "}
-                        sessions for{" "}
-                        {formatExamBoardHeading(selectedOverviewExamBoard)}{" "}
-                        match the current filters.
+                        {performanceTrackingStartDate
+                          ? `Your averages were reset on ${formatSessionDate(performanceTrackingStartDate)}. Complete a new test to start building fresh charts from that point onward.`
+                          : `No ${selectedOverviewSection.title.toLowerCase()} sessions for ${formatExamBoardHeading(selectedOverviewExamBoard)} match the current filters.`}
                       </p>
                     </article>
                   )}

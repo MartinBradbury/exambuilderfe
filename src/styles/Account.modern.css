@@ -409,6 +409,51 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
+.account-results__overviewSharedTop {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.account-results__resetButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: end;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 107, 107, 0.28);
+  border-radius: 12px;
+  background: rgba(255, 107, 107, 0.08);
+  color: #ffd2d2;
+  font: inherit;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.account-results__resetButton:hover:not(:disabled) {
+  background: rgba(255, 107, 107, 0.14);
+  border-color: rgba(255, 107, 107, 0.4);
+}
+
+.account-results__resetButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.16);
+}
+
+.account-results__resetButton:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
 @media (min-width: 721px) {
   .account-results__overviewHeader {
     display: grid;
@@ -558,6 +603,14 @@
 
 .account-chartCard__note--shared {
   margin-top: 0;
+}
+
+.account-chartCard__note--reset {
+  width: 100%;
+  margin-top: 0;
+  border-color: rgba(255, 107, 107, 0.24);
+  background: rgba(255, 107, 107, 0.08);
+  color: #ffdada;
 }
 
 .account-chartCard__body {
@@ -813,16 +866,26 @@
   .account-results__overviewControls {
     width: 100%;
     align-items: stretch;
+  }
 
-    .account-results__overviewSharedControls {
-      grid-template-columns: auto minmax(0, 1fr);
-      align-items: end;
-      gap: 16px;
-    }
+  .account-results__overviewControls .account-results__overviewSharedControls {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: end;
+    gap: 16px;
   }
 
   .account-results__overviewSharedControls {
     padding: 14px;
+  }
+
+  .account-results__overviewSharedTop {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .account-results__resetButton {
+    width: 100%;
+    align-self: stretch;
   }
 
   .account-chartCard__control--shared {
