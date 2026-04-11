@@ -220,15 +220,64 @@
   flex-wrap: wrap;
 }
 
+.account-results__overviewControls {
+  display: flex;
+  align-items: end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
 .account-results__overviewControl {
   display: grid;
   gap: 8px;
   min-width: min(240px, 100%);
 }
 
-.account-results__overviewControl label {
+.account-results__overviewControl label,
+.account-results__overviewControlLabel {
   font-weight: 700;
   font-size: 0.94rem;
+}
+
+.account-results__boardSwitch {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--outline);
+  background: rgba(255, 255, 255, 0.04);
+  min-height: 44px;
+}
+
+.account-results__boardOption {
+  min-width: 84px;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.account-results__boardOption:hover {
+  color: var(--text);
+}
+
+.account-results__boardOption--active {
+  background: linear-gradient(
+    135deg,
+    rgba(73, 209, 125, 0.22),
+    rgba(111, 211, 255, 0.18)
+  );
+  color: var(--text);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
 }
 
 .account-results__overviewGroup {
@@ -312,6 +361,25 @@
   display: grid;
   gap: 6px;
   margin-bottom: 16px;
+}
+
+.account-chartCard__headingRow {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.account-chartCard__control {
+  display: grid;
+  gap: 8px;
+  min-width: min(280px, 100%);
+}
+
+.account-chartCard__control label {
+  font-weight: 700;
+  font-size: 0.94rem;
 }
 
 .account-chartCard__header h4 {
@@ -534,12 +602,29 @@
     align-items: stretch;
   }
 
+  .account-results__overviewControls {
+    width: 100%;
+    align-items: stretch;
+  }
+
   .account-results__overviewControl {
+    width: 100%;
+  }
+
+  .account-results__boardSwitch {
     width: 100%;
   }
 
   .account-resultCard__top {
     grid-template-columns: 1fr;
+  }
+
+  .account-chartCard__headingRow {
+    align-items: stretch;
+  }
+
+  .account-chartCard__control {
+    width: 100%;
   }
 
   .account-resultCard__score {
