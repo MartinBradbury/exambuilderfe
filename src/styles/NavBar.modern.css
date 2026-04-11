@@ -12,8 +12,16 @@
   );
   border-bottom: 1px solid var(--outline);
 }
+:root[data-theme="light"] .site-navbarV2 {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.85),
+    rgba(255, 255, 255, 0.75)
+  );
+}
+
 @media (prefers-color-scheme: light) {
-  .site-navbarV2 {
+  :root:not([data-theme="dark"]) .site-navbarV2 {
     background: linear-gradient(
       180deg,
       rgba(255, 255, 255, 0.85),

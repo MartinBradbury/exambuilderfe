@@ -23,6 +23,23 @@ import "../styles/Account.modern.css";
 
 const RETRY_DELAYS_MS = [1500, 3000];
 const PENDING_CHECKOUT_KEY = "pendingCheckoutQualification";
+const THEME_STORAGE_KEY = "themePreference";
+
+const getPreferredTheme = () => {
+  if (typeof window === "undefined") {
+    return "dark";
+  }
+
+  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+
+  if (storedTheme === "light" || storedTheme === "dark") {
+    return storedTheme;
+  }
+
+  return window.matchMedia("(prefers-color-scheme: light)").matches
+    ? "light"
+    : "dark";
+};
 
 const formatTrackingDate = (value) => {
   const parsed = new Date(value);
@@ -135,6 +152,7 @@ export default function Account() {
   const [hasInitializedSummaryQualification, setHasInitializedSummaryQualification] =
     useState(false);
   const summaryTouchStartXRef = useRef(null);
+  const [themePreference, setThemePreference] = useState(getPreferredTheme);
 
   const isLoggedIn = Boolean(user);
   const planLabel = useMemo(() => getAccessPlanLabel(user), [user]);
@@ -161,6 +179,7 @@ export default function Account() {
     () => getQualificationAccessState(user),
     [user],
   );
+  const nextThemeLabel = themePreference === "dark" ? "Light mode" : "Dark mode";
   const summaryLocked = !hasAccessToQualification(
     user,
     activeSummaryQualification,
@@ -175,6 +194,15 @@ export default function Account() {
       setSelectedCheckoutQualification(checkoutOptions[0]);
     }
   }, [checkoutOptions, selectedCheckoutQualification]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    document.documentElement.dataset.theme = themePreference;
+    window.localStorage.setItem(THEME_STORAGE_KEY, themePreference);
+  }, [themePreference]);
 
   useEffect(() => {
     if (hasInitializedSummaryQualification) {
@@ -485,21 +513,10 @@ export default function Account() {
     showSummaryQualification(summaryCards[nextIndex].qualification);
   };
 
-  const handleRefreshStatus = async () => {
-    if (!refreshCurrentUser) {
-      return;
-    }
-
-    setIsRefreshingStatus(true);
-    setCheckoutError("");
-    try {
-      await refreshCurrentUser();
-    } catch (error) {
-      console.error("Unable to refresh account status", error);
-      setCheckoutError("Unable to refresh your account status right now.");
-    } finally {
-      setIsRefreshingStatus(false);
-    }
+  const handleThemeToggle = () => {
+    setThemePreference((currentTheme) =>
+      currentTheme === "dark" ? "light" : "dark",
+    );
   };
 
   const focusUpgradeOptions = (preferredQualification = null) => {
@@ -1091,38 +1108,61 @@ export default function Account() {
           </div>
 
           <div className="col-12">
-            <article className="account-card">
+            <article className="account-card account-settingsCard">
               <SectionTitle title="Account Settings" />
-              <p className="account-muted">
-                Refresh account data, review terms, or sign out.
-              </p>
-              <div className="account-actions">
-                <button
-                  type="button"
-                  className="btn btn--ghost"
-                  onClick={handleRefreshStatus}
-                  disabled={isRefreshingStatus}
-                >
-                  {isRefreshingStatus
-                    ? "Refreshing…"
-                    : "Refresh account status"}
-                </button>
-                <Link to="/terms" className="btn btn--ghost">
-                  Terms of Service
-                </Link>
-                <Link to="/privacy-policy" className="btn btn--ghost">
-                  Privacy Policy
-                </Link>
-                <Link to="/refund-policy" className="btn btn--ghost">
-                  Refund Policy
-                </Link>
-                <button
-                  type="button"
-                  className="btn btn--subtle"
-                  onClick={() => logout?.()}
-                >
-                  Log out
-                </button>
+              <div className="account-settingsCard__layout">
+                <div className="account-settingsCard__intro">
+                  <p className="account-muted">
+                    Change the interface theme, review key policies, or sign
+                    out from this device.
+                  </p>
+                </div>
+
+                <div className="account-settingsCard__groups">
+                  <div className="account-settingsCard__group">
+                    <p className="account-settingsCard__label">Account</p>
+                    <div className="account-settingsCard__actions">
+                      <button
+                        type="button"
+                        className="account-settingsCard__button account-settingsCard__button--primary"
+                        onClick={handleThemeToggle}
+                      >
+                        Switch to {nextThemeLabel}
+                      </button>
+                      <button
+                        type="button"
+                        className="account-settingsCard__button account-settingsCard__button--subtle"
+                        onClick={() => logout?.()}
+                      >
+                        Log out
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="account-settingsCard__group">
+                    <p className="account-settingsCard__label">Legal</p>
+                    <div className="account-settingsCard__actions">
+                      <Link
+                        to="/terms"
+                        className="account-settingsCard__button account-settingsCard__button--ghost"
+                      >
+                        Terms
+                      </Link>
+                      <Link
+                        to="/privacy-policy"
+                        className="account-settingsCard__button account-settingsCard__button--ghost"
+                      >
+                        Privacy
+                      </Link>
+                      <Link
+                        to="/refund-policy"
+                        className="account-settingsCard__button account-settingsCard__button--ghost"
+                      >
+                        Refunds
+                      </Link>
+                    </div>
+                  </div>
+                </div>
               </div>
             </article>
           </div>

@@ -306,6 +306,113 @@
   color: var(--muted);
 }
 
+.account-settingsCard {
+  display: grid;
+  gap: 16px;
+}
+
+.account-settingsCard__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.8fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.account-settingsCard__intro {
+  padding: 16px 18px;
+  border: 1px solid var(--outline);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.account-settingsCard__groups {
+  display: grid;
+  gap: 12px;
+}
+
+.account-settingsCard__group {
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 1px solid var(--outline);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.account-settingsCard__label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.account-settingsCard__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.account-settingsCard__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--outline);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.account-settingsCard__button:hover {
+  transform: translateY(-1px);
+}
+
+.account-settingsCard__button:focus-visible {
+  outline: 2px solid rgba(73, 209, 125, 0.72);
+  outline-offset: 3px;
+}
+
+.account-settingsCard__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.account-settingsCard__button--primary {
+  background: rgba(73, 209, 125, 0.14);
+  border-color: rgba(73, 209, 125, 0.28);
+  color: var(--brand);
+}
+
+.account-settingsCard__button--ghost {
+  background: transparent;
+  color: var(--text);
+}
+
+.account-settingsCard__button--ghost:hover {
+  border-color: rgba(73, 209, 125, 0.28);
+  color: var(--brand);
+}
+
+.account-settingsCard__button--subtle {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.account-settingsCard__button--subtle:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .account-lockable {
   position: relative;
 }
@@ -686,6 +793,10 @@
     .account-summaryMetrics {
       grid-template-columns: 1fr;
     }
+
+    .account-settingsCard__layout {
+      grid-template-columns: 1fr;
+    }
   }
 }
 
@@ -857,8 +968,12 @@
   box-shadow: 0 0 0 4px var(--ring);
 }
 
+:root[data-theme="light"] .account-results__input {
+  background: #fff;
+}
+
 @media (prefers-color-scheme: light) {
-  .account-results__input {
+  :root:not([data-theme="dark"]) .account-results__input {
     background: #fff;
   }
 }

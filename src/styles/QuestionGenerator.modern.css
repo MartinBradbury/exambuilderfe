@@ -189,9 +189,14 @@
   padding: 10px 12px;
   outline: none;
 }
+:root[data-theme="light"] .qg-input,
+:root[data-theme="light"] .qg-input:disabled {
+  background: #fff;
+}
+
 @media (prefers-color-scheme: light) {
-  .qg-input,
-  .qg-input:disabled {
+  :root:not([data-theme="dark"]) .qg-input,
+  :root:not([data-theme="dark"]) .qg-input:disabled {
     background: #fff;
   }
 }

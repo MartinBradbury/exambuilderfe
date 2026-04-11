@@ -83,12 +83,22 @@
   border-color: transparent;
 }
 
+:root[data-theme="light"] .login-input {
+  background: #fff;
+  color: #0e1726;
+}
+
+:root[data-theme="light"] .login-input::placeholder {
+  color: rgba(14, 23, 38, 0.55);
+}
+
 @media (prefers-color-scheme: light) {
-  .login-input {
+  :root:not([data-theme="dark"]) .login-input {
     background: #fff;
     color: #0e1726;
   }
-  .login-input::placeholder {
+
+  :root:not([data-theme="dark"]) .login-input::placeholder {
     color: rgba(14, 23, 38, 0.55);
   }
 }
