@@ -1146,7 +1146,7 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
                     </div>
 
                     <div className="col-12 col-lg-8">
-                      <article className="card account-card account-chartCard h-100">
+                      <article className="card account-card account-chartCard account-chartCard--trend h-100">
                         <div className="account-chartCard__header">
                           <h4>Percentage score over time</h4>
                           <p className="account-muted">
@@ -1157,10 +1157,11 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
                             are improving over time.
                           </p>
                         </div>
-                        <div className="account-chartCard__body">
-                          <ResponsiveContainer width="100%" height={260}>
+                        <div className="account-chartCard__body account-chartCard__body--trend">
+                          <ResponsiveContainer width="100%" height="100%">
                             <LineChart
                               data={selectedOverviewChartData.scoreTrendData}
+                              margin={{ top: 8, right: 8, bottom: 8, left: 0 }}
                             >
                               <CartesianGrid
                                 stroke={CHART_COLORS.grid}
@@ -1239,38 +1240,61 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
                             )}
                           </div>
                         </div>
-                        <div className="account-chartCard__body">
-                          <ResponsiveContainer width="100%" height={340}>
-                            <BarChart
-                              data={selectedOverviewSubtopicData}
-                              layout="vertical"
-                              margin={{ top: 8, right: 8, bottom: 8, left: 24 }}
+                        <div className="account-chartCard__body account-chartCard__body--barChart">
+                          <div className="account-chartCard__scrollX">
+                            <div
+                              className="account-chartCard__chartCanvas"
+                              style={{
+                                minWidth: `${Math.max(
+                                  selectedOverviewSubtopicData.length * 88,
+                                  560,
+                                )}px`,
+                              }}
                             >
-                              <CartesianGrid
-                                stroke={CHART_COLORS.grid}
-                                horizontal={false}
-                              />
-                              <XAxis
-                                type="number"
-                                domain={[0, 100]}
-                                tick={{ fill: CHART_COLORS.text, fontSize: 12 }}
-                                tickFormatter={(value) => `${value}%`}
-                              />
-                              <YAxis
-                                type="category"
-                                dataKey="subtopicShortLabel"
-                                width={190}
-                                tick={{ fill: CHART_COLORS.text, fontSize: 12 }}
-                              />
-                              <Tooltip content={renderChartTooltip} />
-                              <Bar
-                                dataKey="averageScore"
-                                name="Average"
-                                fill={CHART_COLORS.bar}
-                                radius={[0, 8, 8, 0]}
-                              />
-                            </BarChart>
-                          </ResponsiveContainer>
+                              <ResponsiveContainer width="100%" height={360}>
+                                <BarChart
+                                  data={selectedOverviewSubtopicData}
+                                  margin={{
+                                    top: 8,
+                                    right: 8,
+                                    bottom: 64,
+                                    left: 8,
+                                  }}
+                                >
+                                  <CartesianGrid
+                                    stroke={CHART_COLORS.grid}
+                                    vertical={false}
+                                  />
+                                  <XAxis
+                                    dataKey="subtopicShortLabel"
+                                    tick={{
+                                      fill: CHART_COLORS.text,
+                                      fontSize: 12,
+                                    }}
+                                    interval={0}
+                                    angle={-32}
+                                    textAnchor="end"
+                                    height={72}
+                                  />
+                                  <YAxis
+                                    domain={[0, 100]}
+                                    tick={{
+                                      fill: CHART_COLORS.text,
+                                      fontSize: 12,
+                                    }}
+                                    tickFormatter={(value) => `${value}%`}
+                                  />
+                                  <Tooltip content={renderChartTooltip} />
+                                  <Bar
+                                    dataKey="averageScore"
+                                    name="Average"
+                                    fill={CHART_COLORS.bar}
+                                    radius={[8, 8, 0, 0]}
+                                  />
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
                         </div>
                       </article>
                     </div>

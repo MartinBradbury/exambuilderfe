@@ -357,6 +357,11 @@
   );
 }
 
+.account-chartCard--trend {
+  display: flex;
+  flex-direction: column;
+}
+
 .account-chartCard__header {
   display: grid;
   gap: 6px;
@@ -391,9 +396,29 @@
   min-height: 260px;
 }
 
+.account-chartCard__body--trend {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
 .account-chartCard__body--donut {
   display: grid;
   align-items: center;
+}
+
+.account-chartCard__body--barChart {
+  min-height: 360px;
+}
+
+.account-chartCard__scrollX {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+}
+
+.account-chartCard__chartCanvas {
+  height: 360px;
 }
 
 .account-chartTooltip {
@@ -625,6 +650,14 @@
 
   .account-chartCard__control {
     width: 100%;
+  }
+
+  .account-chartCard__body--barChart {
+    min-height: 320px;
+  }
+
+  .account-chartCard__chartCanvas {
+    height: 320px;
   }
 
   .account-resultCard__score {
