@@ -111,6 +111,7 @@ export default function Account() {
   const [searchParams] = useSearchParams();
   const checkoutState = searchParams.get("checkout");
   const retryTimeoutsRef = useRef([]);
+  const upgradeCardRef = useRef(null);
 
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
@@ -131,6 +132,8 @@ export default function Account() {
   const [activeSummaryQualification, setActiveSummaryQualification] = useState(
     GCSE_QUALIFICATION,
   );
+  const [hasInitializedSummaryQualification, setHasInitializedSummaryQualification] =
+    useState(false);
   const summaryTouchStartXRef = useRef(null);
 
   const isLoggedIn = Boolean(user);
@@ -158,6 +161,11 @@ export default function Account() {
     () => getQualificationAccessState(user),
     [user],
   );
+  const summaryLocked = !hasAccessToQualification(
+    user,
+    activeSummaryQualification,
+  );
+  const trackingLocked = !hasAnyPaidAccess;
 
   useEffect(() => {
     if (
@@ -167,6 +175,24 @@ export default function Account() {
       setSelectedCheckoutQualification(checkoutOptions[0]);
     }
   }, [checkoutOptions, selectedCheckoutQualification]);
+
+  useEffect(() => {
+    if (hasInitializedSummaryQualification) {
+      return;
+    }
+
+    if (hasALevelAccess && !hasGcseAccess) {
+      setActiveSummaryQualification(ALEVEL_QUALIFICATION);
+    } else {
+      setActiveSummaryQualification(GCSE_QUALIFICATION);
+    }
+
+    setHasInitializedSummaryQualification(true);
+  }, [
+    hasALevelAccess,
+    hasGcseAccess,
+    hasInitializedSummaryQualification,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -476,6 +502,22 @@ export default function Account() {
     }
   };
 
+  const focusUpgradeOptions = (preferredQualification = null) => {
+    if (
+      preferredQualification &&
+      checkoutOptions.includes(preferredQualification)
+    ) {
+      setSelectedCheckoutQualification(preferredQualification);
+    } else if (checkoutOptions.length > 0) {
+      setSelectedCheckoutQualification(checkoutOptions[0]);
+    }
+
+    upgradeCardRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
   const handleUpgrade = async () => {
     if (isCreatingCheckout || !canUpgrade || !hasAcceptedPurchaseTerms) {
       if (needsEmailVerification) {
@@ -751,119 +793,182 @@ export default function Account() {
                   Complete a test to start building your summary.
                 </p>
               ) : (
-                <>
-                  <div
-                    className="account-summaryViewport"
-                    onTouchStart={handleSummaryTouchStart}
-                    onTouchEnd={handleSummaryTouchEnd}
-                  >
+                <div
+                  className={`account-lockable${
+                    summaryLocked ? " account-lockable--locked" : ""
+                  }`}
+                >
+                  <div className="account-lockable__content">
                     <div
-                      className="account-summaryTrack"
-                      style={{
-                        transform: `translateX(-${activeSummaryIndex * 100}%)`,
-                      }}
+                      className="account-summaryViewport"
+                      onTouchStart={handleSummaryTouchStart}
+                      onTouchEnd={handleSummaryTouchEnd}
                     >
-                      {summaryCards.map((card) => (
-                        <section
-                          key={card.qualification}
-                          className="account-summarySlide"
-                          aria-label={`${card.title} summary`}
-                        >
-                          <div className="account-summarySlideHeader">
-                            <div>
-                              <p className="account-muted">{card.title}</p>
-                              <strong>
-                                {card.summary.trackedTestsCount} tracked test
-                                {card.summary.trackedTestsCount === 1 ? "" : "s"}
-                              </strong>
+                      <div
+                        className="account-summaryTrack"
+                        style={{
+                          transform: `translateX(-${activeSummaryIndex * 100}%)`,
+                        }}
+                      >
+                        {summaryCards.map((card) => (
+                          <section
+                            key={card.qualification}
+                            className="account-summarySlide"
+                            aria-label={`${card.title} summary`}
+                          >
+                            <div className="account-summarySlideHeader">
+                              <div>
+                                <p className="account-muted">{card.title}</p>
+                                <strong>
+                                  {card.summary.trackedTestsCount} tracked test
+                                  {card.summary.trackedTestsCount === 1
+                                    ? ""
+                                    : "s"}
+                                </strong>
+                              </div>
                             </div>
-                          </div>
 
-                          {card.summary.trackedTestsCount === 0 ? (
-                            <p className="account-muted account-summaryEmpty account-summaryEmpty--panel">
-                              No tracked {card.title.toLowerCase()} tests yet.
-                            </p>
-                          ) : (
-                            <div className="account-summaryMetrics">
-                              {card.items.map((item) => (
-                                <div
-                                  key={`${card.qualification}-${item.label}`}
-                                  className="account-summaryMetric"
-                                >
-                                  <span>{item.label}</span>
-                                  <strong>{item.value}</strong>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </section>
+                            {card.summary.trackedTestsCount === 0 ? (
+                              <p className="account-muted account-summaryEmpty account-summaryEmpty--panel">
+                                No tracked {card.title.toLowerCase()} tests yet.
+                              </p>
+                            ) : (
+                              <div className="account-summaryMetrics">
+                                {card.items.map((item) => (
+                                  <div
+                                    key={`${card.qualification}-${item.label}`}
+                                    className="account-summaryMetric"
+                                  >
+                                    <span>{item.label}</span>
+                                    <strong>{item.value}</strong>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </section>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="account-summaryDots" aria-hidden="true">
+                      {summaryCards.map((card) => (
+                        <span
+                          key={`${card.qualification}-dot`}
+                          className={`account-summaryDot${
+                            activeSummaryQualification === card.qualification
+                              ? " account-summaryDot--active"
+                              : ""
+                          }`}
+                        />
                       ))}
+                    </div>
+
+                    <div className="account-summaryFooter">
+                      <Link
+                        to="/progress"
+                        state={{
+                          initialOverviewLevel: getOverviewLevelForQualification(
+                            activeSummaryQualification,
+                          ),
+                        }}
+                        className="account-summaryCta"
+                      >
+                        View detailed progress -&gt;
+                      </Link>
                     </div>
                   </div>
 
-                  <div className="account-summaryDots" aria-hidden="true">
-                    {summaryCards.map((card) => (
-                      <span
-                        key={`${card.qualification}-dot`}
-                        className={`account-summaryDot${
-                          activeSummaryQualification === card.qualification
-                            ? " account-summaryDot--active"
-                            : ""
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </>
+                  {summaryLocked ? (
+                    <button
+                      type="button"
+                      className="account-lockable__overlay"
+                      onClick={() =>
+                        focusUpgradeOptions(activeSummaryQualification)
+                      }
+                      aria-label={`Upgrade to unlock ${getQualificationLabel(activeSummaryQualification)} summary`}
+                    >
+                      <span className="account-lockable__overlayCard">
+                        <strong>
+                          Upgrade to unlock {getQualificationLabel(activeSummaryQualification)} summary
+                        </strong>
+                        <span>
+                          {hasAnyPaidAccess
+                            ? `Buy ${getQualificationLabel(activeSummaryQualification)} access to view this qualification's performance summary.`
+                            : "Buy a paid plan to unlock your performance summary and progress insights."}
+                        </span>
+                        <span className="account-lockable__overlayAction">
+                          See upgrade options
+                        </span>
+                      </span>
+                    </button>
+                  ) : null}
+                </div>
               )}
-
-              <div className="account-summaryFooter">
-                <Link
-                  to="/progress"
-                  state={{
-                    initialOverviewLevel: getOverviewLevelForQualification(
-                      activeSummaryQualification,
-                    ),
-                  }}
-                  className="account-summaryCta"
-                >
-                  View detailed progress -&gt;
-                </Link>
-              </div>
             </article>
           </div>
 
           <div className="col-12 col-lg-6">
             <article className="account-card h-100">
               <SectionTitle title="Performance Tracking" />
-              <div className="account-trackingMeta">
-                <p className="account-muted">Tracking start date</p>
-                <strong>
-                  {performanceTrackingStartDate
-                    ? formatTrackingDate(performanceTrackingStartDate)
-                    : "Tracking all saved results"}
-                </strong>
+              <div
+                className={`account-lockable${
+                  trackingLocked ? " account-lockable--locked" : ""
+                }`}
+              >
+                <div className="account-lockable__content">
+                  <div className="account-trackingMeta">
+                    <p className="account-muted">Tracking start date</p>
+                    <strong>
+                      {performanceTrackingStartDate
+                        ? formatTrackingDate(performanceTrackingStartDate)
+                        : "Tracking all saved results"}
+                    </strong>
+                  </div>
+                  <div className="account-trackingMeta">
+                    <p className="account-muted">Tracked tests</p>
+                    <strong>{performanceSummary.trackedTestsCount}</strong>
+                  </div>
+                  <div className="account-actions">
+                    <button
+                      type="button"
+                      className="btn btn--ghost"
+                      onClick={() => setIsTrackingResetModalOpen(true)}
+                    >
+                      Start New Tracking Period
+                    </button>
+                  </div>
+                  <p className="account-note">
+                    Past results stay saved. New averages start from today.
+                  </p>
+                </div>
+
+                {trackingLocked ? (
+                  <button
+                    type="button"
+                    className="account-lockable__overlay"
+                    onClick={() => focusUpgradeOptions()}
+                    aria-label="Upgrade to unlock performance tracking"
+                  >
+                    <span className="account-lockable__overlayCard">
+                      <strong>Upgrade to unlock performance tracking</strong>
+                      <span>
+                        Any paid access plan unlocks tracking controls and reset options.
+                      </span>
+                      <span className="account-lockable__overlayAction">
+                        See upgrade options
+                      </span>
+                    </span>
+                  </button>
+                ) : null}
               </div>
-              <div className="account-trackingMeta">
-                <p className="account-muted">Tracked tests</p>
-                <strong>{performanceSummary.trackedTestsCount}</strong>
-              </div>
-              <div className="account-actions">
-                <button
-                  type="button"
-                  className="btn btn--ghost"
-                  onClick={() => setIsTrackingResetModalOpen(true)}
-                >
-                  Start New Tracking Period
-                </button>
-              </div>
-              <p className="account-note">
-                Past results stay saved. New averages start from today.
-              </p>
             </article>
           </div>
 
           <div className="col-12 col-lg-6">
-            <article className="account-card account-card--accent h-100">
+            <article
+              ref={upgradeCardRef}
+              className="account-card account-card--accent h-100"
+            >
               <SectionTitle title="Upgrade Plan" />
               <p className="account-muted">
                 {needsEmailVerification
