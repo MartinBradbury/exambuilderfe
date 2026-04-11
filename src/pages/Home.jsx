@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import EmailVerificationNotice from "../components/EmailVerificationNotice";
 import "../styles/Home.modern.css";
@@ -10,6 +10,59 @@ export default function Home() {
   const canUpgrade = Boolean(user) && !hasUnlimitedAccess && emailVerified;
   const [isMobileHowItWorks, setIsMobileHowItWorks] = useState(false);
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(true);
+  const [activePreviewSlide, setActivePreviewSlide] = useState(0);
+  const previewRailRef = useRef(null);
+
+  const previewSlides = [
+    {
+      key: "question",
+      tag: "Live preview",
+      meta: "OCR Biology • 6 marks",
+      title: "Question preview",
+      content: (
+        <>
+          <p className="heroPanel__question">
+            Explain how the structure of the alveoli helps to maximise gas
+            exchange in the lungs. [4 marks]
+          </p>
+        </>
+      ),
+    },
+    {
+      key: "answer",
+      tag: "Student answer",
+      meta: "Attempt draft",
+      title: "Answer preview",
+      content: (
+        <>
+          <p className="heroPanel__answerIntro">
+            The alveoli are good for gas exchange because there are lots of
+            them, so the lungs have a large surface area. The walls are thin so
+            oxygen diffuses quickly.
+          </p>
+        </>
+      ),
+    },
+    {
+      key: "feedback",
+      tag: "Feedback",
+      meta: "Score example",
+      title: "Instant feedback",
+      content: (
+        <>
+          <div className="heroPanel__score">3 / 4</div>
+          <p>
+            Strong explanation of surface area and diffusion distance. To score
+            higher, mention ventilation and blood flow maintaining the gradient.
+          </p>
+          <ul className="heroPanel__feedbackList">
+            <li>Strength: clear use of exam terminology</li>
+            <li>Next mark: explain how ventilation maintains the gradient</li>
+          </ul>
+        </>
+      ),
+    },
+  ];
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 800px)");
@@ -31,6 +84,35 @@ export default function Home() {
     if (isMobileHowItWorks) {
       setIsHowItWorksOpen(true);
     }
+  };
+
+  useEffect(() => {
+    if (!isMobileHowItWorks) {
+      setActivePreviewSlide(0);
+    }
+  }, [isMobileHowItWorks]);
+
+  const handlePreviewRailScroll = () => {
+    const rail = previewRailRef.current;
+
+    if (!rail) {
+      return;
+    }
+
+    const slideOffsets = Array.from(rail.children).map(
+      (slide) => slide.offsetLeft,
+    );
+
+    const nearestIndex = slideOffsets.reduce(
+      (closestIndex, offset, index) =>
+        Math.abs(offset - rail.scrollLeft) <
+        Math.abs(slideOffsets[closestIndex] - rail.scrollLeft)
+          ? index
+          : closestIndex,
+      0,
+    );
+
+    setActivePreviewSlide(nearestIndex);
   };
 
   return (
@@ -119,40 +201,93 @@ export default function Home() {
             id="preview"
             aria-label="Product preview"
           >
-            {/* Product preview keeps the landing page feeling like a real tool rather than a concept. */}
-            <div className="heroPanel heroPanel--question">
-              <div className="heroPanel__topline">
-                <span className="heroPanel__tag">Live preview</span>
-                <span className="heroPanel__meta">OCR Biology • 6 marks</span>
-              </div>
-              <h2>Question preview</h2>
-              <p className="heroPanel__question">
-                Explain how the structure of the alveoli helps to maximise gas
-                exchange in the lungs. [4 marks]
-              </p>
-              <ul className="heroPanel__points">
-                <li>Large surface area from many alveoli</li>
-                <li>Thin walls create a short diffusion path</li>
-                <li>
-                  Rich capillary network maintains concentration gradients
-                </li>
-              </ul>
-            </div>
+            {!isMobileHowItWorks ? (
+              <>
+                <div className="heroPanel heroPanel--question">
+                  <div className="heroPanel__topline">
+                    <span className="heroPanel__tag">Live preview</span>
+                    <span className="heroPanel__meta">
+                      OCR Biology • 6 marks
+                    </span>
+                  </div>
+                  <h2>Question preview</h2>
+                  <p className="heroPanel__question">
+                    Explain how the structure of the alveoli helps to maximise
+                    gas exchange in the lungs. [4 marks]
+                  </p>
+                  <ul className="heroPanel__points">
+                    <li>Large surface area from many alveoli</li>
+                    <li>Thin walls create a short diffusion path</li>
+                    <li>
+                      Rich capillary network maintains concentration gradients
+                    </li>
+                  </ul>
+                </div>
 
-            <div className="heroPanel heroPanel--feedback">
-              <div className="heroPanel__topline">
-                <span className="heroPanel__tag heroPanel__tag--soft">
-                  Feedback
-                </span>
-                <span className="heroPanel__meta">Score example</span>
+                <div className="heroPanel heroPanel--feedback">
+                  <div className="heroPanel__topline">
+                    <span className="heroPanel__tag heroPanel__tag--soft">
+                      Feedback
+                    </span>
+                    <span className="heroPanel__meta">Score example</span>
+                  </div>
+                  <div className="heroPanel__score">3 / 4</div>
+                  <p>
+                    Strong explanation of surface area and diffusion distance.
+                    To score higher, mention ventilation and blood flow
+                    maintaining the gradient.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="heroPreviewMobile">
+                <div
+                  ref={previewRailRef}
+                  className="heroPreviewMobile__rail"
+                  onScroll={handlePreviewRailScroll}
+                >
+                  {previewSlides.map((slide) => (
+                    <section
+                      key={slide.key}
+                      className="heroPreviewMobile__slide"
+                      aria-label={slide.title}
+                    >
+                      <div className="heroPanel heroPanel--mobileSlide">
+                        <div className="heroPanel__topline">
+                          <span
+                            className={
+                              slide.key === "feedback"
+                                ? "heroPanel__tag heroPanel__tag--soft"
+                                : "heroPanel__tag"
+                            }
+                          >
+                            {slide.tag}
+                          </span>
+                          <span className="heroPanel__meta">{slide.meta}</span>
+                        </div>
+                        <h2>{slide.title}</h2>
+                        {slide.content}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+                <div className="heroPreviewMobile__footer" aria-hidden="true">
+                  <span className="heroPreviewMobile__swipeCue">Swipe →</span>
+                  <div className="heroPreviewMobile__dots">
+                    {previewSlides.map((slide, index) => (
+                      <span
+                        key={slide.key}
+                        className={
+                          index === activePreviewSlide
+                            ? "heroPreviewMobile__dot heroPreviewMobile__dot--active"
+                            : "heroPreviewMobile__dot"
+                        }
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="heroPanel__score">3 / 4</div>
-              <p>
-                Strong explanation of surface area and diffusion distance. To
-                score higher, mention ventilation and blood flow maintaining the
-                gradient.
-              </p>
-            </div>
+            )}
           </aside>
         </div>
       </header>

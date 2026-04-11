@@ -368,6 +368,21 @@ body {
   color: var(--muted);
 }
 
+.heroPanel__answerIntro {
+  margin: 0;
+  color: var(--text);
+}
+
+.heroPanel__feedbackList {
+  margin: 16px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.heroPanel__feedbackList li + li {
+  margin-top: 8px;
+}
+
 .heroPanel__score {
   display: inline-flex;
   align-items: center;
@@ -379,6 +394,10 @@ body {
   font-size: 1.3rem;
   font-weight: 800;
   margin-bottom: 12px;
+}
+
+.heroPreviewMobile {
+  display: none;
 }
 
 .proofStrip {
@@ -765,6 +784,77 @@ body {
     font-size: clamp(2.2rem, 9vw, 3.4rem);
   }
 
+  .heroV2__panel {
+    max-width: none;
+    gap: 12px;
+  }
+
+  .heroPreviewMobile {
+    display: grid;
+    gap: 14px;
+  }
+
+  .heroPreviewMobile__rail {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .heroPreviewMobile__rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .heroPreviewMobile__slide {
+    min-width: 100%;
+    scroll-snap-align: start;
+  }
+
+  .heroPanel--mobileSlide {
+    min-height: 100%;
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.2);
+  }
+
+  .heroPreviewMobile__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .heroPreviewMobile__swipeCue {
+    color: var(--brand);
+    font-size: 0.88rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .heroPreviewMobile__dots {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .heroPreviewMobile__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    transition:
+      transform 0.2s ease,
+      background 0.2s ease;
+  }
+
+  .heroPreviewMobile__dot--active {
+    background: var(--brand);
+    transform: scale(1.25);
+  }
+
   .lead {
     font-size: 1rem;
   }
@@ -909,6 +999,10 @@ body {
   .heroPanel__topline {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .heroPreviewMobile__footer {
+    flex-wrap: wrap;
   }
 
   .heroPanel__score {
