@@ -79,6 +79,25 @@
   text-decoration: underline;
 }
 
+.legal-contact {
+  padding: 0 4px;
+}
+
+.legal-contact p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.legal-contact a {
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.legal-contact a:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 720px) {
   .legal-hero,
   .legal-card {

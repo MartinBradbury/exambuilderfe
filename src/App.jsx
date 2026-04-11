@@ -15,6 +15,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import TermsOfService from "./pages/TermsOfService";
 import PaidPlanTerms from "./pages/PaidPlanTerms";
 import RefundPolicy from "./pages/RefundPolicy";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
 import Specification from "./pages/Specification";
@@ -29,6 +30,10 @@ function App() {
           <Route index element={<Home />} />
           <Route path="access-denied" element={<AccessDenied />} />
           <Route path="specification" element={<Specification />} />
+          <Route path="terms" element={<TermsOfService />} />
+          <Route path="privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="paid-plan-terms" element={<PaidPlanTerms />} />
+          <Route path="refund-policy" element={<RefundPolicy />} />
           <Route element={<GuestOnlyRoute />}>
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
@@ -37,9 +42,6 @@ function App() {
             <Route path="forgot-password" element={<ForgotPassword />} />
             <Route path="reset-password" element={<ResetPassword />} />
             <Route path="verify-email" element={<VerifyEmail />} />
-            <Route path="terms" element={<TermsOfService />} />
-            <Route path="paid-plan-terms" element={<PaidPlanTerms />} />
-            <Route path="refund-policy" element={<RefundPolicy />} />
             <Route path="account" element={<Account />} />
             <Route path="progress" element={<Progress />} />
             <Route path="question-generator" element={<QuestionGenerator />} />

@@ -25,12 +25,27 @@ export default function PaidPlanTerms() {
       </section>
 
       <section>
+        <h2>Billing support</h2>
+        <p>
+          If you believe you were billed incorrectly, contact support at{" "}
+          <a href="mailto:support@exambuilder.co.uk">
+            support@exambuilder.co.uk
+          </a>
+          .
+        </p>
+      </section>
+
+      <section>
         <h2>Length of access</h2>
         <p>
-          The paid upgrade grants full paid access for as long as Exam Builder
-          remains available as a service. It does not guarantee that the service
-          will continue indefinitely, permanently, or without interruption.
+          Paid access grants use of premium features for as long as the service
+          is available. No guarantee of lifetime availability is provided.
         </p>
+      </section>
+
+      <section>
+        <h2>Account use</h2>
+        <p>Access is tied to your account and is non-transferable.</p>
       </section>
 
       <section>

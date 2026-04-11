@@ -10,9 +10,9 @@ export default function RefundPolicy() {
       <section>
         <h2>General position</h2>
         <p>
-          Because the paid plan unlocks digital service access immediately after
-          activation, refunds are generally not offered once paid access has
-          been granted, except where a refund is required by applicable law.
+          Due to the nature of digital services, refunds are generally not
+          offered once access has been granted, except where required by
+          applicable law.
         </p>
       </section>
 
@@ -39,8 +39,11 @@ export default function RefundPolicy() {
       <section>
         <h2>Support contact</h2>
         <p>
-          If you need billing help or want a charge reviewed, contact the site
-          operator using the support details provided with the service.
+          If you need billing help or want a charge reviewed, contact support at{" "}
+          <a href="mailto:support@exambuilder.co.uk">
+            support@exambuilder.co.uk
+          </a>
+          .
         </p>
       </section>
     </LegalPageLayout>

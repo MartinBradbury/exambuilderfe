@@ -21,9 +21,19 @@ export default function LegalPageLayout({
 
         <nav className="legal-links" aria-label="Legal pages">
           <Link to="/terms">Terms of Service</Link>
+          <Link to="/privacy-policy">Privacy Policy</Link>
           <Link to="/paid-plan-terms">Paid Plan Terms</Link>
           <Link to="/refund-policy">Refund Policy</Link>
         </nav>
+
+        <section className="legal-contact">
+          <p>
+            Exam Builder is operated by Martin Bradbury. Contact:{" "}
+            <a href="mailto:enquiry@exambuilder.co.uk">
+              enquiry@exambuilder.co.uk
+            </a>
+          </p>
+        </section>
       </div>
     </div>
   );

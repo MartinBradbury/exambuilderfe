@@ -628,6 +628,7 @@ export default function Account() {
                     />
                     <span>
                       I agree to the <Link to="/terms">Terms of Service</Link>,{" "}
+                      <Link to="/privacy-policy">Privacy Policy</Link>,{" "}
                       <Link to="/paid-plan-terms">Paid Plan Terms</Link>, and{" "}
                       <Link to="/refund-policy">Refund Policy</Link>.
                     </span>
@@ -679,6 +680,9 @@ export default function Account() {
                 </button>
                 <Link to="/terms" className="btn btn--ghost">
                   Terms of Service
+                </Link>
+                <Link to="/privacy-policy" className="btn btn--ghost">
+                  Privacy Policy
                 </Link>
                 <Link to="/refund-policy" className="btn btn--ghost">
                   Refund Policy

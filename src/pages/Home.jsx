@@ -576,6 +576,9 @@ export default function Home() {
             <Link className="link" to="/terms">
               Terms
             </Link>
+            <Link className="link" to="/privacy-policy">
+              Privacy Policy
+            </Link>
             <Link className="link" to="/paid-plan-terms">
               Paid Plan Terms
             </Link>
@@ -597,6 +600,12 @@ export default function Home() {
         <div className="container footerV2__bottom">
           <p className="footerV2__copyright">
             © 2026 Exam Builder. All rights reserved.
+          </p>
+          <p className="footerV2__copyright">
+            Exam Builder is operated by Martin Bradbury. Contact:{" "}
+            <a className="link" href="mailto:enquiry@exambuilder.co.uk">
+              enquiry@exambuilder.co.uk
+            </a>
           </p>
         </div>
       </footer>

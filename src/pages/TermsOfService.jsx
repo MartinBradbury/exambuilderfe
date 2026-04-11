@@ -15,6 +15,18 @@ export default function TermsOfService() {
           You must provide accurate account information and keep your login
           credentials secure.
         </p>
+        <p>
+          Exam Builder is provided for educational purposes only. We do not
+          guarantee exam results or outcomes.
+        </p>
+      </section>
+
+      <section>
+        <h2>Service accuracy</h2>
+        <p>
+          Generated questions and feedback are intended as study support and may
+          not always perfectly reflect official exam marking.
+        </p>
       </section>
 
       <section>
