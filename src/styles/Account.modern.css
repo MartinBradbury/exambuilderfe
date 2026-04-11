@@ -400,6 +400,15 @@
   gap: 14px;
 }
 
+.account-results__overviewSharedControls {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--outline);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
 @media (min-width: 721px) {
   .account-results__overviewHeader {
     display: grid;
@@ -517,6 +526,10 @@
   min-width: min(280px, 100%);
 }
 
+.account-chartCard__control--shared {
+  max-width: 320px;
+}
+
 .account-chartCard__control label {
   font-weight: 700;
   font-size: 0.94rem;
@@ -541,6 +554,10 @@
   color: var(--text);
   font-size: 0.82rem;
   line-height: 1.35;
+}
+
+.account-chartCard__note--shared {
+  margin-top: 0;
 }
 
 .account-chartCard__body {
@@ -796,6 +813,20 @@
   .account-results__overviewControls {
     width: 100%;
     align-items: stretch;
+
+    .account-results__overviewSharedControls {
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: end;
+      gap: 16px;
+    }
+  }
+
+  .account-results__overviewSharedControls {
+    padding: 14px;
+  }
+
+  .account-chartCard__control--shared {
+    max-width: none;
   }
 
   .account-results__overviewControl {

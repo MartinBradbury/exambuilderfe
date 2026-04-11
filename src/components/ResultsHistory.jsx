@@ -64,7 +64,6 @@ const formatLevelHeading = (levelKey) => {
 const OVERVIEW_LEVEL_ORDER = ["gcse", "a-level"];
 const OVERVIEW_EXAM_BOARD_ORDER = ["ocr", "aqa"];
 const OVERVIEW_ALL_TOPICS_VALUE = "__overall__";
-const TREND_MOVING_AVERAGE_WINDOW = 3;
 
 const getExamBoardKey = (value) => {
   const normalizedValue = normalizeText(value);
@@ -159,6 +158,17 @@ const getSessionSubcategory = (session) =>
   session?.subcategory_title ||
   "";
 
+const getSessionBreakdownLabel = (session) => {
+  const subtopic = getSessionSubtopic(session);
+  const subcategory = getSessionSubcategory(session);
+
+  if (!subcategory) {
+    return subtopic;
+  }
+
+  return `${subtopic}: ${subcategory}`;
+};
+
 const parseFeedback = (feedback) => {
   if (!feedback) {
     return null;
@@ -251,45 +261,54 @@ const calculateMarksSummary = (results) => {
   ];
 };
 
-const buildLineChartData = (results) =>
-  [...results]
-    .filter(shouldIncludeInTrendData)
-    .sort((left, right) => {
-      const leftDate = new Date(getSessionDateValue(left)).getTime() || 0;
-      const rightDate = new Date(getSessionDateValue(right)).getTime() || 0;
-      return leftDate - rightDate;
-    })
-    .map((result, index, sortedResults) => {
-      const rawPercentage = calculatePercentageScore(
-        getSessionScore(result),
-        getSessionMaxScore(result),
-      );
-      const movingAverageWindow = sortedResults.slice(
-        Math.max(0, index - TREND_MOVING_AVERAGE_WINDOW + 1),
-        index + 1,
-      );
-      const movingAverage = Math.round(
-        movingAverageWindow.reduce(
-          (total, session) =>
-            total +
-            calculatePercentageScore(
-              getSessionScore(session),
-              getSessionMaxScore(session),
-            ),
-          0,
-        ) / movingAverageWindow.length,
-      );
+const buildLineChartData = (results) => {
+  const sortedResults = [...results].sort((left, right) => {
+    const leftDate = new Date(getSessionDateValue(left)).getTime() || 0;
+    const rightDate = new Date(getSessionDateValue(right)).getTime() || 0;
+    return leftDate - rightDate;
+  });
 
-      return {
-        id: result.id ?? index,
-        label: formatCompactDate(getSessionDateValue(result)),
-        movingAverage,
-        rawPercentage,
-        fullDate: formatSessionDate(getSessionDateValue(result)),
-        topic: result.topicLabel || getSessionTopic(result),
-        sampleSize: movingAverageWindow.length,
-      };
+  const includedResults = [];
+
+  return sortedResults.reduce((points, result, index) => {
+    if (!shouldIncludeInTrendData(result)) {
+      return points;
+    }
+
+    includedResults.push(result);
+
+    const rawPercentage = calculatePercentageScore(
+      getSessionScore(result),
+      getSessionMaxScore(result),
+    );
+    const movingAverage = Math.round(
+      includedResults.reduce(
+        (total, session) =>
+          total +
+          calculatePercentageScore(
+            getSessionScore(session),
+            getSessionMaxScore(session),
+          ),
+        0,
+      ) / includedResults.length,
+    );
+
+    points.push({
+      id: result.id ?? index,
+      label: formatCompactDate(getSessionDateValue(result)),
+      chartPointKey: String(result.id ?? getSessionDateValue(result) ?? index),
+      movingAverage,
+      rawPercentage,
+      fullDate: formatSessionDate(getSessionDateValue(result)),
+      topic: result.topicLabel || getSessionTopic(result),
+      sampleSize: includedResults.length,
+      completedTestsCount: index + 1,
+      excludedTestsCount: index + 1 - includedResults.length,
     });
+
+    return points;
+  }, []);
+};
 
 const groupAverageScoreByTopic = (results) => {
   const grouped = results.reduce((map, result) => {
@@ -332,7 +351,7 @@ const groupAverageScoreBySubtopic = (results, topic, catalogEntries = []) => {
       return map;
     }
 
-    const subtopicKey = result.subtopicLabel || getSessionSubtopic(result);
+    const subtopicKey = getSessionBreakdownLabel(result);
     const current = map.get(subtopicKey) || {
       subtopic: subtopicKey,
       totalPercent: 0,
@@ -362,7 +381,7 @@ const groupAverageScoreBySubtopic = (results, topic, catalogEntries = []) => {
     );
   }
 
-  return catalogEntries.map((entry) => {
+  const catalogMappedEntries = catalogEntries.map((entry) => {
     const existing = grouped.get(entry.label);
 
     return {
@@ -374,6 +393,18 @@ const groupAverageScoreBySubtopic = (results, topic, catalogEntries = []) => {
       attempts: existing?.attempts || 0,
     };
   });
+
+  const catalogKeys = new Set(
+    catalogEntries.map((entry) => normalizeText(entry.label)),
+  );
+
+  const extraGroupedEntries = fallbackEntries.filter(
+    (entry) => !catalogKeys.has(normalizeText(entry.subtopic)),
+  );
+
+  return [...catalogMappedEntries, ...extraGroupedEntries].sort((left, right) =>
+    naturalCompareLabels(left.subtopic, right.subtopic),
+  );
 };
 
 const renderChartTooltip = ({ active, payload, label }) => {
@@ -397,16 +428,29 @@ const renderChartTooltip = ({ active, payload, label }) => {
           Current moving average: {trendPayload.movingAverage}%
         </p>
         <p className="account-chartTooltip__value">
-          Window size: {trendPayload.sampleSize} test
+          Completed tests so far: {trendPayload.completedTestsCount} test
+          {trendPayload.completedTestsCount === 1 ? "" : "s"}
+        </p>
+        <p className="account-chartTooltip__value">
+          Included in average: {trendPayload.sampleSize} test
           {trendPayload.sampleSize === 1 ? "" : "s"}
         </p>
+        {trendPayload.excludedTestsCount > 0 && (
+          <p className="account-chartTooltip__value">
+            Excluded zero-score tests: {trendPayload.excludedTestsCount}
+          </p>
+        )}
       </div>
     );
   }
 
+  const chartLabel = payload[0]?.payload?.chartLabel || label;
+
   return (
     <div className="account-chartTooltip">
-      {label ? <p className="account-chartTooltip__label">{label}</p> : null}
+      {chartLabel ? (
+        <p className="account-chartTooltip__label">{chartLabel}</p>
+      ) : null}
       {payload.map((item) => (
         <p key={item.dataKey} className="account-chartTooltip__value">
           <span
@@ -476,9 +520,6 @@ export default function ResultsHistory({
   const [selectedOverviewExamBoard, setSelectedOverviewExamBoard] =
     useState("ocr");
   const [selectedOverviewMarksTopic, setSelectedOverviewMarksTopic] = useState(
-    OVERVIEW_ALL_TOPICS_VALUE,
-  );
-  const [selectedOverviewTopic, setSelectedOverviewTopic] = useState(
     OVERVIEW_ALL_TOPICS_VALUE,
   );
   const [overviewTopicCatalog, setOverviewTopicCatalog] = useState([]);
@@ -751,19 +792,19 @@ export default function ResultsHistory({
   );
 
   const selectedOverviewSubtopicData = useMemo(() => {
-    if (selectedOverviewTopic === OVERVIEW_ALL_TOPICS_VALUE) {
+    if (selectedOverviewMarksTopic === OVERVIEW_ALL_TOPICS_VALUE) {
       return [];
     }
 
     return groupAverageScoreBySubtopic(
       selectedOverviewSessions,
-      selectedOverviewTopic,
+      selectedOverviewMarksTopic,
       overviewSubtopicCatalog,
     );
   }, [
     overviewSubtopicCatalog,
+    selectedOverviewMarksTopic,
     selectedOverviewSessions,
-    selectedOverviewTopic,
   ]);
 
   const selectedOverviewTopicOptions = useMemo(() => {
@@ -793,9 +834,10 @@ export default function ResultsHistory({
   }, [overviewTopicCatalog, selectedOverviewTopicPerformance]);
 
   const selectedOverviewBarChartData = useMemo(() => {
-    if (selectedOverviewTopic === OVERVIEW_ALL_TOPICS_VALUE) {
-      return selectedOverviewTopicOptions.map((entry) => ({
+    if (selectedOverviewMarksTopic === OVERVIEW_ALL_TOPICS_VALUE) {
+      return selectedOverviewTopicOptions.map((entry, index) => ({
         ...entry,
+        chartKey: `topic-${index}-${normalizeText(entry.topic)}`,
         chartLabel: entry.topic,
         chartShortLabel: truncateChartLabel(
           entry.topic,
@@ -804,8 +846,9 @@ export default function ResultsHistory({
       }));
     }
 
-    return selectedOverviewSubtopicData.map((entry) => ({
+    return selectedOverviewSubtopicData.map((entry, index) => ({
       ...entry,
+      chartKey: `subtopic-${index}-${normalizeText(entry.subtopic)}`,
       chartLabel: entry.subtopic,
       chartShortLabel: truncateChartLabel(
         entry.subtopic,
@@ -814,23 +857,24 @@ export default function ResultsHistory({
     }));
   }, [
     isMobileViewport,
+    selectedOverviewMarksTopic,
     selectedOverviewSubtopicData,
-    selectedOverviewTopic,
     selectedOverviewTopicOptions,
   ]);
 
   const selectedOverviewTopicCatalogEntry = useMemo(() => {
-    if (selectedOverviewTopic === OVERVIEW_ALL_TOPICS_VALUE) {
+    if (selectedOverviewMarksTopic === OVERVIEW_ALL_TOPICS_VALUE) {
       return null;
     }
 
     return (
       overviewTopicCatalog.find(
         (entry) =>
-          normalizeText(entry.label) === normalizeText(selectedOverviewTopic),
+          normalizeText(entry.label) ===
+          normalizeText(selectedOverviewMarksTopic),
       ) || null
     );
-  }, [overviewTopicCatalog, selectedOverviewTopic]);
+  }, [overviewTopicCatalog, selectedOverviewMarksTopic]);
 
   useEffect(() => {
     let isActive = true;
@@ -996,25 +1040,6 @@ export default function ResultsHistory({
     selectedOverviewSection,
     selectedOverviewTopicCatalogEntry,
   ]);
-
-  useEffect(() => {
-    const nextTopicOptions = selectedOverviewTopicOptions;
-
-    if (!nextTopicOptions.length) {
-      if (selectedOverviewTopic !== OVERVIEW_ALL_TOPICS_VALUE) {
-        setSelectedOverviewTopic(OVERVIEW_ALL_TOPICS_VALUE);
-      }
-      return;
-    }
-
-    const hasSelectedTopic =
-      selectedOverviewTopic === OVERVIEW_ALL_TOPICS_VALUE ||
-      nextTopicOptions.some((topic) => topic.topic === selectedOverviewTopic);
-
-    if (!hasSelectedTopic) {
-      setSelectedOverviewTopic(OVERVIEW_ALL_TOPICS_VALUE);
-    }
-  }, [selectedOverviewTopic, selectedOverviewTopicOptions]);
 
   useEffect(() => {
     const nextTopicOptions = selectedOverviewTopicOptions;
@@ -1216,52 +1241,52 @@ export default function ResultsHistory({
                     </p>
                   </div>
 
+                  <div className="account-results__overviewSharedControls">
+                    <div className="account-chartCard__control account-chartCard__control--shared">
+                      <label htmlFor="results-overview-marks-topic">
+                        Module filter
+                      </label>
+                      <select
+                        id="results-overview-marks-topic"
+                        className="account-results__input"
+                        value={selectedOverviewMarksTopic}
+                        onChange={(event) =>
+                          setSelectedOverviewMarksTopic(event.target.value)
+                        }
+                      >
+                        <option value={OVERVIEW_ALL_TOPICS_VALUE}>
+                          Overall
+                        </option>
+                        {selectedOverviewTopicOptions.map((topicOption) => (
+                          <option
+                            key={topicOption.topic}
+                            value={topicOption.topic}
+                          >
+                            {topicOption.topic}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <p className="account-muted account-chartCard__note account-chartCard__note--shared">
+                      All three graphs use this module filter. The more tests
+                      you have, the more reliable the trend - aim for at least 5
+                      tests for a clearer picture.
+                    </p>
+                  </div>
+
                   {selectedOverviewSessions.length > 0 ? (
                     <div className="row g-3">
                       <div className="col-12 col-lg-4">
                         <article className="card account-card account-chartCard h-100">
                           <div className="account-chartCard__header">
-                            <div className="account-chartCard__headingRow account-chartCard__headingRow--top">
-                              <div>
-                                <h4>Marks gained vs missed</h4>
-                                <p className="account-muted">
-                                  {selectedOverviewMarksTopic ===
-                                  OVERVIEW_ALL_TOPICS_VALUE
-                                    ? `Total marks across visible ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} sessions.`
-                                    : `Total marks for ${selectedOverviewMarksTopic} within visible ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} sessions.`}
-                                </p>
-                              </div>
-
-                              <div className="account-chartCard__control">
-                                <label htmlFor="results-overview-marks-topic">
-                                  Module filter
-                                </label>
-                                <select
-                                  id="results-overview-marks-topic"
-                                  className="account-results__input"
-                                  value={selectedOverviewMarksTopic}
-                                  onChange={(event) =>
-                                    setSelectedOverviewMarksTopic(
-                                      event.target.value,
-                                    )
-                                  }
-                                >
-                                  <option value={OVERVIEW_ALL_TOPICS_VALUE}>
-                                    Overall
-                                  </option>
-                                  {selectedOverviewTopicOptions.map(
-                                    (topicOption) => (
-                                      <option
-                                        key={topicOption.topic}
-                                        value={topicOption.topic}
-                                      >
-                                        {topicOption.topic}
-                                      </option>
-                                    ),
-                                  )}
-                                </select>
-                              </div>
-                            </div>
+                            <h4>Marks gained vs missed</h4>
+                            <p className="account-muted">
+                              {selectedOverviewMarksTopic ===
+                              OVERVIEW_ALL_TOPICS_VALUE
+                                ? `Total marks across visible ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} sessions.`
+                                : `Total marks for ${selectedOverviewMarksTopic} within visible ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} sessions.`}
+                            </p>
                           </div>
                           <div className="account-chartCard__body account-chartCard__body--donut">
                             <ResponsiveContainer width="100%" height={260}>
@@ -1298,14 +1323,8 @@ export default function ResultsHistory({
                             <p className="account-muted">
                               {selectedOverviewMarksTopic ===
                               OVERVIEW_ALL_TOPICS_VALUE
-                                ? `See whether your ${selectedOverviewSection.title.toLowerCase()} scores for ${formatExamBoardHeading(selectedOverviewExamBoard)} are improving over time using a rolling average of your latest tests.`
-                                : `See whether your ${selectedOverviewMarksTopic} scores for ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} are improving over time using a rolling average of your latest tests.`}
-                            </p>
-                            <p className="account-muted account-chartCard__note">
-                              This graph uses the module filter from Marks
-                              gained vs missed. The more tests you have, the
-                              more reliable the trend – aim for at least 5 tests
-                              for a clearer picture.
+                                ? `See whether your ${selectedOverviewSection.title.toLowerCase()} scores for ${formatExamBoardHeading(selectedOverviewExamBoard)} are improving over time using the cumulative average of completed tests.`
+                                : `See whether your ${selectedOverviewMarksTopic} scores for ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} are improving over time using the cumulative average of completed tests.`}
                             </p>
                           </div>
                           <div className="account-chartCard__body account-chartCard__body--trend">
@@ -1325,9 +1344,13 @@ export default function ResultsHistory({
                                     vertical={false}
                                   />
                                   <XAxis
-                                    dataKey="label"
+                                    dataKey="chartPointKey"
                                     minTickGap={isMobileViewport ? 28 : 22}
                                     interval={selectedOverviewTrendTickInterval}
+                                    tickFormatter={(_, index) =>
+                                      selectedOverviewScoreTrendData[index]
+                                        ?.label || ""
+                                    }
                                     tick={{
                                       fill: CHART_COLORS.text,
                                       fontSize: isMobileViewport ? 10 : 12,
@@ -1366,54 +1389,18 @@ export default function ResultsHistory({
                       <div className="col-12">
                         <article className="card account-card account-chartCard account-chartCard--bar">
                           <div className="account-chartCard__header">
-                            <div className="account-chartCard__headingRow">
-                              <div>
-                                <h4>
-                                  {selectedOverviewTopic ===
-                                  OVERVIEW_ALL_TOPICS_VALUE
-                                    ? "Average score by module"
-                                    : "Average score by subtopic"}
-                                </h4>
-                                <p className="account-muted">
-                                  {selectedOverviewTopic ===
-                                  OVERVIEW_ALL_TOPICS_VALUE
-                                    ? `Compare module performance across your ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} results.`
-                                    : `Compare subtopic performance within your ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} module choice.`}
-                                </p>
-                              </div>
-
-                              {selectedOverviewTopicOptions.length > 0 && (
-                                <div className="account-chartCard__control">
-                                  <label htmlFor="results-overview-topic">
-                                    Module view
-                                  </label>
-                                  <select
-                                    id="results-overview-topic"
-                                    className="account-results__input"
-                                    value={selectedOverviewTopic}
-                                    onChange={(event) =>
-                                      setSelectedOverviewTopic(
-                                        event.target.value,
-                                      )
-                                    }
-                                  >
-                                    <option value={OVERVIEW_ALL_TOPICS_VALUE}>
-                                      Overall data
-                                    </option>
-                                    {selectedOverviewTopicOptions.map(
-                                      (topicOption) => (
-                                        <option
-                                          key={topicOption.topic}
-                                          value={topicOption.topic}
-                                        >
-                                          {topicOption.topic}
-                                        </option>
-                                      ),
-                                    )}
-                                  </select>
-                                </div>
-                              )}
-                            </div>
+                            <h4>
+                              {selectedOverviewMarksTopic ===
+                              OVERVIEW_ALL_TOPICS_VALUE
+                                ? "Average score by module"
+                                : "Average score by subtopic"}
+                            </h4>
+                            <p className="account-muted">
+                              {selectedOverviewMarksTopic ===
+                              OVERVIEW_ALL_TOPICS_VALUE
+                                ? `Compare module performance across your ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} results.`
+                                : `Compare subtopic performance within ${selectedOverviewMarksTopic} for your ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} results.`}
+                            </p>
                           </div>
                           <div className="account-chartCard__body account-chartCard__body--barChart">
                             <div className="account-chartCard__scrollX">
@@ -1439,7 +1426,11 @@ export default function ResultsHistory({
                                       vertical={false}
                                     />
                                     <XAxis
-                                      dataKey="chartShortLabel"
+                                      dataKey="chartKey"
+                                      tickFormatter={(_, index) =>
+                                        selectedOverviewBarChartData[index]
+                                          ?.chartShortLabel || ""
+                                      }
                                       tick={{
                                         fill: CHART_COLORS.text,
                                         fontSize: isMobileViewport ? 9 : 12,
