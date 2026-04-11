@@ -63,6 +63,7 @@ const formatLevelHeading = (levelKey) => {
 
 const OVERVIEW_LEVEL_ORDER = ["gcse", "a-level"];
 const OVERVIEW_EXAM_BOARD_ORDER = ["ocr", "aqa"];
+const OVERVIEW_ALL_TOPICS_VALUE = "__overall__";
 
 const getExamBoardKey = (value) => {
   const normalizedValue = normalizeText(value);
@@ -88,6 +89,45 @@ const formatExamBoardHeading = (examBoardKey) => {
   }
 
   return "Other";
+};
+
+const naturalCompareLabels = (left, right) =>
+  String(left || "").localeCompare(String(right || ""), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+
+const getCatalogTopicLabel = (item) =>
+  String(item?.topic || item?.title || item?.name || "").trim();
+
+const getCatalogSubtopicLabel = (item) =>
+  String(item?.title || item?.subtopic || item?.name || "").trim();
+
+const getOverviewCatalogContexts = (levelKey, sessions) => {
+  if (levelKey !== "gcse") {
+    return [{}];
+  }
+
+  return Array.from(
+    sessions
+      .reduce((map, session) => {
+        const subject = String(session.subject || "").trim();
+        const tier = String(session.tier || "").trim();
+
+        if (!subject || !tier) {
+          return map;
+        }
+
+        const key = `${normalizeText(subject)}:${normalizeText(tier)}`;
+
+        if (!map.has(key)) {
+          map.set(key, { subject, tier });
+        }
+
+        return map;
+      }, new Map())
+      .values(),
+  );
 };
 
 const truncateChartLabel = (value, maxLength = 24) => {
@@ -247,14 +287,10 @@ const groupAverageScoreByTopic = (results) => {
       averageScore: Math.round(entry.totalPercent / entry.attempts),
       attempts: entry.attempts,
     }))
-    .sort(
-      (left, right) =>
-        right.averageScore - left.averageScore ||
-        left.topic.localeCompare(right.topic),
-    );
+    .sort((left, right) => naturalCompareLabels(left.topic, right.topic));
 };
 
-const groupAverageScoreBySubtopic = (results, topic) => {
+const groupAverageScoreBySubtopic = (results, topic, catalogEntries = []) => {
   if (!topic) {
     return [];
   }
@@ -283,18 +319,31 @@ const groupAverageScoreBySubtopic = (results, topic) => {
     return map;
   }, new Map());
 
-  return Array.from(grouped.values())
-    .map((entry) => ({
-      subtopic: entry.subtopic,
-      subtopicShortLabel: truncateChartLabel(entry.subtopic, 30),
-      averageScore: Math.round(entry.totalPercent / entry.attempts),
-      attempts: entry.attempts,
-    }))
-    .sort(
-      (left, right) =>
-        right.averageScore - left.averageScore ||
-        left.subtopic.localeCompare(right.subtopic),
+  const fallbackEntries = Array.from(grouped.values()).map((entry) => ({
+    subtopic: entry.subtopic,
+    subtopicShortLabel: truncateChartLabel(entry.subtopic, 30),
+    averageScore: Math.round(entry.totalPercent / entry.attempts),
+    attempts: entry.attempts,
+  }));
+
+  if (!catalogEntries.length) {
+    return fallbackEntries.sort((left, right) =>
+      naturalCompareLabels(left.subtopic, right.subtopic),
     );
+  }
+
+  return catalogEntries.map((entry) => {
+    const existing = grouped.get(entry.label);
+
+    return {
+      subtopic: entry.label,
+      subtopicShortLabel: truncateChartLabel(entry.label, 30),
+      averageScore: existing
+        ? Math.round(existing.totalPercent / existing.attempts)
+        : 0,
+      attempts: existing?.attempts || 0,
+    };
+  });
 };
 
 const renderChartTooltip = ({ active, payload, label }) => {
@@ -367,7 +416,12 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
   const [selectedOverviewLevel, setSelectedOverviewLevel] = useState("gcse");
   const [selectedOverviewExamBoard, setSelectedOverviewExamBoard] =
     useState("ocr");
+  const [selectedOverviewMarksTopic, setSelectedOverviewMarksTopic] = useState(
+    OVERVIEW_ALL_TOPICS_VALUE,
+  );
   const [selectedOverviewTopic, setSelectedOverviewTopic] = useState("");
+  const [overviewTopicCatalog, setOverviewTopicCatalog] = useState([]);
+  const [overviewSubtopicCatalog, setOverviewSubtopicCatalog] = useState([]);
 
   useEffect(() => {
     let isActive = true;
@@ -551,11 +605,27 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
 
   const selectedOverviewChartData = useMemo(
     () => ({
-      marksSummaryData: calculateMarksSummary(selectedOverviewSessions),
       scoreTrendData: buildLineChartData(selectedOverviewSessions),
       topicOptions: groupAverageScoreByTopic(selectedOverviewSessions),
     }),
     [selectedOverviewSessions],
+  );
+
+  const selectedOverviewMarksSessions = useMemo(() => {
+    if (selectedOverviewMarksTopic === OVERVIEW_ALL_TOPICS_VALUE) {
+      return selectedOverviewSessions;
+    }
+
+    return selectedOverviewSessions.filter(
+      (session) =>
+        normalizeText(session.topicLabel || getSessionTopic(session)) ===
+        normalizeText(selectedOverviewMarksTopic),
+    );
+  }, [selectedOverviewMarksTopic, selectedOverviewSessions]);
+
+  const selectedOverviewMarksSummaryData = useMemo(
+    () => calculateMarksSummary(selectedOverviewMarksSessions),
+    [selectedOverviewMarksSessions],
   );
 
   const selectedOverviewSubtopicData = useMemo(
@@ -563,12 +633,213 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
       groupAverageScoreBySubtopic(
         selectedOverviewSessions,
         selectedOverviewTopic,
+        overviewSubtopicCatalog,
       ),
-    [selectedOverviewSessions, selectedOverviewTopic],
+    [overviewSubtopicCatalog, selectedOverviewSessions, selectedOverviewTopic],
+  );
+
+  const selectedOverviewTopicOptions = useMemo(() => {
+    if (!overviewTopicCatalog.length) {
+      return selectedOverviewChartData.topicOptions;
+    }
+
+    const sessionTopicMap = new Map(
+      selectedOverviewChartData.topicOptions.map((entry) => [
+        normalizeText(entry.topic),
+        entry,
+      ]),
+    );
+
+    return overviewTopicCatalog.map((entry) => {
+      const existing = sessionTopicMap.get(normalizeText(entry.label));
+
+      return (
+        existing || {
+          topic: entry.label,
+          topicShortLabel: truncateChartLabel(entry.label),
+          averageScore: 0,
+          attempts: 0,
+        }
+      );
+    });
+  }, [overviewTopicCatalog, selectedOverviewChartData.topicOptions]);
+
+  const selectedOverviewTopicCatalogEntry = useMemo(
+    () =>
+      overviewTopicCatalog.find(
+        (entry) =>
+          normalizeText(entry.label) === normalizeText(selectedOverviewTopic),
+      ) || null,
+    [overviewTopicCatalog, selectedOverviewTopic],
   );
 
   useEffect(() => {
-    const nextTopicOptions = selectedOverviewChartData.topicOptions;
+    let isActive = true;
+
+    const fetchOverviewTopicCatalog = async () => {
+      if (!selectedOverviewSection) {
+        setOverviewTopicCatalog([]);
+        return;
+      }
+
+      const examBoard = formatExamBoardHeading(selectedOverviewExamBoard);
+      const contexts = getOverviewCatalogContexts(
+        selectedOverviewSection.levelKey,
+        selectedOverviewSection.sessions,
+      );
+
+      if (!contexts.length) {
+        setOverviewTopicCatalog([]);
+        return;
+      }
+
+      try {
+        const responses = await Promise.all(
+          contexts.map(async (context) => {
+            const endpoint =
+              selectedOverviewSection.levelKey === "gcse"
+                ? "/api/gcse-topics/"
+                : "/api/biology-topics/";
+            const params =
+              selectedOverviewSection.levelKey === "gcse"
+                ? {
+                    exam_board: examBoard,
+                    subject: context.subject,
+                    tier: context.tier,
+                  }
+                : { exam_board: examBoard };
+            const response = await api.get(endpoint, { params });
+
+            return {
+              context,
+              items: Array.isArray(response.data) ? response.data : [],
+            };
+          }),
+        );
+
+        if (!isActive) {
+          return;
+        }
+
+        const merged = responses.reduce((map, { context, items }) => {
+          items.forEach((item) => {
+            const label = getCatalogTopicLabel(item);
+
+            if (!label || item?.id == null) {
+              return;
+            }
+
+            const key = normalizeText(label);
+            const nextRequest = {
+              topicId: item.id,
+              subject: context.subject,
+              tier: context.tier,
+            };
+
+            if (!map.has(key)) {
+              map.set(key, { label, requests: [nextRequest] });
+              return;
+            }
+
+            map.get(key).requests.push(nextRequest);
+          });
+
+          return map;
+        }, new Map());
+
+        setOverviewTopicCatalog(Array.from(merged.values()));
+      } catch (err) {
+        console.error("Failed to fetch overview topics:", err);
+        if (isActive) {
+          setOverviewTopicCatalog([]);
+        }
+      }
+    };
+
+    fetchOverviewTopicCatalog();
+
+    return () => {
+      isActive = false;
+    };
+  }, [selectedOverviewExamBoard, selectedOverviewSection]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const fetchOverviewSubtopicCatalog = async () => {
+      if (!selectedOverviewSection || !selectedOverviewTopicCatalogEntry) {
+        setOverviewSubtopicCatalog([]);
+        return;
+      }
+
+      const examBoard = formatExamBoardHeading(selectedOverviewExamBoard);
+
+      try {
+        const responses = await Promise.all(
+          selectedOverviewTopicCatalogEntry.requests.map(async (request) => {
+            const endpoint =
+              selectedOverviewSection.levelKey === "gcse"
+                ? "/api/gcse-subtopics/"
+                : "/api/biology-subtopics/";
+            const params =
+              selectedOverviewSection.levelKey === "gcse"
+                ? {
+                    topic_id: request.topicId,
+                    exam_board: examBoard,
+                    subject: request.subject,
+                    tier: request.tier,
+                  }
+                : {
+                    topic_id: request.topicId,
+                    exam_board: examBoard,
+                  };
+            const response = await api.get(endpoint, { params });
+            return Array.isArray(response.data) ? response.data : [];
+          }),
+        );
+
+        if (!isActive) {
+          return;
+        }
+
+        const merged = responses.flat().reduce((map, item) => {
+          const label = getCatalogSubtopicLabel(item);
+
+          if (!label) {
+            return map;
+          }
+
+          const key = normalizeText(label);
+
+          if (!map.has(key)) {
+            map.set(key, { label });
+          }
+
+          return map;
+        }, new Map());
+
+        setOverviewSubtopicCatalog(Array.from(merged.values()));
+      } catch (err) {
+        console.error("Failed to fetch overview subtopics:", err);
+        if (isActive) {
+          setOverviewSubtopicCatalog([]);
+        }
+      }
+    };
+
+    fetchOverviewSubtopicCatalog();
+
+    return () => {
+      isActive = false;
+    };
+  }, [
+    selectedOverviewExamBoard,
+    selectedOverviewSection,
+    selectedOverviewTopicCatalogEntry,
+  ]);
+
+  useEffect(() => {
+    const nextTopicOptions = selectedOverviewTopicOptions;
 
     if (!nextTopicOptions.length) {
       if (selectedOverviewTopic) {
@@ -584,7 +855,22 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
     if (!hasSelectedTopic) {
       setSelectedOverviewTopic(nextTopicOptions[0].topic);
     }
-  }, [selectedOverviewChartData, selectedOverviewTopic]);
+  }, [selectedOverviewTopic, selectedOverviewTopicOptions]);
+
+  useEffect(() => {
+    const nextTopicOptions = selectedOverviewTopicOptions;
+
+    if (
+      selectedOverviewMarksTopic === OVERVIEW_ALL_TOPICS_VALUE ||
+      nextTopicOptions.some(
+        (topic) => topic.topic === selectedOverviewMarksTopic,
+      )
+    ) {
+      return;
+    }
+
+    setSelectedOverviewMarksTopic(OVERVIEW_ALL_TOPICS_VALUE);
+  }, [selectedOverviewMarksTopic, selectedOverviewTopicOptions]);
 
   useEffect(() => {
     if (sessionCards.length === 0) {
@@ -792,28 +1078,60 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
                     <div className="col-12 col-lg-4">
                       <article className="card account-card account-chartCard h-100">
                         <div className="account-chartCard__header">
-                          <h4>Marks gained vs missed</h4>
-                          <p className="account-muted">
-                            Total marks across visible{" "}
-                            {selectedOverviewSection.title.toLowerCase()}{" "}
-                            {formatExamBoardHeading(selectedOverviewExamBoard)}{" "}
-                            sessions.
-                          </p>
+                          <div className="account-chartCard__headingRow">
+                            <div>
+                              <h4>Marks gained vs missed</h4>
+                              <p className="account-muted">
+                                {selectedOverviewMarksTopic ===
+                                OVERVIEW_ALL_TOPICS_VALUE
+                                  ? `Total marks across visible ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} sessions.`
+                                  : `Total marks for ${selectedOverviewMarksTopic} within visible ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} sessions.`}
+                              </p>
+                            </div>
+
+                            <div className="account-chartCard__control">
+                              <label htmlFor="results-overview-marks-topic">
+                                Module filter
+                              </label>
+                              <select
+                                id="results-overview-marks-topic"
+                                className="account-results__input"
+                                value={selectedOverviewMarksTopic}
+                                onChange={(event) =>
+                                  setSelectedOverviewMarksTopic(
+                                    event.target.value,
+                                  )
+                                }
+                              >
+                                <option value={OVERVIEW_ALL_TOPICS_VALUE}>
+                                  Overall
+                                </option>
+                                {selectedOverviewTopicOptions.map(
+                                  (topicOption) => (
+                                    <option
+                                      key={topicOption.topic}
+                                      value={topicOption.topic}
+                                    >
+                                      {topicOption.topic}
+                                    </option>
+                                  ),
+                                )}
+                              </select>
+                            </div>
+                          </div>
                         </div>
                         <div className="account-chartCard__body account-chartCard__body--donut">
                           <ResponsiveContainer width="100%" height={260}>
                             <PieChart>
                               <Pie
-                                data={
-                                  selectedOverviewChartData.marksSummaryData
-                                }
+                                data={selectedOverviewMarksSummaryData}
                                 dataKey="value"
                                 nameKey="name"
                                 innerRadius={72}
                                 outerRadius={102}
                                 paddingAngle={4}
                               >
-                                {selectedOverviewChartData.marksSummaryData.map(
+                                {selectedOverviewMarksSummaryData.map(
                                   (entry) => (
                                     <Cell key={entry.name} fill={entry.fill} />
                                   ),
@@ -893,8 +1211,7 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
                               </p>
                             </div>
 
-                            {selectedOverviewChartData.topicOptions.length >
-                              0 && (
+                            {selectedOverviewTopicOptions.length > 0 && (
                               <div className="account-chartCard__control">
                                 <label htmlFor="results-overview-topic">
                                   Topic
@@ -907,7 +1224,7 @@ export default function ResultsHistory({ className = "", showHeader = true }) {
                                     setSelectedOverviewTopic(event.target.value)
                                   }
                                 >
-                                  {selectedOverviewChartData.topicOptions.map(
+                                  {selectedOverviewTopicOptions.map(
                                     (topicOption) => (
                                       <option
                                         key={topicOption.topic}
