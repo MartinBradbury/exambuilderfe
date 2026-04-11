@@ -427,6 +427,13 @@ export default function ResultsHistory({
   const [selectedOverviewTopic, setSelectedOverviewTopic] = useState("");
   const [overviewTopicCatalog, setOverviewTopicCatalog] = useState([]);
   const [overviewSubtopicCatalog, setOverviewSubtopicCatalog] = useState([]);
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return window.matchMedia("(max-width: 720px)").matches;
+  });
   const navigate = useNavigate();
 
   const handleLockedAnalyticsInteraction = () => {
@@ -436,6 +443,33 @@ export default function ResultsHistory({
 
     navigate(upgradePath);
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 720px)");
+    const updateViewport = (event) => {
+      setIsMobileViewport(event.matches);
+    };
+
+    setIsMobileViewport(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", updateViewport);
+
+      return () => {
+        mediaQuery.removeEventListener("change", updateViewport);
+      };
+    }
+
+    mediaQuery.addListener(updateViewport);
+
+    return () => {
+      mediaQuery.removeListener(updateViewport);
+    };
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -650,6 +684,18 @@ export default function ResultsHistory({
         overviewSubtopicCatalog,
       ),
     [overviewSubtopicCatalog, selectedOverviewSessions, selectedOverviewTopic],
+  );
+
+  const selectedOverviewSubtopicChartData = useMemo(
+    () =>
+      selectedOverviewSubtopicData.map((entry) => ({
+        ...entry,
+        subtopicShortLabel: truncateChartLabel(
+          entry.subtopic,
+          isMobileViewport ? 9 : 30,
+        ),
+      })),
+    [isMobileViewport, selectedOverviewSubtopicData],
   );
 
   const selectedOverviewTopicOptions = useMemo(() => {
@@ -886,42 +932,18 @@ export default function ResultsHistory({
     setSelectedOverviewMarksTopic(OVERVIEW_ALL_TOPICS_VALUE);
   }, [selectedOverviewMarksTopic, selectedOverviewTopicOptions]);
 
-  useEffect(() => {
-    if (sessionCards.length === 0) {
-      if (expandedSessionId !== null) {
-        setExpandedSessionId(null);
-      }
-      return;
-    }
-
-    if (expandedSessionId === null) {
-      return;
-    }
-
-    const currentStillVisible = sessionCards.some(
-      (session) => session.id === expandedSessionId,
-    );
-
-    if (!currentStillVisible) {
-      setExpandedSessionId(null);
-    }
-  }, [expandedSessionId, sessionCards]);
-
   return (
-    <section id="results" className={`account-results ${className}`.trim()}>
+    <section
+      className={["account-results", className].filter(Boolean).join(" ")}
+    >
       {showHeader && (
-        <div className="account-results__header">
-          <div>
-            <p className="account-eyebrow">Results history</p>
-            <h2>Past test sessions</h2>
-            <p className="account-muted">
-              Review earlier attempts, revisit feedback, and track how your past
-              question sessions were scored.
-            </p>
-          </div>
-          <Link to="/question-generator" className="btn btn--subtle">
-            Start another test
-          </Link>
+        <div className="account-sectionHeading">
+          <p className="account-eyebrow">Results history</p>
+          <h2>Review your saved exam practice</h2>
+          <p className="account-muted">
+            Track previous sessions, revisit feedback, and compare your progress
+            over time.
+          </p>
         </div>
       )}
 
@@ -931,11 +953,11 @@ export default function ResultsHistory({
             <label htmlFor="results-search">Search</label>
             <input
               id="results-search"
-              type="search"
               className="account-results__input"
+              type="search"
+              placeholder="Search topic, subtopic, level or board"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Topic, board, or subtopic"
             />
           </div>
 
@@ -1185,57 +1207,66 @@ export default function ResultsHistory({
                             </p>
                           </div>
                           <div className="account-chartCard__body account-chartCard__body--trend">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <LineChart
-                                data={selectedOverviewChartData.scoreTrendData}
-                                margin={{
-                                  top: 8,
-                                  right: 8,
-                                  bottom: 8,
-                                  left: 0,
-                                }}
-                              >
-                                <CartesianGrid
-                                  stroke={CHART_COLORS.grid}
-                                  vertical={false}
-                                />
-                                <XAxis
-                                  dataKey="label"
-                                  tick={{
-                                    fill: CHART_COLORS.text,
-                                    fontSize: 12,
+                            <div className="account-chartCard__chartCanvas account-chartCard__chartCanvas--trend">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <LineChart
+                                  data={
+                                    selectedOverviewChartData.scoreTrendData
+                                  }
+                                  margin={{
+                                    top: 8,
+                                    right: 8,
+                                    bottom: isMobileViewport ? 12 : 8,
+                                    left: 0,
                                   }}
-                                />
-                                <YAxis
-                                  domain={[0, 100]}
-                                  tick={{
-                                    fill: CHART_COLORS.text,
-                                    fontSize: 12,
-                                  }}
-                                  tickFormatter={(value) => `${value}%`}
-                                />
-                                <Tooltip content={renderChartTooltip} />
-                                <Line
-                                  type="monotone"
-                                  dataKey="percentage"
-                                  name="Score"
-                                  stroke={CHART_COLORS.line}
-                                  strokeWidth={3}
-                                  dot={{
-                                    r: 4,
-                                    strokeWidth: 0,
-                                    fill: CHART_COLORS.line,
-                                  }}
-                                  activeDot={{ r: 6 }}
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
+                                >
+                                  <CartesianGrid
+                                    stroke={CHART_COLORS.grid}
+                                    vertical={false}
+                                  />
+                                  <XAxis
+                                    dataKey="label"
+                                    minTickGap={isMobileViewport ? 24 : 12}
+                                    interval={
+                                      isMobileViewport ? "preserveStartEnd" : 0
+                                    }
+                                    tick={{
+                                      fill: CHART_COLORS.text,
+                                      fontSize: isMobileViewport ? 10 : 12,
+                                    }}
+                                  />
+                                  <YAxis
+                                    domain={[0, 100]}
+                                    tick={{
+                                      fill: CHART_COLORS.text,
+                                      fontSize: isMobileViewport ? 10 : 12,
+                                    }}
+                                    tickFormatter={(value) => `${value}%`}
+                                    width={isMobileViewport ? 30 : 40}
+                                  />
+                                  <Tooltip content={renderChartTooltip} />
+                                  <Line
+                                    type="monotone"
+                                    dataKey="percentage"
+                                    name="Score"
+                                    stroke={CHART_COLORS.line}
+                                    strokeWidth={3}
+                                    dot={{
+                                      r: isMobileViewport ? 3 : 4,
+                                      strokeWidth: 0,
+                                      fill: CHART_COLORS.line,
+                                    }}
+                                    activeDot={{ r: isMobileViewport ? 5 : 6 }}
+                                  />
+                                </LineChart>
+                              </ResponsiveContainer>
+                            </div>
                           </div>
                         </article>
                       </div>
 
                       <div className="col-12">
-                        <article className="card account-card account-chartCard">
+                        <article className="card account-card account-chartCard account-chartCard--bar">
                           <div className="account-chartCard__header">
                             <div className="account-chartCard__headingRow">
                               <div>
@@ -1283,21 +1314,19 @@ export default function ResultsHistory({
                           <div className="account-chartCard__body account-chartCard__body--barChart">
                             <div className="account-chartCard__scrollX">
                               <div
-                                className="account-chartCard__chartCanvas"
+                                className="account-chartCard__chartCanvas account-chartCard__chartCanvas--bar"
                                 style={{
-                                  minWidth: `${Math.max(
-                                    selectedOverviewSubtopicData.length * 88,
-                                    560,
-                                  )}px`,
+                                  minWidth: "100%",
+                                  height: `${isMobileViewport ? 440 : 540}px`,
                                 }}
                               >
-                                <ResponsiveContainer width="100%" height={360}>
+                                <ResponsiveContainer width="100%" height="100%">
                                   <BarChart
-                                    data={selectedOverviewSubtopicData}
+                                    data={selectedOverviewSubtopicChartData}
                                     margin={{
                                       top: 8,
                                       right: 8,
-                                      bottom: 64,
+                                      bottom: isMobileViewport ? 52 : 64,
                                       left: 8,
                                     }}
                                   >
@@ -1309,20 +1338,22 @@ export default function ResultsHistory({
                                       dataKey="subtopicShortLabel"
                                       tick={{
                                         fill: CHART_COLORS.text,
-                                        fontSize: 12,
+                                        fontSize: isMobileViewport ? 9 : 12,
                                       }}
                                       interval={0}
-                                      angle={-32}
+                                      angle={isMobileViewport ? -42 : -32}
                                       textAnchor="end"
-                                      height={72}
+                                      tickMargin={isMobileViewport ? 6 : 10}
+                                      height={isMobileViewport ? 64 : 72}
                                     />
                                     <YAxis
                                       domain={[0, 100]}
                                       tick={{
                                         fill: CHART_COLORS.text,
-                                        fontSize: 12,
+                                        fontSize: isMobileViewport ? 10 : 12,
                                       }}
                                       tickFormatter={(value) => `${value}%`}
+                                      width={isMobileViewport ? 30 : 40}
                                     />
                                     <Tooltip content={renderChartTooltip} />
                                     <Bar
