@@ -219,6 +219,13 @@ body {
   margin: 0 0 22px;
 }
 
+.heroV2__trustNote {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
 .heroV2__trustRow {
   margin-top: 10px;
 }

@@ -55,13 +55,17 @@ export default function Home() {
               />
             )}
 
+            <p className="heroV2__trustNote">
+              Designed to reflect real OCR and AQA exam expectations.
+            </p>
+
             {/* Lightweight trust points reduce friction without competing with the primary CTA. */}
             <div className="heroV2__trustRow row row-cols-1 row-cols-md-3 g-3" aria-label="Key benefits">
               <div className="col">
                 <div className="heroV2__trustItem">Instant AI marking</div>
               </div>
               <div className="col">
-                <div className="heroV2__trustItem">Based on real exam mark schemes</div>
+                <div className="heroV2__trustItem">Aligned with real OCR &amp; AQA mark schemes</div>
               </div>
               <div className="col">
                 <div className="heroV2__trustItem">Track your progress over time</div>
@@ -188,15 +192,15 @@ export default function Home() {
 
           <div className="col-12 col-lg-6">
             <article className="previewCard previewCard--feedback h-100">
-              <h3>Get AI feedback like a real examiner</h3>
+              <h3>Get AI feedback aligned with real exam mark schemes</h3>
               <p className="previewCard__intro">
                 The feedback is designed to show how your answer performed
                 against the mark scheme, not just whether it was broadly right.
               </p>
               <ul className="planMiniCard__benefits homeFeatureList">
-                <li>See exactly where you gained marks</li>
-                <li>Understand what you missed</li>
-                <li>Improve your exam technique</li>
+                <li>Marked using OCR &amp; AQA-style criteria</li>
+                <li>See exactly where you gain and lose marks</li>
+                <li>Improve your exam technique with targeted feedback</li>
               </ul>
             </article>
           </div>
