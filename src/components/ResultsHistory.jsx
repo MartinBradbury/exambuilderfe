@@ -841,7 +841,7 @@ export default function ResultsHistory({
         chartLabel: entry.topic,
         chartShortLabel: truncateChartLabel(
           entry.topic,
-          isMobileViewport ? 9 : 30,
+          isMobileViewport ? 28 : 30,
         ),
       }));
     }
@@ -852,7 +852,7 @@ export default function ResultsHistory({
       chartLabel: entry.subtopic,
       chartShortLabel: truncateChartLabel(
         entry.subtopic,
-        isMobileViewport ? 9 : 30,
+        isMobileViewport ? 30 : 30,
       ),
     }));
   }, [
