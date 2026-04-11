@@ -427,6 +427,19 @@ body {
   max-width: 70ch;
 }
 
+.sectionHeading__socialProof {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  background: rgba(73, 209, 125, 0.08);
+  color: var(--text);
+  font-size: 0.94rem;
+  font-weight: 600;
+}
+
 .sectionHeading--centered {
   text-align: center;
   justify-items: center;
@@ -443,6 +456,10 @@ body {
 
 .previewGrid {
   display: flex;
+}
+
+.previewV2__toggle {
+  display: none;
 }
 
 .previewCard,
@@ -775,6 +792,47 @@ body {
     font-size: clamp(1.8rem, 7vw, 2.5rem);
   }
 
+  .previewV2 {
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
+
+  .previewV2 .sectionHeading {
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .previewV2__toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--outline);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    font: inherit;
+    font-weight: 700;
+    text-align: left;
+  }
+
+  .previewV2__toggleIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: rgba(73, 209, 125, 0.12);
+    color: var(--brand);
+    font-size: 1.2rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
   .closingCta {
     padding: 10px 0 56px;
   }
@@ -807,6 +865,13 @@ body {
   .closingCta__actions,
   .specsTeaserCard {
     flex-direction: column;
+  }
+
+  .sectionHeading__socialProof {
+    width: 100%;
+    justify-content: center;
+    border-radius: 16px;
+    text-align: center;
   }
 
   .heroV2__ctaBlock .btn,

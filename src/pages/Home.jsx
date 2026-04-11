@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import EmailVerificationNotice from "../components/EmailVerificationNotice";
 import "../styles/Home.modern.css";
@@ -8,6 +8,30 @@ export default function Home() {
   const { user, hasUnlimitedAccess, emailVerified } = useContext(UserContext);
   const needsEmailVerification = Boolean(user) && !emailVerified;
   const canUpgrade = Boolean(user) && !hasUnlimitedAccess && emailVerified;
+  const [isMobileHowItWorks, setIsMobileHowItWorks] = useState(false);
+  const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(true);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 800px)");
+
+    const syncHowItWorksState = (event) => {
+      setIsMobileHowItWorks(event.matches);
+      setIsHowItWorksOpen(!event.matches);
+    };
+
+    syncHowItWorksState(mediaQuery);
+    mediaQuery.addEventListener("change", syncHowItWorksState);
+
+    return () => {
+      mediaQuery.removeEventListener("change", syncHowItWorksState);
+    };
+  }, []);
+
+  const handleHowItWorksLinkClick = () => {
+    if (isMobileHowItWorks) {
+      setIsHowItWorksOpen(true);
+    }
+  };
 
   return (
     <div className="home-root">
@@ -28,21 +52,31 @@ export default function Home() {
               Practice real exam questions and get instant marks and feedback.
             </h1>
             <p className="lead">
-              Built for OCR and AQA students. Improve your exam performance
-              with targeted practice, mark schemes, and progress tracking.
+              Built for OCR and AQA students. Improve your exam performance with
+              targeted practice, mark schemes, and progress tracking.
             </p>
 
             <div className="heroV2__ctaBlock">
               {user ? (
-                <Link to="/question-generator" className="btn btn--primary btn--heroPrimary">
+                <Link
+                  to="/question-generator"
+                  className="btn btn--primary btn--heroPrimary"
+                >
                   Start Practising
                 </Link>
               ) : (
-                <Link to="/register" className="btn btn--primary btn--heroPrimary">
+                <Link
+                  to="/register"
+                  className="btn btn--primary btn--heroPrimary"
+                >
                   Start Practising
                 </Link>
               )}
-              <a href="#how-it-works" className="heroV2__secondaryLink">
+              <a
+                href="#how-it-works"
+                className="heroV2__secondaryLink"
+                onClick={handleHowItWorksLinkClick}
+              >
                 See how it works →
               </a>
             </div>
@@ -60,15 +94,22 @@ export default function Home() {
             </p>
 
             {/* Lightweight trust points reduce friction without competing with the primary CTA. */}
-            <div className="heroV2__trustRow row row-cols-1 row-cols-md-3 g-3" aria-label="Key benefits">
+            <div
+              className="heroV2__trustRow row row-cols-1 row-cols-md-3 g-3"
+              aria-label="Key benefits"
+            >
               <div className="col">
                 <div className="heroV2__trustItem">Instant AI marking</div>
               </div>
               <div className="col">
-                <div className="heroV2__trustItem">Aligned with real OCR &amp; AQA mark schemes</div>
+                <div className="heroV2__trustItem">
+                  Aligned with real OCR &amp; AQA mark schemes
+                </div>
               </div>
               <div className="col">
-                <div className="heroV2__trustItem">Track your progress over time</div>
+                <div className="heroV2__trustItem">
+                  Built to reflect real exam expectations
+                </div>
               </div>
             </div>
           </div>
@@ -87,7 +128,7 @@ export default function Home() {
               <h2>Question preview</h2>
               <p className="heroPanel__question">
                 Explain how the structure of the alveoli helps to maximise gas
-                exchange in the lungs.
+                exchange in the lungs. [4 marks]
               </p>
               <ul className="heroPanel__points">
                 <li>Large surface area from many alveoli</li>
@@ -105,7 +146,7 @@ export default function Home() {
                 </span>
                 <span className="heroPanel__meta">Score example</span>
               </div>
-              <div className="heroPanel__score">4 / 6</div>
+              <div className="heroPanel__score">3 / 4</div>
               <p>
                 Strong explanation of surface area and diffusion distance. To
                 score higher, mention ventilation and blood flow maintaining the
@@ -149,62 +190,87 @@ export default function Home() {
       >
         <div className="sectionHeading sectionHeading--centered">
           <p className="sectionEyebrow">How it works</p>
-          <h2 id="preview-title">A simple revision flow students can use immediately</h2>
+          <h2 id="preview-title">
+            A simple revision flow students can use immediately
+          </h2>
           <p>
             Pick a topic, answer exam-style questions, and get fast feedback
             that helps you improve on the next attempt.
           </p>
         </div>
 
-        <div className="previewGrid row g-4 align-items-stretch">
-          <div className="col-12 col-lg-6">
-            <article className="previewCard previewCard--steps h-100">
-              <h3>How students use it</h3>
-              <ol className="stepList">
-                <li>
-                  <strong>1. Choose a topic</strong>
-                  <span>
-                    Focus on the exact module or subtopic you want to improve.
-                  </span>
-                </li>
-                <li>
-                  <strong>2. Answer exam-style questions</strong>
-                  <span>
-                    Practise structured responses and longer written answers in
-                    the format that wins marks.
-                  </span>
-                </li>
-                <li>
-                  <strong>3. Get instant marks and feedback</strong>
-                  <span>
-                    See your score, the missing points, and what to improve next.
-                  </span>
-                </li>
-                <li>
-                  <strong>4. Track progress and improvements</strong>
-                  <span>
-                    Revisit past sessions and see how your scores improve over time.
-                  </span>
-                </li>
-              </ol>
-            </article>
-          </div>
+        {isMobileHowItWorks && (
+          <button
+            type="button"
+            className="previewV2__toggle"
+            aria-expanded={isHowItWorksOpen}
+            aria-controls="how-it-works-content"
+            onClick={() => setIsHowItWorksOpen((isOpen) => !isOpen)}
+          >
+            <span>{isHowItWorksOpen ? "Hide steps" : "Show steps"}</span>
+            <span className="previewV2__toggleIcon" aria-hidden="true">
+              {isHowItWorksOpen ? "−" : "+"}
+            </span>
+          </button>
+        )}
 
-          <div className="col-12 col-lg-6">
-            <article className="previewCard previewCard--feedback h-100">
-              <h3>Get AI feedback aligned with real exam mark schemes</h3>
-              <p className="previewCard__intro">
-                The feedback is designed to show how your answer performed
-                against the mark scheme, not just whether it was broadly right.
-              </p>
-              <ul className="planMiniCard__benefits homeFeatureList">
-                <li>Marked using OCR &amp; AQA-style criteria</li>
-                <li>See exactly where you gain and lose marks</li>
-                <li>Improve your exam technique with targeted feedback</li>
-              </ul>
-            </article>
+        {(!isMobileHowItWorks || isHowItWorksOpen) && (
+          <div
+            className="previewGrid row g-4 align-items-stretch"
+            id="how-it-works-content"
+          >
+            <div className="col-12 col-lg-6">
+              <article className="previewCard previewCard--steps h-100">
+                <h3>How students use it</h3>
+                <ol className="stepList">
+                  <li>
+                    <strong>1. Choose a topic</strong>
+                    <span>
+                      Focus on the exact module or subtopic you want to improve.
+                    </span>
+                  </li>
+                  <li>
+                    <strong>2. Answer exam-style questions</strong>
+                    <span>
+                      Practise structured responses and longer written answers
+                      in the format that wins marks.
+                    </span>
+                  </li>
+                  <li>
+                    <strong>3. Get instant marks and feedback</strong>
+                    <span>
+                      See your score, the missing points, and what to improve
+                      next.
+                    </span>
+                  </li>
+                  <li>
+                    <strong>4. Track progress and improvements</strong>
+                    <span>
+                      Revisit past sessions and see how your scores improve over
+                      time.
+                    </span>
+                  </li>
+                </ol>
+              </article>
+            </div>
+
+            <div className="col-12 col-lg-6">
+              <article className="previewCard previewCard--feedback h-100">
+                <h3>Designed to mark your answers like a real examiner.</h3>
+                <p className="previewCard__intro">
+                  The feedback is designed to show how your answer performed
+                  against the mark scheme, not just whether it was broadly
+                  right.
+                </p>
+                <ul className="planMiniCard__benefits homeFeatureList">
+                  <li>Marked using OCR &amp; AQA-style criteria</li>
+                  <li>See exactly where you gain and lose marks</li>
+                  <li>Improve your exam technique with targeted feedback</li>
+                </ul>
+              </article>
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       <section
@@ -213,7 +279,16 @@ export default function Home() {
       >
         <div className="sectionHeading sectionHeading--centered">
           <p className="sectionEyebrow">Why students use it</p>
-          <h2 id="features-title">Built to improve exam performance, not just generate questions</h2>
+          <h2 id="features-title">
+            Built to improve exam performance, not just generate questions
+          </h2>
+          <p>
+            Improve your exam performance with targeted practice and instant
+            feedback.
+          </p>
+          <p className="sectionHeading__socialProof">
+            Used by students preparing for OCR and AQA GCSE and A-Level exams.
+          </p>
         </div>
 
         <div className="featureGrid row g-4">
@@ -255,7 +330,9 @@ export default function Home() {
       >
         <div className="sectionHeading sectionHeading--centered">
           <p className="sectionEyebrow">Specification links</p>
-          <h2 id="spec-teaser-title">Keep your practice tied to the course content</h2>
+          <h2 id="spec-teaser-title">
+            Keep your practice tied to the course content
+          </h2>
           <p>
             Use the specification page to align your revision with the topics
             and exam board content you need to cover.
