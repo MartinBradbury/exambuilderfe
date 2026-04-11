@@ -211,7 +211,7 @@ export default function Home() {
                   <div className="heroPanel__topline">
                     <span className="heroPanel__tag">Live preview</span>
                     <span className="heroPanel__meta">
-                      OCR Biology • 6 marks
+                      OCR Biology • 4 marks
                     </span>
                   </div>
                   <h2>Question preview</h2>
