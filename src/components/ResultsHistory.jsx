@@ -65,6 +65,7 @@ const formatLevelHeading = (levelKey) => {
 const OVERVIEW_LEVEL_ORDER = ["gcse", "a-level"];
 const OVERVIEW_EXAM_BOARD_ORDER = ["ocr", "aqa"];
 const OVERVIEW_ALL_TOPICS_VALUE = "__overall__";
+const RESULTS_PAGE_SIZE = 5;
 
 const getExamBoardKey = (value) => {
   const normalizedValue = normalizeText(value);
@@ -534,6 +535,8 @@ export default function ResultsHistory({
   const [isResettingPerformance, setIsResettingPerformance] = useState(false);
   const [hasAutoSelectedOverviewLevel, setHasAutoSelectedOverviewLevel] =
     useState(false);
+  const [visibleSessionCardsCount, setVisibleSessionCardsCount] =
+    useState(RESULTS_PAGE_SIZE);
   const [sortOrder, setSortOrder] = useState("newest");
   const [examBoardFilter, setExamBoardFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -807,6 +810,17 @@ export default function ResultsHistory({
       ),
     [selectedOverviewExamBoard, selectedOverviewSection],
   );
+
+  const visibleSessionCards = useMemo(
+    () => sessionCards.slice(0, visibleSessionCardsCount),
+    [sessionCards, visibleSessionCardsCount],
+  );
+
+  const hasMoreSessionCards = visibleSessionCards.length < sessionCards.length;
+
+  useEffect(() => {
+    setVisibleSessionCardsCount(RESULTS_PAGE_SIZE);
+  }, [examBoardFilter, searchTerm, sortOrder, sessionCards.length]);
 
   const selectedOverviewMarksSessions = useMemo(() => {
     if (selectedOverviewMarksTopic === OVERVIEW_ALL_TOPICS_VALUE) {
@@ -1693,7 +1707,7 @@ export default function ResultsHistory({
           ) : null}
 
           <div className="account-results__list">
-            {sessionCards.map((session) => (
+            {visibleSessionCards.map((session) => (
               <article
                 key={session.id}
                 className="account-card account-resultCard"
@@ -1815,6 +1829,25 @@ export default function ResultsHistory({
                 )}
               </article>
             ))}
+
+            {hasMoreSessionCards ? (
+              <div className="account-actions">
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  onClick={() =>
+                    setVisibleSessionCardsCount((currentCount) =>
+                      Math.min(
+                        currentCount + RESULTS_PAGE_SIZE,
+                        sessionCards.length,
+                      ),
+                    )
+                  }
+                >
+                  Show 5 more results
+                </button>
+              </div>
+            ) : null}
           </div>
         </>
       )}
