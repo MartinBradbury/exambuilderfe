@@ -95,11 +95,7 @@ const getCheckoutOptions = (missingQualifications) => {
   const missingALevel = missingQualifications.includes(ALEVEL_QUALIFICATION);
 
   if (missingGcse && missingALevel) {
-    return [
-      BOTH_QUALIFICATIONS,
-      GCSE_QUALIFICATION,
-      ALEVEL_QUALIFICATION,
-    ];
+    return [BOTH_QUALIFICATIONS, GCSE_QUALIFICATION, ALEVEL_QUALIFICATION];
   }
 
   return missingQualifications;
@@ -146,11 +142,12 @@ export default function Account() {
     useState(false);
   const [isStartingNewTrackingPeriod, setIsStartingNewTrackingPeriod] =
     useState(false);
-  const [activeSummaryQualification, setActiveSummaryQualification] = useState(
-    GCSE_QUALIFICATION,
-  );
-  const [hasInitializedSummaryQualification, setHasInitializedSummaryQualification] =
-    useState(false);
+  const [activeSummaryQualification, setActiveSummaryQualification] =
+    useState(GCSE_QUALIFICATION);
+  const [
+    hasInitializedSummaryQualification,
+    setHasInitializedSummaryQualification,
+  ] = useState(false);
   const summaryTouchStartXRef = useRef(null);
   const [themePreference, setThemePreference] = useState(getPreferredTheme);
 
@@ -215,11 +212,7 @@ export default function Account() {
     }
 
     setHasInitializedSummaryQualification(true);
-  }, [
-    hasALevelAccess,
-    hasGcseAccess,
-    hasInitializedSummaryQualification,
-  ]);
+  }, [hasALevelAccess, hasGcseAccess, hasInitializedSummaryQualification]);
 
   useEffect(() => {
     return () => {
@@ -543,7 +536,9 @@ export default function Account() {
           "You must accept the purchase terms before continuing.",
         );
       } else if (!canUpgrade) {
-        setCheckoutError("This account already has access to both qualifications.");
+        setCheckoutError(
+          "This account already has access to both qualifications.",
+        );
       }
       return;
     }
@@ -792,7 +787,9 @@ export default function Account() {
                       className={`account-summaryTab${
                         isActive ? " account-summaryTab--active" : ""
                       }`}
-                      onClick={() => showSummaryQualification(card.qualification)}
+                      onClick={() =>
+                        showSummaryQualification(card.qualification)
+                      }
                     >
                       {card.title}
                     </button>
@@ -883,9 +880,10 @@ export default function Account() {
                       <Link
                         to="/progress"
                         state={{
-                          initialOverviewLevel: getOverviewLevelForQualification(
-                            activeSummaryQualification,
-                          ),
+                          initialOverviewLevel:
+                            getOverviewLevelForQualification(
+                              activeSummaryQualification,
+                            ),
                         }}
                         className="account-summaryCta"
                       >
@@ -905,7 +903,9 @@ export default function Account() {
                     >
                       <span className="account-lockable__overlayCard">
                         <strong>
-                          Upgrade to unlock {getQualificationLabel(activeSummaryQualification)} summary
+                          Upgrade to unlock{" "}
+                          {getQualificationLabel(activeSummaryQualification)}{" "}
+                          summary
                         </strong>
                         <span>
                           {hasAnyPaidAccess
@@ -968,7 +968,8 @@ export default function Account() {
                     <span className="account-lockable__overlayCard">
                       <strong>Upgrade to unlock performance tracking</strong>
                       <span>
-                        Any paid access plan unlocks tracking controls and reset options.
+                        Any paid access plan unlocks tracking controls and reset
+                        options.
                       </span>
                       <span className="account-lockable__overlayAction">
                         See upgrade options
@@ -991,15 +992,29 @@ export default function Account() {
                   ? "Verify your email to unlock checkout."
                   : hasFullAccess
                     ? "GCSE and A-level access are already active on this account."
-                    : "Secure checkout powered by Stripe. Unlock the qualification access you need instantly."}
+                    : "Secure checkout powered by Stripe. Early access pricing unlocks the premium study tools for the qualification access you choose."}
               </p>
 
               {!hasFullAccess ? (
                 <>
+                  <div className="account-upgradeHighlight">
+                    <p className="account-upgradeHighlight__eyebrow">
+                      Early access pricing
+                    </p>
+                    <p className="account-upgradeHighlight__title">
+                      Pay once to unlock unlimited premium revision tools.
+                    </p>
+                    <ul className="account-upgradeHighlight__list">
+                      <li>Unlimited questions</li>
+                      <li>Full AI marking</li>
+                      <li>Detailed feedback</li>
+                      <li>Performance tracking</li>
+                    </ul>
+                  </div>
                   <p className="account-price">
                     {selectedCheckoutQualification === BOTH_QUALIFICATIONS
-                      ? "Bundle: £2.99"
-                      : "Single qualification: £1.99"}
+                      ? "GCSE + A-level early access: £3.99"
+                      : `${selectedCheckoutLabel} early access: £2.99`}
                   </p>
                   <div
                     className="account-upgradeOptions"
@@ -1021,7 +1036,9 @@ export default function Account() {
                           value={option}
                           checked={selectedCheckoutQualification === option}
                           onChange={(event) => {
-                            setSelectedCheckoutQualification(event.target.value);
+                            setSelectedCheckoutQualification(
+                              event.target.value,
+                            );
                             setCheckoutError("");
                           }}
                         />
@@ -1029,8 +1046,8 @@ export default function Account() {
                           <strong>{getQualificationLabel(option)}</strong>
                           <small>
                             {option === BOTH_QUALIFICATIONS
-                              ? "Unlock GCSE and A-level access together in one checkout."
-                              : "Unlock unlimited question generation for this qualification."}
+                              ? "Early access for both qualifications with one payment and full premium features."
+                              : "Early access for this qualification with full premium features unlocked."}
                           </small>
                         </span>
                       </label>
@@ -1039,18 +1056,19 @@ export default function Account() {
                   <ul className="account-benefits">
                     <li>
                       {selectedCheckoutQualification === BOTH_QUALIFICATIONS
-                        ? "Unlimited questions for GCSE and A-level"
+                        ? "Unlimited questions across GCSE and A-level"
                         : `Unlimited questions for ${selectedCheckoutLabel}`}
                     </li>
-                    <li>Full AI feedback</li>
-                    <li>Advanced performance tracking</li>
                   </ul>
                   <p className="account-note">
-                    {selectedCheckoutLabel} price: {selectedCheckoutPrice}
+                    Early access price for {selectedCheckoutLabel}:{" "}
+                    {selectedCheckoutPrice}
                   </p>
-                  {checkoutStatus.hasAnyPaidAccess && !checkoutStatus.hasFullAccess ? (
+                  {checkoutStatus.hasAnyPaidAccess &&
+                  !checkoutStatus.hasFullAccess ? (
                     <p className="account-note">
-                      You already have {hasGcseAccess ? "GCSE" : "A-level"} access. Buy the other qualification here if you want both.
+                      You already have {hasGcseAccess ? "GCSE" : "A-level"}{" "}
+                      access. Buy the other qualification here if you want both.
                     </p>
                   ) : null}
                 </>
@@ -1096,7 +1114,8 @@ export default function Account() {
                 </p>
               ) : hasFullAccess ? (
                 <p className="account-note">
-                  No upgrade needed. Your plan already includes both qualifications.
+                  No upgrade needed. Your plan already includes both
+                  qualifications.
                 </p>
               ) : (
                 <p className="account-note">
@@ -1112,8 +1131,8 @@ export default function Account() {
               <div className="account-settingsCard__layout">
                 <div className="account-settingsCard__intro">
                   <p className="account-muted">
-                    Change the interface theme, review key policies, or sign
-                    out from this device.
+                    Change the interface theme, review key policies, or sign out
+                    from this device.
                   </p>
                 </div>
 
@@ -1121,7 +1140,10 @@ export default function Account() {
                   <div className="account-settingsCard__group">
                     <p className="account-settingsCard__label">Account</p>
                     <div className="account-settingsCard__actions">
-                      <label className="account-settingsCard__toggle" htmlFor="account-theme-toggle">
+                      <label
+                        className="account-settingsCard__toggle"
+                        htmlFor="account-theme-toggle"
+                      >
                         <span className="account-settingsCard__toggleCopy">
                           <strong>
                             {themePreference === "dark"
@@ -1137,7 +1159,10 @@ export default function Account() {
                             checked={themePreference === "light"}
                             onChange={handleThemeToggle}
                           />
-                          <span className="account-settingsCard__toggleTrack" aria-hidden="true">
+                          <span
+                            className="account-settingsCard__toggleTrack"
+                            aria-hidden="true"
+                          >
                             <span className="account-settingsCard__toggleThumb" />
                           </span>
                         </span>

@@ -230,6 +230,47 @@
   color: var(--text);
 }
 
+.account-upgradeHighlight {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(73, 209, 125, 0.24);
+  border-radius: 20px;
+  background: linear-gradient(
+    180deg,
+    rgba(73, 209, 125, 0.12),
+    rgba(111, 211, 255, 0.06)
+  );
+}
+
+.account-upgradeHighlight__eyebrow {
+  margin: 0;
+  color: var(--brand);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.account-upgradeHighlight__title {
+  margin: 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.account-upgradeHighlight__list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text);
+}
+
+.account-upgradeHighlight__list li + li {
+  margin-top: 6px;
+}
+
 .account-benefits {
   margin: 12px 0 0;
   padding-left: 18px;

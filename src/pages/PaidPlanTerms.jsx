@@ -4,24 +4,26 @@ export default function PaidPlanTerms() {
   return (
     <LegalPageLayout
       title="Paid Plan Terms"
-      intro="These terms apply to the paid qualification upgrades, including single-qualification access at £1.99 and the GCSE + A-level bundle at £2.99, and explain what access the purchase gives, how long it lasts, and how service availability affects that access."
+      intro="These terms apply to the early access qualification upgrades, including GCSE access at £2.99, A-level access at £2.99, and the GCSE + A-level bundle at £3.99, and explain what access the purchase gives, how long it lasts, and how service availability affects that access."
       lastUpdated="8 April 2026"
     >
       <section>
         <h2>What the paid plan includes</h2>
         <p>
-          The paid plan currently includes unlimited question generation,
-          feedback on submitted answers, and review of completed work in the
-          results section while those features remain part of the service.
+          The early access paid plan currently includes unlimited questions,
+          full AI marking, detailed feedback on submitted answers, and
+          performance tracking in the results section while those features
+          remain part of the service.
         </p>
       </section>
 
       <section>
         <h2>Price and purchase</h2>
         <p>
-          The current single-qualification paid plan price is £1.99. The GCSE +
-          A-level bundle price is £2.99. The price shown at checkout is the
-          amount charged for the selected purchase.
+          The current early access price for GCSE is £2.99. The current early
+          access price for A-level is £2.99. The GCSE + A-level early access
+          bundle price is £3.99. The price shown at checkout is the amount
+          charged for the selected purchase.
         </p>
       </section>
 

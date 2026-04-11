@@ -526,7 +526,7 @@ export default function Home() {
                 ) : (
                   !hasFullAccess && (
                     <Link to="/account" className="btn btn--ghost">
-                      Unlock Access from £1.99
+                      Unlock Early Access from £2.99
                     </Link>
                   )
                 )}
