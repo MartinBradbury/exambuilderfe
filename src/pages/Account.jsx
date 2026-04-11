@@ -179,7 +179,6 @@ export default function Account() {
     () => getQualificationAccessState(user),
     [user],
   );
-  const nextThemeLabel = themePreference === "dark" ? "Light mode" : "Dark mode";
   const summaryLocked = !hasAccessToQualification(
     user,
     activeSummaryQualification,
@@ -1122,13 +1121,27 @@ export default function Account() {
                   <div className="account-settingsCard__group">
                     <p className="account-settingsCard__label">Account</p>
                     <div className="account-settingsCard__actions">
-                      <button
-                        type="button"
-                        className="account-settingsCard__button account-settingsCard__button--primary"
-                        onClick={handleThemeToggle}
-                      >
-                        Switch to {nextThemeLabel}
-                      </button>
+                      <label className="account-settingsCard__toggle" htmlFor="account-theme-toggle">
+                        <span className="account-settingsCard__toggleCopy">
+                          <strong>
+                            {themePreference === "dark"
+                              ? "Dark mode"
+                              : "Light mode"}
+                          </strong>
+                          <small>Use your saved theme across the app.</small>
+                        </span>
+                        <span className="account-settingsCard__toggleControl">
+                          <input
+                            id="account-theme-toggle"
+                            type="checkbox"
+                            checked={themePreference === "light"}
+                            onChange={handleThemeToggle}
+                          />
+                          <span className="account-settingsCard__toggleTrack" aria-hidden="true">
+                            <span className="account-settingsCard__toggleThumb" />
+                          </span>
+                        </span>
+                      </label>
                       <button
                         type="button"
                         className="account-settingsCard__button account-settingsCard__button--subtle"

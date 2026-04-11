@@ -354,6 +354,96 @@
   gap: 10px;
 }
 
+.account-settingsCard__toggle {
+  flex: 1 1 240px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--outline);
+  border-radius: 18px;
+  background: rgba(73, 209, 125, 0.08);
+  cursor: pointer;
+}
+
+.account-settingsCard__toggleCopy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.account-settingsCard__toggleCopy strong {
+  color: var(--text);
+  font-size: 0.98rem;
+}
+
+.account-settingsCard__toggleCopy small {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.account-settingsCard__toggleControl {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+}
+
+.account-settingsCard__toggleControl input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.account-settingsCard__toggleTrack {
+  width: 50px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(73, 209, 125, 0.26);
+  background: rgba(255, 255, 255, 0.08);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.account-settingsCard__toggleThumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--text);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease;
+}
+
+.account-settingsCard__toggleControl
+  input:checked
+  + .account-settingsCard__toggleTrack {
+  background: rgba(73, 209, 125, 0.18);
+  border-color: rgba(73, 209, 125, 0.36);
+}
+
+.account-settingsCard__toggleControl
+  input:checked
+  + .account-settingsCard__toggleTrack
+  .account-settingsCard__toggleThumb {
+  transform: translateX(20px);
+  background: var(--brand);
+}
+
+.account-settingsCard__toggleControl
+  input:focus-visible
+  + .account-settingsCard__toggleTrack {
+  box-shadow: 0 0 0 4px rgba(73, 209, 125, 0.18);
+}
+
 .account-settingsCard__button {
   display: inline-flex;
   align-items: center;
