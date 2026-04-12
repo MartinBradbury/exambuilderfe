@@ -87,6 +87,16 @@ const OVERVIEW_LEVEL_ORDER = ["gcse", "a-level"];
 const OVERVIEW_EXAM_BOARD_ORDER = ["ocr", "aqa"];
 const OVERVIEW_ALL_TOPICS_VALUE = "__overall__";
 const RESULTS_PAGE_SIZE = 5;
+const GCSE_ROUTE_COMBINED = "combined";
+const GCSE_ROUTE_SEPARATE = "separate";
+const GCSE_EXPLICIT_ROUTE_FIELDS = ["science_route", "route", "pathway"];
+const GCSE_OVERVIEW_SUBJECT_OPTIONS = [
+  "BIOLOGY",
+  "CHEMISTRY",
+  "PHYSICS",
+  "COMBINED",
+];
+const GCSE_OVERVIEW_TIER_OPTIONS = ["FOUNDATION", "HIGHER"];
 
 const getExamBoardKey = (value) => {
   const normalizedValue = normalizeText(value);
@@ -126,31 +136,107 @@ const getCatalogTopicLabel = (item) =>
 const getCatalogSubtopicLabel = (item) =>
   String(item?.title || item?.subtopic || item?.name || "").trim();
 
-const getOverviewCatalogContexts = (levelKey, sessions) => {
+const getGcseScienceRoute = (value) => {
+  const normalizedSubject = normalizeText(value).replace(/[_-]+/g, " ");
+
+  if (normalizedSubject === GCSE_ROUTE_COMBINED) {
+    return GCSE_ROUTE_COMBINED;
+  }
+
+  if (normalizedSubject === GCSE_ROUTE_SEPARATE) {
+    return GCSE_ROUTE_SEPARATE;
+  }
+
+  if (
+    normalizedSubject.includes("combined") ||
+    normalizedSubject.includes("trilogy")
+  ) {
+    return GCSE_ROUTE_COMBINED;
+  }
+
+  if (
+    ["biology", "chemistry", "physics"].some((science) =>
+      normalizedSubject.includes(science),
+    )
+  ) {
+    return GCSE_ROUTE_SEPARATE;
+  }
+
+  return null;
+};
+
+const getExplicitGcseScienceRouteForSession = (session) => {
+  const directRoute = GCSE_EXPLICIT_ROUTE_FIELDS.map(
+    (field) => session?.[field],
+  )
+    .map((value) => getGcseScienceRoute(value))
+    .find(Boolean);
+
+  return directRoute || null;
+};
+
+const getDerivedGcseScienceRouteForSession = (session) => {
+  const directRoute = getExplicitGcseScienceRouteForSession(session);
+
+  if (directRoute) {
+    return directRoute;
+  }
+
+  const metadataRoute = [
+    session?.subject,
+    session?.qualification,
+    session?.qualification_label,
+    session?.level,
+  ]
+    .map((value) => getGcseScienceRoute(value))
+    .find(Boolean);
+
+  return metadataRoute || null;
+};
+
+const getGcseSubjectsForRoute = (route) => {
+  if (route === GCSE_ROUTE_COMBINED) {
+    return ["COMBINED"];
+  }
+
+  return ["BIOLOGY", "CHEMISTRY", "PHYSICS"];
+};
+
+const getOverviewCatalogContexts = (levelKey, sessions, gcseScienceRoute) => {
   if (levelKey !== "gcse") {
     return [{}];
   }
 
-  return Array.from(
-    sessions
-      .reduce((map, session) => {
-        const subject = String(session.subject || "").trim();
-        const tier = String(session.tier || "").trim();
+  const allowedSubjects = getGcseSubjectsForRoute(gcseScienceRoute);
 
-        if (!subject || !tier) {
-          return map;
-        }
-
-        const key = `${normalizeText(subject)}:${normalizeText(tier)}`;
-
-        if (!map.has(key)) {
-          map.set(key, { subject, tier });
-        }
-
-        return map;
-      }, new Map())
-      .values(),
+  const contexts = new Map(
+    allowedSubjects.flatMap((subject) =>
+      GCSE_OVERVIEW_TIER_OPTIONS.map((tier) => [
+        `${normalizeText(subject)}:${normalizeText(tier)}`,
+        { subject, tier },
+      ]),
+    ),
   );
+
+  sessions.forEach((session) => {
+    const subject = String(session.subject || "")
+      .trim()
+      .toUpperCase();
+    const tier = String(session.tier || "")
+      .trim()
+      .toUpperCase();
+
+    if (!subject || !tier || !allowedSubjects.includes(subject)) {
+      return;
+    }
+
+    contexts.set(`${normalizeText(subject)}:${normalizeText(tier)}`, {
+      subject,
+      tier,
+    });
+  });
+
+  return Array.from(contexts.values());
 };
 
 const truncateChartLabel = (value, maxLength = 24) => {
@@ -525,6 +611,10 @@ export default function ResultsHistory({
   const [selectedOverviewLevel, setSelectedOverviewLevel] = useState("gcse");
   const [selectedOverviewExamBoard, setSelectedOverviewExamBoard] =
     useState("ocr");
+  const [
+    selectedOverviewGcseScienceRoute,
+    setSelectedOverviewGcseScienceRoute,
+  ] = useState(GCSE_ROUTE_SEPARATE);
   const [selectedOverviewMarksTopic, setSelectedOverviewMarksTopic] = useState(
     OVERVIEW_ALL_TOPICS_VALUE,
   );
@@ -841,14 +931,74 @@ export default function ResultsHistory({
     }
   }, [overviewSections, selectedOverviewLevel]);
 
-  const selectedOverviewSessions = useMemo(
-    () =>
-      (selectedOverviewSection?.sessions || []).filter(
-        (session) =>
-          getExamBoardKey(session.exam_board) === selectedOverviewExamBoard,
-      ),
-    [selectedOverviewExamBoard, selectedOverviewSection],
-  );
+  const selectedOverviewSessions = useMemo(() => {
+    const boardMatchedSessions = (
+      selectedOverviewSection?.sessions || []
+    ).filter(
+      (session) =>
+        getExamBoardKey(session.exam_board) === selectedOverviewExamBoard,
+    );
+
+    if (selectedOverviewSection?.levelKey !== "gcse") {
+      return boardMatchedSessions;
+    }
+
+    const explicitRouteSessions = boardMatchedSessions.filter(
+      (session) => getExplicitGcseScienceRouteForSession(session) != null,
+    );
+    const hasCompleteExplicitRouteCoverage =
+      boardMatchedSessions.length > 0 &&
+      explicitRouteSessions.length === boardMatchedSessions.length;
+
+    if (!hasCompleteExplicitRouteCoverage) {
+      return boardMatchedSessions;
+    }
+
+    return boardMatchedSessions.filter(
+      (session) =>
+        getExplicitGcseScienceRouteForSession(session) ===
+        selectedOverviewGcseScienceRoute,
+    );
+  }, [
+    selectedOverviewExamBoard,
+    selectedOverviewGcseScienceRoute,
+    selectedOverviewSection,
+  ]);
+
+  const selectedOverviewUnclassifiedGcseSessionsCount = useMemo(() => {
+    if (selectedOverviewSection?.levelKey !== "gcse") {
+      return 0;
+    }
+
+    return (selectedOverviewSection.sessions || []).filter((session) => {
+      if (getExamBoardKey(session.exam_board) !== selectedOverviewExamBoard) {
+        return false;
+      }
+
+      return getExplicitGcseScienceRouteForSession(session) == null;
+    }).length;
+  }, [selectedOverviewExamBoard, selectedOverviewSection]);
+
+  const selectedOverviewCanSplitGcseRoutes = useMemo(() => {
+    if (selectedOverviewSection?.levelKey !== "gcse") {
+      return false;
+    }
+
+    const boardMatchedSessions = (
+      selectedOverviewSection.sessions || []
+    ).filter(
+      (session) =>
+        getExamBoardKey(session.exam_board) === selectedOverviewExamBoard,
+    );
+
+    if (boardMatchedSessions.length === 0) {
+      return false;
+    }
+
+    return boardMatchedSessions.every(
+      (session) => getExplicitGcseScienceRouteForSession(session) != null,
+    );
+  }, [selectedOverviewExamBoard, selectedOverviewSection]);
 
   const visibleSessionCards = useMemo(
     () => sessionCards.slice(0, visibleSessionCardsCount),
@@ -952,7 +1102,7 @@ export default function ResultsHistory({
       ]),
     );
 
-    return overviewTopicCatalog.map((entry) => {
+    const catalogEntries = overviewTopicCatalog.map((entry) => {
       const existing = sessionTopicMap.get(normalizeText(entry.label));
 
       return (
@@ -964,6 +1114,16 @@ export default function ResultsHistory({
         }
       );
     });
+    const catalogKeys = new Set(
+      overviewTopicCatalog.map((entry) => normalizeText(entry.label)),
+    );
+    const extraSessionEntries = selectedOverviewTopicPerformance.filter(
+      (entry) => !catalogKeys.has(normalizeText(entry.topic)),
+    );
+
+    return [...catalogEntries, ...extraSessionEntries].sort((left, right) =>
+      naturalCompareLabels(left.topic, right.topic),
+    );
   }, [overviewTopicCatalog, selectedOverviewTopicPerformance]);
 
   const selectedOverviewResetTopicOptions = useMemo(() => {
@@ -978,7 +1138,7 @@ export default function ResultsHistory({
       ]),
     );
 
-    return overviewTopicCatalog.map((entry) => {
+    const catalogEntries = overviewTopicCatalog.map((entry) => {
       const existing = sessionTopicMap.get(normalizeText(entry.label));
 
       return (
@@ -990,6 +1150,16 @@ export default function ResultsHistory({
         }
       );
     });
+    const catalogKeys = new Set(
+      overviewTopicCatalog.map((entry) => normalizeText(entry.label)),
+    );
+    const extraSessionEntries = selectedOverviewResetTopicPerformance.filter(
+      (entry) => !catalogKeys.has(normalizeText(entry.topic)),
+    );
+
+    return [...catalogEntries, ...extraSessionEntries].sort((left, right) =>
+      naturalCompareLabels(left.topic, right.topic),
+    );
   }, [overviewTopicCatalog, selectedOverviewResetTopicPerformance]);
 
   const selectedOverviewBarChartData = useMemo(() => {
@@ -1085,6 +1255,7 @@ export default function ResultsHistory({
       const contexts = getOverviewCatalogContexts(
         selectedOverviewSection.levelKey,
         selectedOverviewSection.sessions,
+        selectedOverviewGcseScienceRoute,
       );
 
       if (!contexts.length) {
@@ -1160,7 +1331,11 @@ export default function ResultsHistory({
     return () => {
       isActive = false;
     };
-  }, [selectedOverviewExamBoard, selectedOverviewSection]);
+  }, [
+    selectedOverviewExamBoard,
+    selectedOverviewGcseScienceRoute,
+    selectedOverviewSection,
+  ]);
 
   useEffect(() => {
     let isActive = true;
@@ -1445,6 +1620,55 @@ export default function ResultsHistory({
 
                   <div className="account-results__overviewSharedControls">
                     <div className="account-results__overviewSharedTop">
+                      {selectedOverviewSection.levelKey === "gcse" ? (
+                        <div className="account-results__overviewControl">
+                          <span className="account-results__overviewControlLabel">
+                            Science route
+                          </span>
+                          <div
+                            className="account-results__boardSwitch"
+                            role="radiogroup"
+                            aria-label="GCSE science route"
+                          >
+                            {[
+                              {
+                                value: GCSE_ROUTE_SEPARATE,
+                                label: "Separate",
+                              },
+                              {
+                                value: GCSE_ROUTE_COMBINED,
+                                label: "Combined",
+                              },
+                            ].map((routeOption) => {
+                              const isSelected =
+                                selectedOverviewGcseScienceRoute ===
+                                routeOption.value;
+
+                              return (
+                                <button
+                                  key={routeOption.value}
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={isSelected}
+                                  className={`account-results__boardOption${
+                                    isSelected
+                                      ? " account-results__boardOption--active"
+                                      : ""
+                                  }`}
+                                  onClick={() =>
+                                    setSelectedOverviewGcseScienceRoute(
+                                      routeOption.value,
+                                    )
+                                  }
+                                >
+                                  {routeOption.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : null}
+
                       <div className="account-chartCard__control account-chartCard__control--shared">
                         <label htmlFor="results-overview-marks-topic">
                           Module filter
@@ -1487,10 +1711,40 @@ export default function ResultsHistory({
                     </div>
 
                     <p className="account-muted account-chartCard__note account-chartCard__note--shared">
-                      All three graphs use this module filter. The more tests
-                      you have, the more reliable the trend - aim for at least 5
-                      tests for a clearer picture.
+                      All three graphs use this module filter.
+                      {selectedOverviewSection.levelKey === "gcse"
+                        ? ` Switch between ${GCSE_ROUTE_COMBINED} and ${GCSE_ROUTE_SEPARATE} science to change the GCSE module set and chart data.`
+                        : ""}{" "}
+                      The more tests you have, the more reliable the trend - aim
+                      for at least 5 tests for a clearer picture.
                     </p>
+
+                    {selectedOverviewSection.levelKey === "gcse" &&
+                    selectedOverviewUnclassifiedGcseSessionsCount > 0 &&
+                    !selectedOverviewCanSplitGcseRoutes ? (
+                      <p className="account-muted account-chartCard__note account-chartCard__note--warning">
+                        GCSE route splitting for saved results is waiting on
+                        backend session metadata. The route toggle currently
+                        changes the module list, but chart data still includes
+                        all GCSE sessions for{" "}
+                        {formatExamBoardHeading(selectedOverviewExamBoard)}. Add
+                        one of {GCSE_EXPLICIT_ROUTE_FIELDS.join(", ")} with
+                        values {GCSE_ROUTE_COMBINED} or {GCSE_ROUTE_SEPARATE}
+                        to each saved GCSE session to enable exact separation.
+                      </p>
+                    ) : selectedOverviewSection.levelKey === "gcse" &&
+                      selectedOverviewUnclassifiedGcseSessionsCount > 0 ? (
+                      <p className="account-muted account-chartCard__note account-chartCard__note--warning">
+                        {selectedOverviewUnclassifiedGcseSessionsCount} GCSE
+                        session
+                        {selectedOverviewUnclassifiedGcseSessionsCount === 1
+                          ? ""
+                          : "s"}{" "}
+                        for {formatExamBoardHeading(selectedOverviewExamBoard)}{" "}
+                        are missing explicit route metadata and are excluded
+                        from the split view.
+                      </p>
+                    ) : null}
 
                     {performanceTrackingStartDate ? (
                       <p
