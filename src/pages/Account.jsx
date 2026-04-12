@@ -162,8 +162,7 @@ export default function Account() {
     () => getCheckoutOptions(missingUpgradeQualifications),
     [missingUpgradeQualifications],
   );
-  const canUpgrade =
-    Boolean(user) && missingUpgradeQualifications.length > 0 && emailVerified;
+  const canUpgrade = Boolean(user) && missingUpgradeQualifications.length > 0;
   const numericRemaining =
     questionsRemainingToday == null ? null : Number(questionsRemainingToday);
   const performanceTrackingStartDate =
@@ -529,9 +528,7 @@ export default function Account() {
 
   const handleUpgrade = async () => {
     if (isCreatingCheckout || !canUpgrade || !hasAcceptedPurchaseTerms) {
-      if (needsEmailVerification) {
-        setCheckoutError("Please verify your email before starting checkout.");
-      } else if (!hasAcceptedPurchaseTerms) {
+      if (!hasAcceptedPurchaseTerms) {
         setCheckoutError(
           "You must accept the purchase terms before continuing.",
         );
@@ -595,14 +592,14 @@ export default function Account() {
         window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
         setCheckoutError(
           error.response?.data?.detail ||
-            "Please verify your email before starting checkout.",
+            "Unable to start payment setup right now. Please try again.",
         );
 
         try {
           await refreshCurrentUser?.();
         } catch (refreshError) {
           console.error(
-            "Unable to refresh account after checkout verification block",
+            "Unable to refresh account after checkout block",
             refreshError,
           );
         }
@@ -988,11 +985,9 @@ export default function Account() {
             >
               <SectionTitle title="Upgrade Plan" />
               <p className="account-muted">
-                {needsEmailVerification
-                  ? "Verify your email to unlock checkout."
-                  : hasFullAccess
-                    ? "GCSE and A-level access are already active on this account."
-                    : "Secure checkout powered by Stripe. Early access pricing unlocks the premium study tools for the qualification access you choose."}
+                {hasFullAccess
+                  ? "GCSE and A-level access are already active on this account."
+                  : "Secure checkout powered by Stripe. Early access pricing unlocks the premium study tools for the qualification access you choose."}
               </p>
 
               {!hasFullAccess ? (
@@ -1108,10 +1103,6 @@ export default function Account() {
                     </button>
                   </div>
                 </>
-              ) : needsEmailVerification ? (
-                <p className="account-note">
-                  Verify your email first, then come back to upgrade.
-                </p>
               ) : hasFullAccess ? (
                 <p className="account-note">
                   No upgrade needed. Your plan already includes both

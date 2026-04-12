@@ -9,9 +9,7 @@ export default function Home() {
   const { user, hasFullAccess, emailVerified } = useContext(UserContext);
   const needsEmailVerification = Boolean(user) && !emailVerified;
   const canUpgrade =
-    Boolean(user) &&
-    getMissingUpgradeQualifications(user).length > 0 &&
-    emailVerified;
+    Boolean(user) && getMissingUpgradeQualifications(user).length > 0;
   const isMobileViewport =
     typeof window !== "undefined" &&
     window.matchMedia("(max-width: 800px)").matches;
@@ -174,8 +172,8 @@ export default function Home() {
             {needsEmailVerification && (
               <EmailVerificationNotice
                 className="home-verification-notice"
-                title="Billing is locked until you verify your email"
-                description="Your free account is active now. Verify your email to unlock GCSE and A-level access upgrades."
+                title="Verify your email when you can"
+                description="Your free account is active now. Verifying your email helps you receive account and support updates."
               />
             )}
 
@@ -500,13 +498,11 @@ export default function Home() {
           <div>
             <p className="sectionEyebrow">Start revising smarter</p>
             <h2>
-              {needsEmailVerification
-                ? "Verify your email, then start turning practice into better exam answers."
-                : canUpgrade
-                  ? "Start with focused practice, then unlock the qualification access you need when you want more."
-                  : hasFullAccess
-                    ? "GCSE and A-level access are already active on this account."
-                    : "Start practising now and build better exam performance one topic at a time."}
+              {canUpgrade
+                ? "Start with focused practice, then unlock the qualification access you need when you want more."
+                : hasFullAccess
+                  ? "GCSE and A-level access are already active on this account."
+                  : "Start practising now and build better exam performance one topic at a time."}
             </h2>
             <p className="closingCta__copy">
               Practise exam-style questions, review feedback quickly, and use
@@ -519,16 +515,10 @@ export default function Home() {
                 <Link to="/question-generator" className="btn btn--primary">
                   Start Practising
                 </Link>
-                {needsEmailVerification ? (
+                {!hasFullAccess && (
                   <Link to="/account" className="btn btn--ghost">
-                    Verify Email
+                    Unlock Early Access from £2.99
                   </Link>
-                ) : (
-                  !hasFullAccess && (
-                    <Link to="/account" className="btn btn--ghost">
-                      Unlock Early Access from £2.99
-                    </Link>
-                  )
                 )}
               </>
             ) : (

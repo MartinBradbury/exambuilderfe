@@ -27,8 +27,8 @@ const getMessageFromPayload = (payload, fallback) => {
 };
 
 export default function EmailVerificationNotice({
-  title = "Verify your email to unlock billing",
-  description = "You can keep using the free tier, but Stripe checkout stays locked until your email is verified.",
+  title = "Verify your email",
+  description = "Keep your account details confirmed and make sure you can receive account emails and updates.",
   className = "",
 }) {
   const { user, emailVerified, refreshCurrentUser } =

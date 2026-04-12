@@ -73,7 +73,7 @@ export default function VerifyEmail() {
         setMessage(
           typeof data?.detail === "string"
             ? data.detail
-            : "Your email has been verified. Billing is now unlocked on your account.",
+            : "Your email has been verified and your account details are up to date.",
         );
       } catch (error) {
         if (!isActive) {
@@ -107,7 +107,7 @@ export default function VerifyEmail() {
           <header className="login-header">
             <h1>Verify your email</h1>
             <p className="muted">
-              Confirm your account email so billing and checkout can be enabled.
+              Confirm your account email so your account details stay up to date.
             </p>
           </header>
 
