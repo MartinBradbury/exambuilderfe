@@ -16,7 +16,7 @@ import {
 } from "../lib/access";
 import aLevelCover from "../assets/home/Alevelcard.png";
 import gcseCover from "../assets/home/GCSEcard.png";
-const GCSE_SUBJECT_OPTIONS = ["BIOLOGY", "CHEMISTRY", "PHYSICS"];
+const GCSE_SUBJECT_OPTIONS = ["BIOLOGY", "CHEMISTRY", "PHYSICS", "COMBINED"];
 const GCSE_TIER_OPTIONS = ["FOUNDATION", "HIGHER"];
 const SESSION_LEAVE_MESSAGE =
   "Are you sure you want to leave this page? Your current question session will be lost.";
@@ -719,7 +719,7 @@ export default function QuestionGenerator() {
               />
               <span className="qg-choice-copy">
                 <strong>GCSE</strong>
-                <span>Biology, Chemistry, and Physics</span>
+                <span>Biology, Chemistry, Physics, and Combined Science</span>
               </span>
             </button>
           </div>
