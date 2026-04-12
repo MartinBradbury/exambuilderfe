@@ -107,7 +107,8 @@ export default function VerifyEmail() {
           <header className="login-header">
             <h1>Verify your email</h1>
             <p className="muted">
-              Confirm your account email so your account details stay up to date.
+              Confirm your account email so your account details stay up to
+              date.
             </p>
           </header>
 
