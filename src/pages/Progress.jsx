@@ -22,12 +22,7 @@ export default function Progress() {
       <div className="account-shell container">
         <header className="account-header">
           <div>
-            <p className="account-eyebrow">Progress</p>
-            <h1>Performance and history</h1>
-            <p className="account-muted">
-              Review saved sessions, track trends over time, and compare module
-              and subtopic performance across your completed tests.
-            </p>
+            <h3 className="account-eyebrow">Performance and history</h3>
           </div>
         </header>
 

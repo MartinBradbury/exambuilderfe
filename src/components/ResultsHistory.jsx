@@ -1445,7 +1445,7 @@ export default function ResultsHistory({
       {!loading && !error && sessions.length > 0 && (
         <div className="account-results__toolbar account-card">
           <div className="account-results__control">
-            <label htmlFor="results-search">Search</label>
+            <label htmlFor="results-search">Filter Results</label>
             <input
               id="results-search"
               className="account-results__input"
@@ -1530,10 +1530,6 @@ export default function ResultsHistory({
               <div>
                 <p className="account-eyebrow">Performance overview</p>
                 <h3>Track how your results are trending</h3>
-                <p className="account-muted">
-                  These charts use the same result history dataset shown in the
-                  cards below, filtered by qualification and exam board.
-                </p>
               </div>
 
               {overviewSections.length > 0 && (
@@ -1608,16 +1604,6 @@ export default function ResultsHistory({
                   key={selectedOverviewSection.levelKey}
                   className="account-results__overviewGroup"
                 >
-                  <div className="account-results__overviewGroupHeader">
-                    <h4>{selectedOverviewSection.title} charts</h4>
-                    <p className="account-muted">
-                      Only {selectedOverviewSection.title.toLowerCase()}{" "}
-                      sessions for{" "}
-                      {formatExamBoardHeading(selectedOverviewExamBoard)} are
-                      included in these charts.
-                    </p>
-                  </div>
-
                   <div className="account-results__overviewSharedControls">
                     <div className="account-results__overviewSharedTop">
                       {selectedOverviewSection.levelKey === "gcse" ? (
@@ -1710,15 +1696,6 @@ export default function ResultsHistory({
                       </button>
                     </div>
 
-                    <p className="account-muted account-chartCard__note account-chartCard__note--shared">
-                      All three graphs use this module filter.
-                      {selectedOverviewSection.levelKey === "gcse"
-                        ? ` Switch between ${GCSE_ROUTE_COMBINED} and ${GCSE_ROUTE_SEPARATE} science to change the GCSE module set and chart data.`
-                        : ""}{" "}
-                      The more tests you have, the more reliable the trend - aim
-                      for at least 5 tests for a clearer picture.
-                    </p>
-
                     {selectedOverviewSection.levelKey === "gcse" &&
                     selectedOverviewUnclassifiedGcseSessionsCount > 0 &&
                     !selectedOverviewCanSplitGcseRoutes ? (
@@ -1806,12 +1783,12 @@ export default function ResultsHistory({
                         <article className="card account-card account-chartCard account-chartCard--trend h-100">
                           <div className="account-chartCard__header">
                             <h4>Moving average score over time</h4>
-                            <p className="account-muted">
+                            {/* <p className="account-muted">
                               {selectedOverviewMarksTopic ===
                               OVERVIEW_ALL_TOPICS_VALUE
                                 ? `See whether your ${selectedOverviewSection.title.toLowerCase()} scores for ${formatExamBoardHeading(selectedOverviewExamBoard)} are improving over time using the cumulative average of completed tests.`
                                 : `See whether your ${selectedOverviewMarksTopic} scores for ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} are improving over time using the cumulative average of completed tests.`}
-                            </p>
+                            </p> */}
                           </div>
                           <div className="account-chartCard__body account-chartCard__body--trend">
                             <div className="account-chartCard__chartCanvas account-chartCard__chartCanvas--trend">
@@ -1881,12 +1858,6 @@ export default function ResultsHistory({
                                 ? "Average score by module"
                                 : "Average score by subtopic"}
                             </h4>
-                            <p className="account-muted">
-                              {selectedOverviewMarksTopic ===
-                              OVERVIEW_ALL_TOPICS_VALUE
-                                ? `Compare module performance across your ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} results.`
-                                : `Compare subtopic performance within ${selectedOverviewMarksTopic} for your ${selectedOverviewSection.title.toLowerCase()} ${formatExamBoardHeading(selectedOverviewExamBoard)} results.`}
-                            </p>
                           </div>
                           <div className="account-chartCard__body account-chartCard__body--barChart">
                             <div className="account-chartCard__scrollX">
