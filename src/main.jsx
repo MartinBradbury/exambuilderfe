@@ -9,5 +9,5 @@ initializeThemePreference();
 createRoot(document.getElementById("root")).render(
   <UserProvider>
     <App />
-  </UserProvider>
+  </UserProvider>,
 );
