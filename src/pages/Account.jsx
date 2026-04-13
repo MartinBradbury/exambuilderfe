@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import EmailVerificationNotice from "../components/EmailVerificationNotice";
 import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
+import { applyThemePreference, getPreferredTheme } from "../lib/theme";
 import {
   ALEVEL_QUALIFICATION,
   BOTH_QUALIFICATIONS,
@@ -23,23 +24,6 @@ import "../styles/Account.modern.css";
 
 const RETRY_DELAYS_MS = [1500, 3000];
 const PENDING_CHECKOUT_KEY = "pendingCheckoutQualification";
-const THEME_STORAGE_KEY = "themePreference";
-
-const getPreferredTheme = () => {
-  if (typeof window === "undefined") {
-    return "dark";
-  }
-
-  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-
-  if (storedTheme === "light" || storedTheme === "dark") {
-    return storedTheme;
-  }
-
-  return window.matchMedia("(prefers-color-scheme: light)").matches
-    ? "light"
-    : "dark";
-};
 
 const formatTrackingDate = (value) => {
   const parsed = new Date(value);
@@ -191,12 +175,7 @@ export default function Account() {
   }, [checkoutOptions, selectedCheckoutQualification]);
 
   useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    document.documentElement.dataset.theme = themePreference;
-    window.localStorage.setItem(THEME_STORAGE_KEY, themePreference);
+    applyThemePreference(themePreference);
   }, [themePreference]);
 
   useEffect(() => {
