@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ResultsHistory from "../components/ResultsHistory";
 import { UserContext } from "../context/UserContextObject";
+import { buildAccountUpgradePath } from "../lib/access";
 import "../styles/Account.modern.css";
 
 export default function Progress() {
@@ -29,8 +30,9 @@ export default function Progress() {
         <ResultsHistory
           showHeader={false}
           analyticsLocked={!hasAnyPaidAccess}
-          upgradePath="/account"
+          upgradePath={buildAccountUpgradePath}
           initialOverviewLevel={initialOverviewLevel}
+          placeResultsToolbarAfterOverview
           afterOverviewAction={
             <div className="account-actions account-actions--progressInline">
               <Link to="/question-generator" className="btn btn--primary">

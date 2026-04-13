@@ -166,6 +166,35 @@ export const getMissingUpgradeQualifications = (user) => {
   return missingQualifications;
 };
 
+export const getPreferredUpgradeQualification = (missingQualifications) => {
+  const normalizedQualifications = Array.isArray(missingQualifications)
+    ? missingQualifications.filter(Boolean)
+    : [];
+
+  if (normalizedQualifications.length === 1) {
+    return normalizedQualifications[0];
+  }
+
+  if (
+    normalizedQualifications.includes(GCSE_QUALIFICATION) &&
+    normalizedQualifications.includes(ALEVEL_QUALIFICATION)
+  ) {
+    return BOTH_QUALIFICATIONS;
+  }
+
+  return normalizedQualifications[0] || null;
+};
+
+export const buildAccountUpgradePath = (preferredQualification = null) => {
+  const params = new URLSearchParams({ section: "upgrade" });
+
+  if (preferredQualification) {
+    params.set("qualification", preferredQualification);
+  }
+
+  return `/account?${params.toString()}`;
+};
+
 export const getCheckoutPrice = (qualification) => {
   if (qualification === BOTH_QUALIFICATIONS) {
     return "£3.99";

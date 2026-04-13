@@ -10,6 +10,7 @@ import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
 import {
   ALEVEL_QUALIFICATION,
+  buildAccountUpgradePath,
   GCSE_QUALIFICATION,
   getQualificationLabel,
   pickEntitlementUpdates,
@@ -924,7 +925,10 @@ export default function QuestionGenerator() {
             <p className="qg-hint">
               Need more than the shared free daily quota? Manage qualification
               access from{" "}
-              <Link to="/account" className="qg-inlineLink">
+              <Link
+                to={buildAccountUpgradePath(qualification)}
+                className="qg-inlineLink"
+              >
                 your account
               </Link>
               .

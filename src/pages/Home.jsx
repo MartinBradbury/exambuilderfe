@@ -3,13 +3,20 @@ import { Link } from "react-router-dom";
 import EmailVerificationNotice from "../components/EmailVerificationNotice";
 import "../styles/Home.modern.css";
 import { UserContext } from "../context/UserContextObject";
-import { getMissingUpgradeQualifications } from "../lib/access";
+import {
+  buildAccountUpgradePath,
+  getMissingUpgradeQualifications,
+  getPreferredUpgradeQualification,
+} from "../lib/access";
 
 export default function Home() {
   const { user, hasFullAccess, emailVerified } = useContext(UserContext);
   const needsEmailVerification = Boolean(user) && !emailVerified;
-  const canUpgrade =
-    Boolean(user) && getMissingUpgradeQualifications(user).length > 0;
+  const missingUpgradeQualifications = getMissingUpgradeQualifications(user);
+  const canUpgrade = Boolean(user) && missingUpgradeQualifications.length > 0;
+  const accountUpgradePath = buildAccountUpgradePath(
+    getPreferredUpgradeQualification(missingUpgradeQualifications),
+  );
   const isMobileViewport =
     typeof window !== "undefined" &&
     window.matchMedia("(max-width: 800px)").matches;
@@ -128,21 +135,35 @@ export default function Home() {
             </p>
 
             <div className="heroV2__ctaBlock">
-              {user ? (
-                <Link
-                  to="/question-generator"
-                  className="btn btn--primary btn--heroPrimary"
-                >
-                  Start Practising
-                </Link>
-              ) : (
-                <Link
-                  to="/register"
-                  className="btn btn--primary btn--heroPrimary"
-                >
-                  Start Practising
-                </Link>
+              {!user && (
+                <p className="heroV2__ctaMessage">
+                  To get started, hit Start Practising to create an account and
+                  try Exam Builder.
+                </p>
               )}
+
+              <div className="heroV2__ctaActions">
+                {user ? (
+                  <Link
+                    to="/question-generator"
+                    className="btn btn--primary btn--heroPrimary"
+                  >
+                    Start Practising
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      to="/register"
+                      className="btn btn--primary btn--heroPrimary"
+                    >
+                      Start Practising
+                    </Link>
+                    <Link to="/login" className="btn btn--ghost btn--heroGhost">
+                      Login
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
 
             {needsEmailVerification && (
@@ -482,7 +503,7 @@ export default function Home() {
                   Start Practising
                 </Link>
                 {!hasFullAccess && (
-                  <Link to="/account" className="btn btn--ghost">
+                  <Link to={accountUpgradePath} className="btn btn--ghost">
                     Unlock Early Access from £2.99
                   </Link>
                 )}

@@ -196,8 +196,16 @@
 
 :root[data-theme="light"] .account-lockable__overlayCard,
 :root[data-theme="light"] .account-results__overviewLockCard {
+  background: rgba(255, 255, 255, 0.96);
+  color: #0e1726;
   border-color: rgba(14, 23, 38, 0.14);
   box-shadow: 0 18px 40px rgba(14, 23, 38, 0.18);
+}
+
+:root[data-theme="light"] .account-lockable__overlayAction,
+:root[data-theme="light"] .account-results__overviewLockAction {
+  background: rgba(47, 183, 101, 0.18);
+  color: #17663b;
 }
 
 :root[data-theme="light"] .account-card--accent {
@@ -252,8 +260,16 @@
 
   :root:not([data-theme="dark"]) .account-lockable__overlayCard,
   :root:not([data-theme="dark"]) .account-results__overviewLockCard {
+    background: rgba(255, 255, 255, 0.96);
+    color: #0e1726;
     border-color: rgba(14, 23, 38, 0.14);
     box-shadow: 0 18px 40px rgba(14, 23, 38, 0.18);
+  }
+
+  :root:not([data-theme="dark"]) .account-lockable__overlayAction,
+  :root:not([data-theme="dark"]) .account-results__overviewLockAction {
+    background: rgba(47, 183, 101, 0.18);
+    color: #17663b;
   }
 
   :root:not([data-theme="dark"]) .account-card--accent {
@@ -1036,6 +1052,7 @@
   background: rgba(7, 11, 17, 0.28);
   cursor: pointer;
   border-radius: 20px;
+  z-index: 2;
 }
 
 .account-lockable__overlayCard {
@@ -1326,6 +1343,7 @@
   border: 0;
   background: rgba(7, 11, 17, 0.28);
   cursor: pointer;
+  z-index: 2;
 }
 
 .account-results__overviewLockCard {

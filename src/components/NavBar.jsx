@@ -3,15 +3,21 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import "../styles/NavBar.modern.css";
 import { UserContext } from "../context/UserContextObject";
 import {
+  buildAccountUpgradePath,
   getAccessPlanLabel,
   getMissingUpgradeQualifications,
+  getPreferredUpgradeQualification,
 } from "../lib/access";
 
 export default function Navbar() {
   const { user, logout } = useContext(UserContext) || {};
   const navigate = useNavigate();
+  const missingUpgradeQualifications = getMissingUpgradeQualifications(user);
   const showUpgradeCta =
-    Boolean(user) && getMissingUpgradeQualifications(user).length > 0;
+    Boolean(user) && missingUpgradeQualifications.length > 0;
+  const upgradePath = buildAccountUpgradePath(
+    getPreferredUpgradeQualification(missingUpgradeQualifications),
+  );
   const membershipLabel = getAccessPlanLabel(user);
 
   const displayName = useMemo(() => {
@@ -106,7 +112,7 @@ export default function Navbar() {
               <div className="user-actions">
                 {showUpgradeCta && (
                   <NavLink
-                    to="/account"
+                    to={upgradePath}
                     className="btn btn--primary nav-upgrade"
                   >
                     Unlock Access
@@ -186,7 +192,7 @@ export default function Navbar() {
                 </div>
                 {showUpgradeCta && (
                   <NavLink
-                    to="/account"
+                    to={upgradePath}
                     className="btn btn--primary"
                     onClick={closeMenu}
                   >

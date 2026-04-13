@@ -184,6 +184,22 @@ body {
   margin: 30px 0 24px;
 }
 
+.heroV2__ctaMessage {
+  margin: 0;
+  max-width: 34rem;
+  color: var(--text);
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.heroV2__ctaActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 4px 0 14px;
+}
+
 .btn {
   border: none;
   border-radius: 12px;
@@ -231,6 +247,16 @@ body {
   font-size: 1rem;
   font-weight: 800;
   box-shadow: 0 16px 36px rgba(73, 209, 125, 0.22);
+}
+
+.btn--heroGhost {
+  min-width: 154px;
+  min-height: 54px;
+  font-size: 1rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .heroV2__secondaryLink {

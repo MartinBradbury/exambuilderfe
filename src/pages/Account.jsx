@@ -10,7 +10,9 @@ import {
   GCSE_QUALIFICATION,
   getCheckoutPrice,
   getAccessPlanLabel,
+  buildAccountUpgradePath,
   getMissingUpgradeQualifications,
+  getPreferredUpgradeQualification,
   getQualificationLabel,
   getQualificationAccessState,
   hasAccessToQualification,
@@ -107,6 +109,8 @@ export default function Account() {
   } = useContext(UserContext) || {};
   const [searchParams] = useSearchParams();
   const checkoutState = searchParams.get("checkout");
+  const upgradeSection = searchParams.get("section");
+  const upgradeQualificationParam = searchParams.get("qualification");
   const retryTimeoutsRef = useRef([]);
   const upgradeCardRef = useRef(null);
 
@@ -173,6 +177,36 @@ export default function Account() {
       setSelectedCheckoutQualification(checkoutOptions[0]);
     }
   }, [checkoutOptions, selectedCheckoutQualification]);
+
+  useEffect(() => {
+    if (upgradeSection !== "upgrade" || !authReady || !isLoggedIn) {
+      return;
+    }
+
+    const preferredQualification = checkoutOptions.includes(
+      upgradeQualificationParam,
+    )
+      ? upgradeQualificationParam
+      : getPreferredUpgradeQualification(checkoutOptions);
+
+    if (
+      preferredQualification &&
+      checkoutOptions.includes(preferredQualification)
+    ) {
+      setSelectedCheckoutQualification(preferredQualification);
+    }
+
+    upgradeCardRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [
+    authReady,
+    checkoutOptions,
+    isLoggedIn,
+    upgradeQualificationParam,
+    upgradeSection,
+  ]);
 
   useEffect(() => {
     applyThemePreference(themePreference);
@@ -976,6 +1010,7 @@ export default function Account() {
           <div className="col-12 col-lg-6">
             <article
               ref={upgradeCardRef}
+              id="account-upgrade-plan"
               className="account-card account-card--accent h-100"
             >
               <SectionTitle title="Upgrade Plan" />

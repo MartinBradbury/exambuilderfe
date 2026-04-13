@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
+import { buildAccountUpgradePath } from "../lib/access";
 import {
   calculatePercentageScore,
   getSessionDateValue,
@@ -589,9 +590,10 @@ export default function ResultsHistory({
   className = "",
   showHeader = true,
   analyticsLocked = false,
-  upgradePath = "/account",
+  upgradePath = buildAccountUpgradePath,
   initialOverviewLevel = null,
   afterOverviewAction = null,
+  placeResultsToolbarAfterOverview = false,
 }) {
   const { user, refreshCurrentUser, hasAccessToQualification } =
     useContext(UserContext) || {};
@@ -630,13 +632,18 @@ export default function ResultsHistory({
   const navigate = useNavigate();
   const performanceTrackingStartDate =
     user?.performance_tracking_start_date || null;
+  const shouldShowResultsToolbar = !loading && !error && sessions.length > 0;
 
   const handleLockedAnalyticsInteraction = () => {
-    if (!analyticsLocked) {
-      return;
-    }
+    const preferredQualification = getQualificationForLevelKey(
+      selectedOverviewSection?.levelKey,
+    );
+    const nextUpgradePath =
+      typeof upgradePath === "function"
+        ? upgradePath(preferredQualification)
+        : upgradePath;
 
-    navigate(upgradePath);
+    navigate(nextUpgradePath);
   };
 
   useEffect(() => {
@@ -1442,7 +1449,7 @@ export default function ResultsHistory({
         </div>
       )}
 
-      {!loading && !error && sessions.length > 0 && (
+      {shouldShowResultsToolbar && !placeResultsToolbarAfterOverview && (
         <div className="account-results__toolbar account-card">
           <div className="account-results__control">
             <label htmlFor="results-search">Filter Results</label>
@@ -1528,7 +1535,7 @@ export default function ResultsHistory({
           <section className="account-results__overview">
             <div className="account-results__overviewHeader">
               <div>
-                <p className="account-eyebrow">Performance overview</p>
+                {/* <p className="account-eyebrow">Performance overview</p> */}
                 <h3>Track how your results are trending</h3>
               </div>
 
@@ -1972,6 +1979,54 @@ export default function ResultsHistory({
               {afterOverviewAction}
             </div>
           ) : null}
+
+          {shouldShowResultsToolbar && placeResultsToolbarAfterOverview && (
+            <div className="account-results__toolbar account-card">
+              <div className="account-results__control">
+                <label htmlFor="results-search">Filter Results</label>
+                <input
+                  id="results-search"
+                  className="account-results__input"
+                  type="search"
+                  placeholder="Search topic, subtopic, level or board"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                />
+              </div>
+
+              <div className="account-results__control">
+                <label htmlFor="results-board">Exam board</label>
+                <select
+                  id="results-board"
+                  className="account-results__input"
+                  value={examBoardFilter}
+                  onChange={(event) => setExamBoardFilter(event.target.value)}
+                >
+                  <option value="all">All boards</option>
+                  {examBoardOptions.map((board) => (
+                    <option key={board} value={board}>
+                      {board}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="account-results__control">
+                <label htmlFor="results-sort">Sort by</label>
+                <select
+                  id="results-sort"
+                  className="account-results__input"
+                  value={sortOrder}
+                  onChange={(event) => setSortOrder(event.target.value)}
+                >
+                  <option value="newest">Newest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="highest-score">Highest score</option>
+                  <option value="lowest-score">Lowest score</option>
+                </select>
+              </div>
+            </div>
+          )}
 
           <div className="account-results__list">
             {visibleSessionCards.map((session) => (
