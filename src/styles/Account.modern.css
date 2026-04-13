@@ -164,6 +164,56 @@
   color: #ffb1b1;
 }
 
+.account-quickStart {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 22px 24px;
+  border: 1px solid rgba(73, 209, 125, 0.22);
+  border-radius: 22px;
+  background: linear-gradient(
+    135deg,
+    rgba(73, 209, 125, 0.14),
+    rgba(111, 211, 255, 0.08)
+  );
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+}
+
+.account-quickStart__copy {
+  display: grid;
+  gap: 8px;
+  min-width: min(320px, 100%);
+  flex: 1 1 420px;
+}
+
+.account-quickStart__eyebrow {
+  margin: 0;
+  color: var(--brand);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.account-quickStart h2 {
+  margin: 0;
+  font-size: clamp(1.3rem, 2.4vw, 1.9rem);
+}
+
+.account-quickStart__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+}
+
+.account-quickStart__actions .btn {
+  min-width: 240px;
+  min-height: 50px;
+}
+
 .account-actions--progressInline,
 .account-actions--progressFooter {
   width: 100%;
@@ -1481,6 +1531,21 @@
 
   .account-details div {
     flex-direction: column;
+  }
+
+  .account-quickStart {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .account-quickStart__actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .account-quickStart__actions .btn {
+    width: 100%;
+    min-width: 0;
   }
 
   .account-details dd {

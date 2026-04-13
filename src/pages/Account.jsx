@@ -725,6 +725,22 @@ export default function Account() {
           </section>
         )}
 
+        <section className="account-quickStart" aria-label="Start practicing">
+          <div className="account-quickStart__copy">
+            <p className="account-quickStart__eyebrow">Quick start</p>
+            <h2>Start a new question session</h2>
+            <p className="account-muted">
+              Jump straight into the question generator whenever you are ready
+              to practise exam-style questions and get instant feedback.
+            </p>
+          </div>
+          <div className="account-quickStart__actions">
+            <Link to="/question-generator" className="btn btn--primary">
+              Open Question Generator
+            </Link>
+          </div>
+        </section>
+
         <section className="row g-3">
           <div className="col-12 col-lg-6">
             <article className="account-card h-100">

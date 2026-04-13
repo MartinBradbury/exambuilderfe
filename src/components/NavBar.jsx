@@ -155,7 +155,7 @@ export default function Navbar() {
                 className="mobile-link"
                 onClick={closeMenu}
               >
-                Generator
+                Start Practicing
               </NavLink>
               <NavLink
                 to="/progress"

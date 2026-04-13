@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import EmailVerificationNotice from "../components/EmailVerificationNotice";
 import "../styles/Home.modern.css";
@@ -16,59 +16,71 @@ export default function Home() {
   const [isMobileHowItWorks, setIsMobileHowItWorks] =
     useState(isMobileViewport);
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(!isMobileViewport);
-  const [activePreviewSlide, setActivePreviewSlide] = useState(0);
-  const previewRailRef = useRef(null);
 
-  const previewSlides = [
-    {
-      key: "question",
-      tag: "Live preview",
-      meta: "OCR Biology • 4 marks",
-      title: "Question preview",
-      content: (
-        <>
-          <p className="heroPanel__question">
-            Explain how the structure of the alveoli helps to maximise gas
-            exchange in the lungs. [4 marks]
-          </p>
-        </>
-      ),
-    },
-    {
-      key: "answer",
-      tag: "Student answer",
-      meta: "Attempt draft",
-      title: "Answer preview",
-      content: (
-        <>
-          <p className="heroPanel__answerIntro">
-            The alveoli are good for gas exchange because there are lots of
-            them, so the lungs have a large surface area. The walls are thin so
-            oxygen diffuses quickly.
-          </p>
-        </>
-      ),
-    },
-    {
-      key: "feedback",
-      tag: "Feedback",
-      meta: "Score example",
-      title: "Instant feedback",
-      content: (
-        <>
-          <div className="heroPanel__score">3 / 4</div>
-          <p>
-            Strong explanation of surface area and diffusion distance. To score
-            higher, mention ventilation and blood flow maintaining the gradient.
-          </p>
-          <ul className="heroPanel__feedbackList">
-            <li>Strength: clear use of exam terminology</li>
-            <li>Next mark: explain how ventilation maintains the gradient</li>
-          </ul>
-        </>
-      ),
-    },
-  ];
+  const feedbackPreviewContent = (
+    <div className="heroMarkedPreview">
+      <div className="heroMarkedPreview__questionRow">
+        <strong>Question 1 of 3</strong>
+        <span>33% viewed</span>
+      </div>
+
+      <p className="heroMarkedPreview__question">
+        <strong>Q1.</strong> Explain how the structure of the alveoli helps to
+        maximise gas exchange in the lungs. [4 marks]
+      </p>
+
+      <button
+        type="button"
+        className="heroMarkedPreview__markSchemeBtn"
+        disabled
+      >
+        Show Mark Scheme
+      </button>
+
+      <div className="heroMarkedPreview__field">
+        <span className="heroMarkedPreview__label">Your Answer</span>
+        <div className="heroMarkedPreview__answerBox">
+          Large surface area because there are many alveoli. Thin walls create a
+          short diffusion distance, and the capillary network helps maintain the
+          concentration gradient.
+        </div>
+      </div>
+
+      <div className="heroMarkedPreview__feedbackBlock">
+        <p>
+          <strong>Score:</strong> 3 / 4
+        </p>
+        <p>
+          <strong>Feedback:</strong> Strong explanation of surface area and
+          diffusion distance. To reach full marks, mention ventilation helping
+          to maintain a steep concentration gradient.
+        </p>
+      </div>
+
+      <div className="heroMarkedPreview__status">Answers Marked</div>
+
+      <div className="heroMarkedPreview__summary">
+        <h3>Overall Summary</h3>
+        <div className="heroMarkedPreview__summaryGrid">
+          <section className="heroMarkedPreview__summaryCard">
+            <h4>Strengths</h4>
+            <ul>
+              <li>Clear explanation of large surface area</li>
+              <li>Identifies the short diffusion pathway</li>
+            </ul>
+          </section>
+
+          <section className="heroMarkedPreview__summaryCard">
+            <h4>Improvements</h4>
+            <ul>
+              <li>Mention ventilation maintaining the gradient</li>
+              <li>Link the capillary supply more directly to gas exchange</li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 800px)");
@@ -90,35 +102,6 @@ export default function Home() {
     if (isMobileHowItWorks) {
       setIsHowItWorksOpen(true);
     }
-  };
-
-  useEffect(() => {
-    if (!isMobileHowItWorks) {
-      setActivePreviewSlide(0);
-    }
-  }, [isMobileHowItWorks]);
-
-  const handlePreviewRailScroll = () => {
-    const rail = previewRailRef.current;
-
-    if (!rail) {
-      return;
-    }
-
-    const slideOffsets = Array.from(rail.children).map(
-      (slide) => slide.offsetLeft,
-    );
-
-    const nearestIndex = slideOffsets.reduce(
-      (closestIndex, offset, index) =>
-        Math.abs(offset - rail.scrollLeft) <
-        Math.abs(slideOffsets[closestIndex] - rail.scrollLeft)
-          ? index
-          : closestIndex,
-      0,
-    );
-
-    setActivePreviewSlide(nearestIndex);
   };
 
   return (
@@ -211,7 +194,9 @@ export default function Home() {
               <>
                 <div className="heroPanel heroPanel--question">
                   <div className="heroPanel__topline">
-                    <span className="heroPanel__tag">Live preview</span>
+                    <span className="heroPanel__tag">
+                      Exam Question Preview
+                    </span>
                     <span className="heroPanel__meta">
                       OCR Biology • 4 marks
                     </span>
@@ -221,13 +206,16 @@ export default function Home() {
                     Explain how the structure of the alveoli helps to maximise
                     gas exchange in the lungs. [4 marks]
                   </p>
-                  <ul className="heroPanel__points">
-                    <li>Large surface area from many alveoli</li>
-                    <li>Thin walls create a short diffusion path</li>
-                    <li>
-                      Rich capillary network maintains concentration gradients
-                    </li>
-                  </ul>
+                  <div className="heroPanel__attempt">
+                    <span className="heroPanel__attemptLabel">
+                      Example student attempt
+                    </span>
+                    <div className="heroPanel__attemptBox">
+                      Large surface area because there are many alveoli. Thin
+                      walls create a short diffusion distance, and the capillary
+                      network helps maintain the concentration gradient.
+                    </div>
+                  </div>
                 </div>
 
                 <div className="heroPanel heroPanel--feedback">
@@ -235,63 +223,62 @@ export default function Home() {
                     <span className="heroPanel__tag heroPanel__tag--soft">
                       Feedback
                     </span>
-                    <span className="heroPanel__meta">Score example</span>
+                    <span className="heroPanel__meta">
+                      Marked answer preview
+                    </span>
                   </div>
-                  <div className="heroPanel__score">3 / 4</div>
-                  <p>
-                    Strong explanation of surface area and diffusion distance.
-                    To score higher, mention ventilation and blood flow
-                    maintaining the gradient.
-                  </p>
+                  <h2>Marked answer preview</h2>
+                  {feedbackPreviewContent}
                 </div>
               </>
             ) : (
-              <div className="heroPreviewMobile">
-                <div
-                  ref={previewRailRef}
-                  className="heroPreviewMobile__rail"
-                  onScroll={handlePreviewRailScroll}
+              <div className="heroPreviewMobile heroPreviewMobile--stack">
+                <section
+                  className="heroPanel heroPanel--mobileCompact"
+                  aria-label="Question preview"
                 >
-                  {previewSlides.map((slide) => (
-                    <section
-                      key={slide.key}
-                      className="heroPreviewMobile__slide"
-                      aria-label={slide.title}
-                    >
-                      <div className="heroPanel heroPanel--mobileSlide">
-                        <div className="heroPanel__topline">
-                          <span
-                            className={
-                              slide.key === "feedback"
-                                ? "heroPanel__tag heroPanel__tag--soft"
-                                : "heroPanel__tag"
-                            }
-                          >
-                            {slide.tag}
-                          </span>
-                          <span className="heroPanel__meta">{slide.meta}</span>
-                        </div>
-                        <h2>{slide.title}</h2>
-                        {slide.content}
-                      </div>
-                    </section>
-                  ))}
-                </div>
-                <div className="heroPreviewMobile__footer" aria-hidden="true">
-                  <span className="heroPreviewMobile__swipeCue">Swipe →</span>
-                  <div className="heroPreviewMobile__dots">
-                    {previewSlides.map((slide, index) => (
-                      <span
-                        key={slide.key}
-                        className={
-                          index === activePreviewSlide
-                            ? "heroPreviewMobile__dot heroPreviewMobile__dot--active"
-                            : "heroPreviewMobile__dot"
-                        }
-                      />
-                    ))}
+                  <div className="heroPanel__topline">
+                    <span className="heroPanel__tag">Example Question</span>
+                    <span className="heroPanel__meta">
+                      OCR Biology • 4 marks
+                    </span>
                   </div>
-                </div>
+                  <p className="heroPanel__question heroPanel__question--compact">
+                    Explain how the structure of the alveoli helps to maximise
+                    gas exchange in the lungs. [4 marks]
+                  </p>
+                </section>
+
+                <section
+                  className="heroPanel heroPanel--mobileCompact"
+                  aria-label="Answer preview"
+                >
+                  <div className="heroPanel__topline">
+                    <span className="heroPanel__tag">Student answer</span>
+                    <span className="heroPanel__meta">Attempt draft</span>
+                  </div>
+                  <p className="heroPanel__answerIntro">
+                    The alveoli are good for gas exchange because there are lots
+                    of them, so the lungs have a large surface area. The walls
+                    are thin so oxygen diffuses quickly.
+                  </p>
+                </section>
+
+                <section
+                  className="heroPanel heroPanel--mobileSlide"
+                  aria-label="Marked answer preview"
+                >
+                  <div className="heroPanel__topline">
+                    <span className="heroPanel__tag heroPanel__tag--soft">
+                      Feedback
+                    </span>
+                    <span className="heroPanel__meta">
+                      Marked answer preview
+                    </span>
+                  </div>
+                  <h2>Marked answer preview</h2>
+                  {feedbackPreviewContent}
+                </section>
               </div>
             )}
           </aside>
@@ -334,10 +321,6 @@ export default function Home() {
           <h2 id="preview-title">
             A simple revision flow students can use immediately
           </h2>
-          <p>
-            Pick a topic, answer exam-style questions, and get fast feedback
-            that helps you improve on the next attempt.
-          </p>
         </div>
 
         {isMobileHowItWorks && (
@@ -423,10 +406,6 @@ export default function Home() {
           <h2 id="features-title">
             Built to improve exam performance, not just generate questions
           </h2>
-          <p>
-            Improve your exam performance with targeted practice and instant
-            feedback.
-          </p>
           <p className="sectionHeading__socialProof">
             Used by students preparing for OCR and AQA GCSE and A-Level exams.
           </p>
@@ -474,10 +453,6 @@ export default function Home() {
           <h2 id="spec-teaser-title">
             Keep your practice tied to the course content
           </h2>
-          <p>
-            Use the specification page to align your revision with the topics
-            and exam board content you need to cover.
-          </p>
         </div>
         <div className="specsTeaserCard">
           <div>
