@@ -1135,78 +1135,124 @@ export default function Account() {
           <div className="col-12">
             <article className="account-card account-settingsCard">
               <SectionTitle title="Account Settings" />
-              <div className="account-settingsCard__layout">
-                <div className="account-settingsCard__intro">
-                  <p className="account-muted">
-                    Change the interface theme, review key policies, or sign out
-                    from this device.
-                  </p>
-                </div>
-
-                <div className="account-settingsCard__groups">
-                  <div className="account-settingsCard__group">
-                    <p className="account-settingsCard__label">Account</p>
-                    <div className="account-settingsCard__actions">
-                      <label
-                        className="account-settingsCard__toggle"
-                        htmlFor="account-theme-toggle"
-                      >
-                        <span className="account-settingsCard__toggleCopy">
-                          <strong>
-                            {themePreference === "dark"
-                              ? "Dark mode"
-                              : "Light mode"}
-                          </strong>
-                          <small>Use your saved theme across the app.</small>
-                        </span>
-                        <span className="account-settingsCard__toggleControl">
-                          <input
-                            id="account-theme-toggle"
-                            type="checkbox"
-                            checked={themePreference === "light"}
-                            onChange={handleThemeToggle}
-                          />
-                          <span
-                            className="account-settingsCard__toggleTrack"
-                            aria-hidden="true"
-                          >
-                            <span className="account-settingsCard__toggleThumb" />
-                          </span>
-                        </span>
-                      </label>
-                      <button
-                        type="button"
-                        className="account-settingsCard__button account-settingsCard__button--subtle"
-                        onClick={() => logout?.()}
-                      >
-                        Log out
-                      </button>
-                    </div>
+              <div className="account-settingsModern">
+                <section className="account-settingsModern__hero">
+                  <div>
+                    <p className="account-settingsModern__eyebrow">
+                      Preferences
+                    </p>
+                    <h3>Manage how this account works on this device</h3>
+                    <p className="account-muted">
+                      Update your theme, review important policies, and control
+                      your current session from one place.
+                    </p>
                   </div>
+                  <div className="account-settingsModern__status">
+                    <span className="account-settingsModern__statusLabel">
+                      Current theme
+                    </span>
+                    <strong>
+                      {themePreference === "dark" ? "Dark mode" : "Light mode"}
+                    </strong>
+                  </div>
+                </section>
 
-                  <div className="account-settingsCard__group">
-                    <p className="account-settingsCard__label">Legal</p>
-                    <div className="account-settingsCard__actions">
+                <div className="account-settingsModern__grid">
+                  <section className="account-settingsModern__panel">
+                    <div className="account-settingsModern__panelTop">
+                      <p className="account-settingsModern__label">Display</p>
+                      <span className="account-settingsModern__badge">
+                        Saved
+                      </span>
+                    </div>
+                    <h4>Theme preference</h4>
+                    <p className="account-muted">
+                      Switch between dark and light mode and keep the same look
+                      across the app.
+                    </p>
+
+                    <label
+                      className="account-settingsModern__toggle"
+                      htmlFor="account-theme-toggle"
+                    >
+                      <span className="account-settingsModern__toggleCopy">
+                        <strong>
+                          {themePreference === "dark"
+                            ? "Switch to light mode"
+                            : "Switch to dark mode"}
+                        </strong>
+                        <small>Your choice is saved automatically.</small>
+                      </span>
+                      <span className="account-settingsCard__toggleControl">
+                        <input
+                          id="account-theme-toggle"
+                          type="checkbox"
+                          checked={themePreference === "light"}
+                          onChange={handleThemeToggle}
+                        />
+                        <span
+                          className="account-settingsCard__toggleTrack"
+                          aria-hidden="true"
+                        >
+                          <span className="account-settingsCard__toggleThumb" />
+                        </span>
+                      </span>
+                    </label>
+                  </section>
+
+                  <section className="account-settingsModern__panel">
+                    <div className="account-settingsModern__panelTop">
+                      <p className="account-settingsModern__label">Legal</p>
+                    </div>
+                    <h4>Important policies</h4>
+                    <p className="account-muted">
+                      Review the policies that apply to your account and any
+                      purchases.
+                    </p>
+
+                    <div className="account-settingsModern__linkGrid">
                       <Link
                         to="/terms"
-                        className="account-settingsCard__button account-settingsCard__button--ghost"
+                        className="account-settingsModern__linkCard"
                       >
-                        Terms
+                        <strong>Terms</strong>
+                        <span>Service terms and usage rules</span>
                       </Link>
                       <Link
                         to="/privacy-policy"
-                        className="account-settingsCard__button account-settingsCard__button--ghost"
+                        className="account-settingsModern__linkCard"
                       >
-                        Privacy
+                        <strong>Privacy</strong>
+                        <span>How your data is handled</span>
                       </Link>
                       <Link
                         to="/refund-policy"
-                        className="account-settingsCard__button account-settingsCard__button--ghost"
+                        className="account-settingsModern__linkCard"
                       >
-                        Refunds
+                        <strong>Refunds</strong>
+                        <span>Refund and billing guidance</span>
                       </Link>
                     </div>
-                  </div>
+                  </section>
+
+                  <section className="account-settingsModern__panel account-settingsModern__panel--session">
+                    <div className="account-settingsModern__panelTop">
+                      <p className="account-settingsModern__label">Session</p>
+                    </div>
+                    <h4>Sign out of this device</h4>
+                    <p className="account-muted">
+                      End your current session here if you are finished using
+                      this account on this device.
+                    </p>
+
+                    <button
+                      type="button"
+                      className="account-settingsModern__logout"
+                      onClick={() => logout?.()}
+                    >
+                      Log out
+                    </button>
+                  </section>
                 </div>
               </div>
             </article>

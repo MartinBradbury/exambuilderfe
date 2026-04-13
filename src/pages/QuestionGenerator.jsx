@@ -20,6 +20,8 @@ const GCSE_SUBJECT_OPTIONS = ["BIOLOGY", "CHEMISTRY", "PHYSICS", "COMBINED"];
 const GCSE_TIER_OPTIONS = ["FOUNDATION", "HIGHER"];
 const SESSION_LEAVE_MESSAGE =
   "Are you sure you want to leave this page? Your current question session will be lost.";
+const SESSION_RESULTS_PENDING_LEAVE_MESSAGE =
+  "Are you sure you want to leave this page? Your answers have been marked, but this question session will not be saved unless you click Complete and View Results.";
 
 const normalizeTopicName = (value) =>
   String(value || "")
@@ -87,8 +89,16 @@ export default function QuestionGenerator() {
     () => (isFreePlan ? [1] : [1, 2, 3, 4, 5, 6]),
     [isFreePlan],
   );
+  const hasMarkedButIncompleteSession =
+    Boolean(questions?.length) &&
+    typeof finalFeedback === "object" &&
+    finalFeedback !== null &&
+    !hasSubmitted;
   const hasActiveQuestionSession = Boolean(questions?.length) && !hasSubmitted;
   const shouldBlockNavigation = hasActiveQuestionSession && !allowNavigation;
+  const sessionLeaveMessage = hasMarkedButIncompleteSession
+    ? SESSION_RESULTS_PENDING_LEAVE_MESSAGE
+    : SESSION_LEAVE_MESSAGE;
 
   useBeforeUnload(
     useCallback(
@@ -98,9 +108,9 @@ export default function QuestionGenerator() {
         }
 
         event.preventDefault();
-        event.returnValue = SESSION_LEAVE_MESSAGE;
+        event.returnValue = sessionLeaveMessage;
       },
-      [shouldBlockNavigation],
+      [sessionLeaveMessage, shouldBlockNavigation],
     ),
   );
 
@@ -139,7 +149,7 @@ export default function QuestionGenerator() {
         return;
       }
 
-      const confirmed = window.confirm(SESSION_LEAVE_MESSAGE);
+      const confirmed = window.confirm(sessionLeaveMessage);
       if (!confirmed) {
         event.preventDefault();
         event.stopPropagation();
@@ -147,7 +157,7 @@ export default function QuestionGenerator() {
     };
 
     const handlePopState = () => {
-      const confirmed = window.confirm(SESSION_LEAVE_MESSAGE);
+      const confirmed = window.confirm(sessionLeaveMessage);
       if (!confirmed) {
         window.history.go(1);
       }
@@ -164,6 +174,7 @@ export default function QuestionGenerator() {
     location.hash,
     location.pathname,
     location.search,
+    sessionLeaveMessage,
     shouldBlockNavigation,
   ]);
 
