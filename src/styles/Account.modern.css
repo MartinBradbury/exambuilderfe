@@ -164,6 +164,115 @@
   color: #ffb1b1;
 }
 
+:root[data-theme="light"] .account-banner--info,
+:root[data-theme="light"] .account-card--accent,
+:root[data-theme="light"] .account-settingsCard__intro,
+:root[data-theme="light"] .account-settingsCard__group,
+:root[data-theme="light"] .account-settingsCard__toggle,
+:root[data-theme="light"] .account-summaryTabs,
+:root[data-theme="light"] .account-summaryMetric,
+:root[data-theme="light"] .account-summaryEmpty--panel,
+:root[data-theme="light"] .account-results__overviewSharedControls,
+:root[data-theme="light"] .account-resultCard__feedbackBlock,
+:root[data-theme="light"] .account-chartCard__note,
+:root[data-theme="light"] .account-quickStart,
+:root[data-theme="light"] .btn:not(.btn--primary):not(.btn--ghost) {
+  background: rgba(14, 23, 38, 0.05);
+}
+
+:root[data-theme="light"] .account-settingsCard__button--subtle,
+:root[data-theme="light"] .account-summaryDot,
+:root[data-theme="light"] .account-upgradeOption {
+  background: rgba(14, 23, 38, 0.045);
+}
+
+:root[data-theme="light"] .account-banner--error {
+  color: #a62639;
+}
+
+:root[data-theme="light"] .account-resultCard__metaLine span + span::before {
+  color: rgba(14, 23, 38, 0.32);
+}
+
+:root[data-theme="light"] .account-lockable__overlayCard,
+:root[data-theme="light"] .account-results__overviewLockCard {
+  border-color: rgba(14, 23, 38, 0.14);
+  box-shadow: 0 18px 40px rgba(14, 23, 38, 0.18);
+}
+
+:root[data-theme="light"] .account-card--accent {
+  background: linear-gradient(180deg, rgba(47, 183, 101, 0.18), #edf4ef);
+}
+
+:root[data-theme="light"] .account-quickStart {
+  background: linear-gradient(135deg, rgba(47, 183, 101, 0.2), #e7efe8);
+}
+
+:root[data-theme="light"] .account-upgradeHighlight {
+  background: linear-gradient(180deg, rgba(47, 183, 101, 0.18), #ecf4ee);
+}
+
+:root[data-theme="light"] .account-summaryTab--active {
+  background: linear-gradient(135deg, rgba(47, 183, 101, 0.22), #e8f0ea);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .account-banner--info,
+  :root:not([data-theme="dark"]) .account-card--accent,
+  :root:not([data-theme="dark"]) .account-settingsCard__intro,
+  :root:not([data-theme="dark"]) .account-settingsCard__group,
+  :root:not([data-theme="dark"]) .account-settingsCard__toggle,
+  :root:not([data-theme="dark"]) .account-summaryTabs,
+  :root:not([data-theme="dark"]) .account-summaryMetric,
+  :root:not([data-theme="dark"]) .account-summaryEmpty--panel,
+  :root:not([data-theme="dark"]) .account-results__overviewSharedControls,
+  :root:not([data-theme="dark"]) .account-resultCard__feedbackBlock,
+  :root:not([data-theme="dark"]) .account-chartCard__note,
+  :root:not([data-theme="dark"]) .account-quickStart,
+  :root:not([data-theme="dark"]) .btn:not(.btn--primary):not(.btn--ghost) {
+    background: rgba(14, 23, 38, 0.05);
+  }
+
+  :root:not([data-theme="dark"]) .account-settingsCard__button--subtle,
+  :root:not([data-theme="dark"]) .account-summaryDot,
+  :root:not([data-theme="dark"]) .account-upgradeOption {
+    background: rgba(14, 23, 38, 0.045);
+  }
+
+  :root:not([data-theme="dark"]) .account-banner--error {
+    color: #a62639;
+  }
+
+  :root:not([data-theme="dark"])
+    .account-resultCard__metaLine
+    span
+    + span::before {
+    color: rgba(14, 23, 38, 0.32);
+  }
+
+  :root:not([data-theme="dark"]) .account-lockable__overlayCard,
+  :root:not([data-theme="dark"]) .account-results__overviewLockCard {
+    border-color: rgba(14, 23, 38, 0.14);
+    box-shadow: 0 18px 40px rgba(14, 23, 38, 0.18);
+  }
+
+  :root:not([data-theme="dark"]) .account-card--accent {
+    background: linear-gradient(180deg, rgba(47, 183, 101, 0.18), #edf4ef);
+  }
+
+  :root:not([data-theme="dark"]) .account-quickStart {
+    background: linear-gradient(135deg, rgba(47, 183, 101, 0.2), #e7efe8);
+  }
+
+  :root:not([data-theme="dark"]) .account-upgradeHighlight {
+    background: linear-gradient(180deg, rgba(47, 183, 101, 0.18), #ecf4ee);
+  }
+
+  :root:not([data-theme="dark"]) .account-summaryTab--active {
+    background: linear-gradient(135deg, rgba(47, 183, 101, 0.22), #e8f0ea);
+  }
+}
+
 .account-quickStart {
   display: flex;
   align-items: center;
@@ -1015,8 +1124,8 @@
 .account-results__boardOption--active {
   background: linear-gradient(
     135deg,
-    rgba(73, 209, 125, 0.22),
-    rgba(111, 211, 255, 0.18)
+    rgba(47, 183, 101, 0.24),
+    rgba(73, 209, 125, 0.14)
   );
   color: var(--text);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
@@ -1203,9 +1312,30 @@
   height: 100%;
   background: linear-gradient(
     180deg,
-    var(--chart-card-start),
+    rgba(47, 183, 101, 0.18),
+    rgba(47, 183, 101, 0.08) 18%,
     var(--chart-card-end)
   );
+}
+
+:root[data-theme="light"] .account-chartCard {
+  background: linear-gradient(180deg, rgba(47, 183, 101, 0.2), #e8f0ea);
+}
+
+:root[data-theme="light"] .account-results__boardOption--active {
+  background: linear-gradient(135deg, rgba(47, 183, 101, 0.24), #e8f0ea);
+  box-shadow: 0 8px 18px rgba(14, 23, 38, 0.12);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .account-chartCard {
+    background: linear-gradient(180deg, rgba(47, 183, 101, 0.2), #e8f0ea);
+  }
+
+  :root:not([data-theme="dark"]) .account-results__boardOption--active {
+    background: linear-gradient(135deg, rgba(47, 183, 101, 0.24), #e8f0ea);
+    box-shadow: 0 8px 18px rgba(14, 23, 38, 0.12);
+  }
 }
 
 .account-chartCard--trend {

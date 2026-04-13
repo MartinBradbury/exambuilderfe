@@ -177,6 +177,36 @@
   background: rgba(73, 209, 125, 0.08);
 }
 
+:root[data-theme="light"] .btn:not(.btn--primary):not(.btn--ghost),
+:root[data-theme="light"] .login-alert,
+:root[data-theme="light"] .login-card {
+  background: rgba(14, 23, 38, 0.05);
+}
+
+:root[data-theme="light"] .login-card {
+  box-shadow: 0 16px 34px rgba(14, 23, 38, 0.08);
+}
+
+:root[data-theme="light"] .login-alert--error {
+  color: #a62639;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .btn:not(.btn--primary):not(.btn--ghost),
+  :root:not([data-theme="dark"]) .login-alert,
+  :root:not([data-theme="dark"]) .login-card {
+    background: rgba(14, 23, 38, 0.05);
+  }
+
+  :root:not([data-theme="dark"]) .login-card {
+    box-shadow: 0 16px 34px rgba(14, 23, 38, 0.08);
+  }
+
+  :root:not([data-theme="dark"]) .login-alert--error {
+    color: #a62639;
+  }
+}
+
 .login-helper-text {
   margin: 0;
   color: var(--muted);

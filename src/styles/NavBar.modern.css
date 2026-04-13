@@ -314,6 +314,46 @@
   display: block;
 }
 
+:root[data-theme="light"] .site-navbarV2 {
+  border-bottom-color: rgba(14, 23, 38, 0.12);
+  box-shadow: 0 10px 24px rgba(14, 23, 38, 0.06);
+}
+
+:root[data-theme="light"] .nav-link:hover,
+:root[data-theme="light"] .user-info,
+:root[data-theme="light"] .btn:not(.btn--primary):not(.btn--ghost),
+:root[data-theme="light"] .hamburger,
+:root[data-theme="light"] .mobile-link:hover,
+:root[data-theme="light"] .mobile-drawer {
+  background: rgba(14, 23, 38, 0.05);
+}
+
+:root[data-theme="light"] .btn--subtle:hover,
+:root[data-theme="light"] .nav-link.is-active {
+  background: rgba(14, 23, 38, 0.08);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .site-navbarV2 {
+    border-bottom-color: rgba(14, 23, 38, 0.12);
+    box-shadow: 0 10px 24px rgba(14, 23, 38, 0.06);
+  }
+
+  :root:not([data-theme="dark"]) .nav-link:hover,
+  :root:not([data-theme="dark"]) .user-info,
+  :root:not([data-theme="dark"]) .btn:not(.btn--primary):not(.btn--ghost),
+  :root:not([data-theme="dark"]) .hamburger,
+  :root:not([data-theme="dark"]) .mobile-link:hover,
+  :root:not([data-theme="dark"]) .mobile-drawer {
+    background: rgba(14, 23, 38, 0.05);
+  }
+
+  :root:not([data-theme="dark"]) .btn--subtle:hover,
+  :root:not([data-theme="dark"]) .nav-link.is-active {
+    background: rgba(14, 23, 38, 0.08);
+  }
+}
+
 /* Responsive behavior */
 @media (max-width: 900px) {
   .nav-links {

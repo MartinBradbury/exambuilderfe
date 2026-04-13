@@ -143,13 +143,6 @@ export default function Home() {
                   Start Practising
                 </Link>
               )}
-              <a
-                href="#how-it-works"
-                className="heroV2__secondaryLink"
-                onClick={handleHowItWorksLinkClick}
-              >
-                See how it works →
-              </a>
             </div>
 
             {needsEmailVerification && (
@@ -166,20 +159,18 @@ export default function Home() {
 
             {/* Lightweight trust points reduce friction without competing with the primary CTA. */}
             <div
-              className="heroV2__trustRow row row-cols-1 row-cols-md-3 g-3"
+              className="heroV2__trustRow row row-cols-1 row-cols-md-2 g-3"
               aria-label="Key benefits"
             >
               <div className="col">
-                <div className="heroV2__trustItem">Instant AI marking</div>
-              </div>
-              <div className="col">
                 <div className="heroV2__trustItem">
-                  Aligned with real OCR &amp; AQA mark schemes
+                  Instant AI marking designed to reflect real OCR and AQA exam
+                  expectations.
                 </div>
               </div>
               <div className="col">
                 <div className="heroV2__trustItem">
-                  Built to reflect real exam expectations
+                  Aligned with real OCR &amp; AQA mark schemes
                 </div>
               </div>
             </div>

@@ -165,6 +165,36 @@
   background: rgba(47, 183, 101, 0.1);
 }
 
+:root[data-theme="light"] .btn:not(.btn--primary):not(.btn--ghost),
+:root[data-theme="light"] .reg-alert,
+:root[data-theme="light"] .reg-card {
+  background: rgba(14, 23, 38, 0.05);
+}
+
+:root[data-theme="light"] .reg-card {
+  box-shadow: 0 16px 34px rgba(14, 23, 38, 0.08);
+}
+
+:root[data-theme="light"] .reg-alert--error {
+  color: #a62639;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .btn:not(.btn--primary):not(.btn--ghost),
+  :root:not([data-theme="dark"]) .reg-alert,
+  :root:not([data-theme="dark"]) .reg-card {
+    background: rgba(14, 23, 38, 0.05);
+  }
+
+  :root:not([data-theme="dark"]) .reg-card {
+    box-shadow: 0 16px 34px rgba(14, 23, 38, 0.08);
+  }
+
+  :root:not([data-theme="dark"]) .reg-alert--error {
+    color: #a62639;
+  }
+}
+
 /* Footer */
 .reg-footer {
   margin-top: 12px;
