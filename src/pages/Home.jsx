@@ -215,8 +215,10 @@ export default function Home() {
                   </div>
                   <h2>Question preview</h2>
                   <p className="heroPanel__question">
-                    Explain how the structure of the alveoli helps to maximise
-                    gas exchange in the lungs. [4 marks]
+                    Explain how the structure and function of the alveoli
+                    maximise the rate of gas exchange in the lungs.
+                    <hr></hr>
+                    <span>[4 marks]</span>
                   </p>
                   <div className="heroPanel__attempt">
                     <span className="heroPanel__attemptLabel">
@@ -256,8 +258,8 @@ export default function Home() {
                     </span>
                   </div>
                   <p className="heroPanel__question heroPanel__question--compact">
-                    Explain how the structure of the alveoli helps to maximise
-                    gas exchange in the lungs. [4 marks]
+                    Explain how the structure and function of the alveoli
+                    maximise the rate of gas exchange in the lungs. [4 marks]
                   </p>
                 </section>
 
@@ -270,9 +272,9 @@ export default function Home() {
                     <span className="heroPanel__meta">Attempt draft</span>
                   </div>
                   <p className="heroPanel__answerIntro">
-                    The alveoli are good for gas exchange because there are lots
-                    of them, so the lungs have a large surface area. The walls
-                    are thin so oxygen diffuses quickly.
+                    Large surface area because there are many alveoli. Thin
+                    walls create a short diffusion distance, and the capillary
+                    network helps maintain the concentration gradient.
                   </p>
                 </section>
 
