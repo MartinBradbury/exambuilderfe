@@ -1038,8 +1038,8 @@ export default function Account() {
                   </div>
                   <p className="account-price">
                     {selectedCheckoutQualification === BOTH_QUALIFICATIONS
-                      ? "GCSE + A-level early access: £3.99"
-                      : `${selectedCheckoutLabel} early access: £2.99`}
+                      ? "GCSE + A-level early access: £2.99"
+                      : `${selectedCheckoutLabel} early access: £1.99`}
                   </p>
                   <div
                     className="account-upgradeOptions"
