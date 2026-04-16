@@ -895,7 +895,7 @@ export default function QuestionGenerator() {
                 <p className="qg-hint">
                   {hasSelectedQualificationAccess
                     ? ""
-                    : `${getQualificationLabel(qualification)} is currently on the free tier for this account, so this qualification is limited to 1 generated question per day until upgraded.`}
+                    : `${getQualificationLabel(qualification)} is currently on the free tier for this account, so this qualification is limited to 2 generated question per day until upgraded.`}
                 </p>
               )}
             </div>
