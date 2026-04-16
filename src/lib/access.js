@@ -197,10 +197,10 @@ export const buildAccountUpgradePath = (preferredQualification = null) => {
 
 export const getCheckoutPrice = (qualification) => {
   if (qualification === BOTH_QUALIFICATIONS) {
-    return "£3.99";
+    return "£2.99";
   }
 
-  return "£2.99";
+  return "£1.99";
 };
 
 export const pickEntitlementUpdates = (payload) => {
