@@ -17,8 +17,11 @@ import {
 } from "../lib/access";
 import aLevelCover from "../assets/home/Alevelcard.png";
 import gcseCover from "../assets/home/GCSEcard.png";
+
+const EXAM_BOARD_OPTIONS = ["AQA", "OCR", "EDEXCEL"];
 const GCSE_SUBJECT_OPTIONS = ["BIOLOGY", "CHEMISTRY", "PHYSICS", "COMBINED"];
 const GCSE_TIER_OPTIONS = ["FOUNDATION", "HIGHER"];
+const EDEXCEL_ALEVEL_SPECIFICATION_OPTIONS = ["Spec A", "Spec B"];
 const SESSION_LEAVE_MESSAGE =
   "Are you sure you want to leave this page? Your current question session will be lost.";
 const SESSION_RESULTS_PENDING_LEAVE_MESSAGE =
@@ -48,6 +51,7 @@ export default function QuestionGenerator() {
     useState(false);
   const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedTier, setSelectedTier] = useState("");
+  const [selectedSpecification, setSelectedSpecification] = useState("");
 
   const [examBoard, setExamBoard] = useState("OCR");
   const [numberOfQuestions, setNumberOfQuestions] = useState("3");
@@ -76,6 +80,8 @@ export default function QuestionGenerator() {
   const navigate = useNavigate();
   const location = useLocation();
   const isGcse = qualification === GCSE_QUALIFICATION;
+  const requiresSpecification =
+    qualification === ALEVEL_QUALIFICATION && examBoard === "EDEXCEL";
   const resumeSession = location.state?.resumeSession || null;
 
   const numericRemaining =
@@ -214,11 +220,20 @@ export default function QuestionGenerator() {
       setHasSelectedQualification(true);
     }
 
+    const normalizedExamBoard = String(resumeSession.examBoard || "").toUpperCase();
+
+    if (EXAM_BOARD_OPTIONS.includes(normalizedExamBoard)) {
+      setExamBoard(normalizedExamBoard);
+    }
+
     if (
-      resumeSession.examBoard &&
-      ["AQA", "OCR"].includes(String(resumeSession.examBoard).toUpperCase())
+      normalizedExamBoard === "EDEXCEL" &&
+      nextQualification === ALEVEL_QUALIFICATION &&
+      EDEXCEL_ALEVEL_SPECIFICATION_OPTIONS.includes(
+        String(resumeSession.specification || ""),
+      )
     ) {
-      setExamBoard(String(resumeSession.examBoard).toUpperCase());
+      setSelectedSpecification(String(resumeSession.specification));
     }
 
     if (
@@ -272,6 +287,7 @@ export default function QuestionGenerator() {
     clearTopicSelections();
     setSelectedSubject("");
     setSelectedTier("");
+    setSelectedSpecification("");
   };
 
   const handleBackToQualificationChoice = () => {
@@ -280,10 +296,12 @@ export default function QuestionGenerator() {
     clearTopicSelections();
     setSelectedSubject("");
     setSelectedTier("");
+    setSelectedSpecification("");
   };
 
   const handleExamBoardChange = (nextExamBoard) => {
     setExamBoard(nextExamBoard);
+    setSelectedSpecification("");
     setError("");
     clearTopicSelections();
   };
@@ -297,6 +315,12 @@ export default function QuestionGenerator() {
 
   const handleTierChange = (nextTier) => {
     setSelectedTier(nextTier);
+    setError("");
+    clearTopicSelections();
+  };
+
+  const handleSpecificationChange = (nextSpecification) => {
+    setSelectedSpecification(nextSpecification);
     setError("");
     clearTopicSelections();
   };
@@ -317,6 +341,11 @@ export default function QuestionGenerator() {
         return;
       }
 
+      if (requiresSpecification && !selectedSpecification) {
+        clearTopicSelections();
+        return;
+      }
+
       try {
         const endpoint = isGcse ? "/api/gcse-topics/" : "/api/biology-topics/";
         const params = isGcse
@@ -325,7 +354,12 @@ export default function QuestionGenerator() {
               subject: selectedSubject,
               tier: selectedTier,
             }
-          : { exam_board: examBoard };
+          : {
+              exam_board: examBoard,
+              ...(requiresSpecification
+                ? { specification: selectedSpecification }
+                : {}),
+            };
         const { data } = await api.get(endpoint, { params });
         setTopics(data || []);
         setSelectedTopic("");
@@ -341,6 +375,8 @@ export default function QuestionGenerator() {
     examBoard,
     hasSelectedQualification,
     isGcse,
+    requiresSpecification,
+    selectedSpecification,
     selectedSubject,
     selectedTier,
   ]);
@@ -351,6 +387,12 @@ export default function QuestionGenerator() {
         clearSubtopicSelections();
         return;
       }
+
+      if (requiresSpecification && !selectedSpecification) {
+        clearSubtopicSelections();
+        return;
+      }
+
       try {
         const endpoint = isGcse
           ? "/api/gcse-subtopics/"
@@ -365,6 +407,9 @@ export default function QuestionGenerator() {
           : {
               topic_id: selectedTopic,
               exam_board: examBoard,
+              ...(requiresSpecification
+                ? { specification: selectedSpecification }
+                : {}),
             };
         const { data } = await api.get(endpoint, { params });
         setSubtopics(data || []);
@@ -376,7 +421,15 @@ export default function QuestionGenerator() {
       }
     };
     run();
-  }, [examBoard, isGcse, selectedSubject, selectedTier, selectedTopic]);
+  }, [
+    examBoard,
+    isGcse,
+    requiresSpecification,
+    selectedSpecification,
+    selectedSubject,
+    selectedTier,
+    selectedTopic,
+  ]);
 
   useEffect(() => {
     const run = async () => {
@@ -384,6 +437,12 @@ export default function QuestionGenerator() {
         clearSubcategorySelections();
         return;
       }
+
+      if (requiresSpecification && !selectedSpecification) {
+        clearSubcategorySelections();
+        return;
+      }
+
       try {
         const endpoint = isGcse
           ? "/api/gcse-subcategories/"
@@ -398,6 +457,9 @@ export default function QuestionGenerator() {
           : {
               subtopic_id: selectedSubtopic,
               exam_board: examBoard,
+              ...(requiresSpecification
+                ? { specification: selectedSpecification }
+                : {}),
             };
         const { data } = await api.get(endpoint, { params });
         setSubcategories(data || []);
@@ -408,7 +470,15 @@ export default function QuestionGenerator() {
       }
     };
     run();
-  }, [examBoard, isGcse, selectedSubject, selectedTier, selectedSubtopic]);
+  }, [
+    examBoard,
+    isGcse,
+    requiresSpecification,
+    selectedSpecification,
+    selectedSubject,
+    selectedTier,
+    selectedSubtopic,
+  ]);
 
   useEffect(() => {
     if (!resumeSession?.topicName || selectedTopic || topics.length === 0) {
@@ -452,7 +522,7 @@ export default function QuestionGenerator() {
 
     const missingRequiredFields = isGcse
       ? !examBoard || !selectedSubject || !selectedTier || !selectedTopic
-      : !examBoard || !selectedTopic;
+      : !examBoard || !selectedTopic || (requiresSpecification && !selectedSpecification);
 
     if (generationBlocked) {
       setUpgradeState({
@@ -494,6 +564,9 @@ export default function QuestionGenerator() {
         topic_id: Number(selectedTopic),
         exam_board: examBoard,
         number_of_questions: parseInt(numberOfQuestions, 10),
+        ...(requiresSpecification
+          ? { specification: selectedSpecification }
+          : {}),
         ...(selectedSubtopic ? { subtopic_id: Number(selectedSubtopic) } : {}),
         ...(selectedSubcategory
           ? { subcategory_id: Number(selectedSubcategory) }
@@ -680,6 +753,8 @@ export default function QuestionGenerator() {
         : topics.length === 0
           ? "-- No topics available --"
           : "-- Please Select --"
+    : requiresSpecification && !selectedSpecification
+      ? "-- Select specification first --"
     : topics.length === 0
       ? "-- No topics available --"
       : "-- Please Select --";
@@ -687,6 +762,7 @@ export default function QuestionGenerator() {
     loading ||
     generationBlocked ||
     !selectedTopic ||
+    (requiresSpecification && !selectedSpecification) ||
     (isGcse && (!selectedSubject || !selectedTier));
 
   return (
@@ -769,10 +845,32 @@ export default function QuestionGenerator() {
                 value={examBoard}
                 onChange={(e) => handleExamBoardChange(e.target.value)}
               >
-                <option value="AQA">AQA</option>
-                <option value="OCR">OCR</option>
+                {EXAM_BOARD_OPTIONS.map((board) => (
+                  <option key={board} value={board}>
+                    {board}
+                  </option>
+                ))}
               </select>
             </div>
+
+            {requiresSpecification && (
+              <div className="qg-field">
+                <label className="qg-label">Specification</label>
+                <select
+                  className="qg-input"
+                  value={selectedSpecification}
+                  onChange={(e) => handleSpecificationChange(e.target.value)}
+                  required
+                >
+                  <option value="">-- Please Select --</option>
+                  {EDEXCEL_ALEVEL_SPECIFICATION_OPTIONS.map((specification) => (
+                    <option key={specification} value={specification}>
+                      {specification}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {isGcse && (
               <>

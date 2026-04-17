@@ -105,18 +105,11 @@ export default function Home() {
     };
   }, []);
 
-  const handleHowItWorksLinkClick = () => {
-    if (isMobileHowItWorks) {
-      setIsHowItWorksOpen(true);
-    }
-  };
-
   return (
     <div className="home-root">
       <div className="announcement" role="status" aria-live="polite">
         <span>
-          OCR and AQA question generation is now live, with more
-          subject-specific questions and long-answer essay modes coming soon.
+          Updates: Just added, Edexcel A-Level Biology Spec A and Spec B.
         </span>
       </div>
 
