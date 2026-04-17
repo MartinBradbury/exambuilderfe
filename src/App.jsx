@@ -34,14 +34,14 @@ function App() {
           <Route path="privacy-policy" element={<PrivacyPolicy />} />
           <Route path="paid-plan-terms" element={<PaidPlanTerms />} />
           <Route path="refund-policy" element={<RefundPolicy />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
+          <Route path="verify-email" element={<VerifyEmail />} />
           <Route element={<GuestOnlyRoute />}>
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
           </Route>
           <Route element={<ProtectedRoute />}>
-            <Route path="forgot-password" element={<ForgotPassword />} />
-            <Route path="reset-password" element={<ResetPassword />} />
-            <Route path="verify-email" element={<VerifyEmail />} />
             <Route path="account" element={<Account />} />
             <Route path="progress" element={<Progress />} />
             <Route path="question-generator" element={<QuestionGenerator />} />
