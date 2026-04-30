@@ -1396,6 +1396,10 @@
   min-width: min(240px, 100%);
 }
 
+.account-results__overviewControl--board {
+  min-width: min(320px, 100%);
+}
+
 .account-results__overviewControl label,
 .account-results__overviewControlLabel {
   font-weight: 700;
@@ -1419,6 +1423,7 @@
 .account-results__boardSwitch {
   display: inline-grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
   padding: 4px;
   border-radius: 999px;
   border: 1px solid var(--outline);
@@ -1426,8 +1431,12 @@
   min-height: 44px;
 }
 
+.account-results__boardSwitch--triple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .account-results__boardOption {
-  min-width: 84px;
+  min-width: 0;
   min-height: 36px;
   padding: 0 16px;
   border: 0;
@@ -1436,6 +1445,7 @@
   color: var(--muted);
   font: inherit;
   font-weight: 700;
+  text-align: center;
   cursor: pointer;
   transition:
     background-color 160ms ease,
@@ -1564,6 +1574,10 @@
 
   .account-results__overviewControl {
     min-width: 200px;
+  }
+
+  .account-results__overviewControl--board {
+    min-width: 320px;
   }
 }
 
@@ -2080,6 +2094,10 @@
 
   .account-results__boardSwitch {
     width: 100%;
+  }
+
+  .account-results__boardSwitch--triple .account-results__boardOption {
+    padding-inline: 10px;
   }
 
   .account-resultCard__top {

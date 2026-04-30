@@ -85,7 +85,7 @@ const getQualificationForLevelKey = (levelKey) => {
 };
 
 const OVERVIEW_LEVEL_ORDER = ["gcse", "a-level"];
-const OVERVIEW_EXAM_BOARD_ORDER = ["ocr", "aqa"];
+const OVERVIEW_EXAM_BOARD_ORDER = ["ocr", "aqa", "edexcel"];
 const OVERVIEW_ALL_TOPICS_VALUE = "__overall__";
 const RESULTS_PAGE_SIZE = 5;
 const GCSE_ROUTE_COMBINED = "combined";
@@ -110,6 +110,10 @@ const getExamBoardKey = (value) => {
     return "aqa";
   }
 
+  if (normalizedValue.includes("edexcel")) {
+    return "edexcel";
+  }
+
   return "other";
 };
 
@@ -120,6 +124,10 @@ const formatExamBoardHeading = (examBoardKey) => {
 
   if (examBoardKey === "aqa") {
     return "AQA";
+  }
+
+  if (examBoardKey === "edexcel") {
+    return "Edexcel";
   }
 
   return "Other";
@@ -1561,12 +1569,12 @@ export default function ResultsHistory({
                     </select>
                   </div>
 
-                  <div className="account-results__overviewControl">
+                  <div className="account-results__overviewControl account-results__overviewControl--board">
                     <span className="account-results__overviewControlLabel">
                       Exam board
                     </span>
                     <div
-                      className="account-results__boardSwitch"
+                      className="account-results__boardSwitch account-results__boardSwitch--triple"
                       role="radiogroup"
                       aria-label="Overview exam board"
                     >
