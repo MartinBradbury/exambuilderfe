@@ -499,7 +499,7 @@ export default function Home() {
                 </Link>
                 {!hasFullAccess && (
                   <Link to={accountUpgradePath} className="btn btn--ghost">
-                    Unlock Early Access from £2.99
+                    Unlock Early Access from £1.99
                   </Link>
                 )}
               </>
