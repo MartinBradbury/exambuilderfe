@@ -98,6 +98,9 @@ const GCSE_OVERVIEW_SUBJECT_OPTIONS = [
   "COMBINED",
 ];
 const GCSE_OVERVIEW_TIER_OPTIONS = ["FOUNDATION", "HIGHER"];
+const ESSAY_QUESTION_TYPE = "essay_25_mark";
+const ESSAY_TOPIC_LABEL = "Essay Questions";
+const ESSAY_SCORE_TICKS = [0, 5, 10, 15, 20, 25];
 
 const getExamBoardKey = (value) => {
   const normalizedValue = normalizeText(value);
@@ -263,6 +266,52 @@ const getSessionSubtopic = (session) =>
   session?.subtopic ||
   session?.subtopic_title ||
   "Not recorded";
+
+const isEssaySession = (session) => {
+  const questionType =
+    session?.question_type || session?.feedback?.question_type || "";
+
+  if (normalizeText(questionType) === ESSAY_QUESTION_TYPE) {
+    return true;
+  }
+
+  const qualificationValue = [
+    session?.qualification,
+    session?.qualification_label,
+    session?.level,
+  ].join(" ");
+  const topicValue = session?.topicLabel || session?.topic_name || session?.topic;
+  const normalizedTopicValue = normalizeText(topicValue);
+  const questionCount = Number(
+    session?.number_of_questions ??
+      session?.question_count ??
+      session?.questions_count ??
+      0,
+  );
+
+  return (
+    getExamBoardKey(session?.exam_board) === "aqa" &&
+    getLevelKey(qualificationValue) === "a-level" &&
+    questionCount === 1 &&
+    (!normalizedTopicValue || normalizedTopicValue === "untitled topic")
+  );
+};
+
+const getSessionDisplaySubtopic = (session) => {
+  if (isEssaySession(session)) {
+    return "Essay response";
+  }
+
+  return getSessionSubtopic(session);
+};
+
+const getSessionDisplayTopic = (session) => {
+  if (isEssaySession(session)) {
+    return ESSAY_TOPIC_LABEL;
+  }
+
+  return getSessionTopic(session);
+};
 
 const getSessionSubcategory = (session) =>
   session?.subcategory_name ||
@@ -499,6 +548,29 @@ const groupAverageScoreBySubtopic = (results, topic, catalogEntries = []) => {
   );
 };
 
+const buildEssayScoreByAttemptData = (results) =>
+  [...results]
+    .sort((left, right) => {
+      const leftDate = new Date(getSessionDateValue(left)).getTime() || 0;
+      const rightDate = new Date(getSessionDateValue(right)).getTime() || 0;
+      return rightDate - leftDate;
+    })
+    .slice(0, 10)
+    .reverse()
+    .map((session, index) => {
+      const score = getSessionScore(session);
+      const maxScore = getSessionMaxScore(session);
+      const dateValue = getSessionDateValue(session);
+
+      return {
+        essayScore: score,
+        chartKey: `essay-${session.id ?? index}-${dateValue ?? index}`,
+        chartLabel: formatSessionDate(dateValue),
+        chartShortLabel: truncateChartLabel(formatCompactDate(dateValue), 30),
+        maxScore,
+      };
+    });
+
 const renderChartTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) {
     return null;
@@ -589,7 +661,12 @@ const getInsightText = (session) => {
   return "This topic needs another pass, with more focus on exact terminology and full mark scheme coverage.";
 };
 
-const formatAssessmentTitle = (topic) => {
+const formatAssessmentTitle = (session) => {
+  if (isEssaySession(session)) {
+    return "Essay question";
+  }
+
+  const topic = session?.topicLabel || session?.topic_name || session?.topic;
   const baseTitle = String(topic || "Untitled topic").trim();
   return /assessment$/i.test(baseTitle) ? baseTitle : `${baseTitle} Assessment`;
 };
@@ -788,9 +865,9 @@ export default function ResultsHistory({
               session.total_score,
               session.total_available,
             ),
-            topicLabel: getSessionTopic(session),
+            topicLabel: getSessionDisplayTopic(session),
             levelLabel: getSessionLevel(session),
-            subtopicLabel: getSessionSubtopic(session),
+            subtopicLabel: getSessionDisplaySubtopic(session),
             subcategoryLabel: getSessionSubcategory(session),
           };
         }),
@@ -1105,9 +1182,41 @@ export default function ResultsHistory({
     selectedOverviewMarksTopic,
   ]);
 
+  const isSelectedOverviewEssayTopic =
+    normalizeText(selectedOverviewMarksTopic) === normalizeText(ESSAY_TOPIC_LABEL);
+
+  const selectedOverviewEssayAttemptData = useMemo(() => {
+    if (!isSelectedOverviewEssayTopic) {
+      return [];
+    }
+
+    return buildEssayScoreByAttemptData(selectedOverviewAnalyticsSessions);
+  }, [isSelectedOverviewEssayTopic, selectedOverviewAnalyticsSessions]);
+
   const selectedOverviewTopicOptions = useMemo(() => {
     if (!overviewTopicCatalog.length) {
-      return selectedOverviewTopicPerformance;
+      const baseOptions = selectedOverviewTopicPerformance;
+
+      if (
+        selectedOverviewSection?.levelKey === "a-level" &&
+        selectedOverviewExamBoard === "aqa"
+      ) {
+        return baseOptions.some(
+          (entry) => normalizeText(entry.topic) === normalizeText(ESSAY_TOPIC_LABEL),
+        )
+          ? baseOptions
+          : [
+              ...baseOptions,
+              {
+                topic: ESSAY_TOPIC_LABEL,
+                topicShortLabel: truncateChartLabel(ESSAY_TOPIC_LABEL),
+                averageScore: 0,
+                attempts: 0,
+              },
+            ].sort((left, right) => naturalCompareLabels(left.topic, right.topic));
+      }
+
+      return baseOptions;
     }
 
     const sessionTopicMap = new Map(
@@ -1136,10 +1245,32 @@ export default function ResultsHistory({
       (entry) => !catalogKeys.has(normalizeText(entry.topic)),
     );
 
-    return [...catalogEntries, ...extraSessionEntries].sort((left, right) =>
+    const mergedOptions = [...catalogEntries, ...extraSessionEntries];
+
+    if (
+      selectedOverviewSection?.levelKey === "a-level" &&
+      selectedOverviewExamBoard === "aqa" &&
+      !mergedOptions.some(
+        (entry) => normalizeText(entry.topic) === normalizeText(ESSAY_TOPIC_LABEL),
+      )
+    ) {
+      mergedOptions.push({
+        topic: ESSAY_TOPIC_LABEL,
+        topicShortLabel: truncateChartLabel(ESSAY_TOPIC_LABEL),
+        averageScore: 0,
+        attempts: 0,
+      });
+    }
+
+    return mergedOptions.sort((left, right) =>
       naturalCompareLabels(left.topic, right.topic),
     );
-  }, [overviewTopicCatalog, selectedOverviewTopicPerformance]);
+  }, [
+    overviewTopicCatalog,
+    selectedOverviewExamBoard,
+    selectedOverviewSection?.levelKey,
+    selectedOverviewTopicPerformance,
+  ]);
 
   const selectedOverviewResetTopicOptions = useMemo(() => {
     if (!overviewTopicCatalog.length) {
@@ -1190,6 +1321,10 @@ export default function ResultsHistory({
       }));
     }
 
+    if (isSelectedOverviewEssayTopic) {
+      return selectedOverviewEssayAttemptData;
+    }
+
     return selectedOverviewSubtopicData.map((entry, index) => ({
       ...entry,
       chartKey: `subtopic-${index}-${normalizeText(entry.subtopic)}`,
@@ -1200,11 +1335,28 @@ export default function ResultsHistory({
       ),
     }));
   }, [
+    isSelectedOverviewEssayTopic,
     isMobileViewport,
+    selectedOverviewEssayAttemptData,
     selectedOverviewMarksTopic,
     selectedOverviewSubtopicData,
     selectedOverviewResetTopicOptions,
   ]);
+
+  const selectedOverviewBarDataKey = isSelectedOverviewEssayTopic
+    ? "essayScore"
+    : "averageScore";
+  const selectedOverviewBarDataName = isSelectedOverviewEssayTopic
+    ? "Score"
+    : "Average";
+  const selectedOverviewBarYAxisDomain = isSelectedOverviewEssayTopic
+    ? [0, 25]
+    : [0, 100];
+  const selectedOverviewBarTicks = isSelectedOverviewEssayTopic
+    ? ESSAY_SCORE_TICKS
+    : undefined;
+  const selectedOverviewBarTickFormatter = (value) =>
+    isSelectedOverviewEssayTopic ? String(value) : `${value}%`;
 
   const handleResetPerformanceTracking = async () => {
     if (!selectedOverviewMarksSessions.length || isResettingPerformance) {
@@ -1871,8 +2023,15 @@ export default function ResultsHistory({
                               {selectedOverviewMarksTopic ===
                               OVERVIEW_ALL_TOPICS_VALUE
                                 ? "Average score by module"
-                                : "Average score by subtopic"}
+                                : isSelectedOverviewEssayTopic
+                                  ? "Essay scores for recent attempts"
+                                  : "Average score by subtopic"}
                             </h4>
+                            {isSelectedOverviewEssayTopic ? (
+                              <p className="account-muted">
+                                Showing the most recent 10 completed essays.
+                              </p>
+                            ) : null}
                           </div>
                           <div className="account-chartCard__body account-chartCard__body--barChart">
                             <div className="account-chartCard__scrollX">
@@ -1914,18 +2073,19 @@ export default function ResultsHistory({
                                       height={isMobileViewport ? 68 : 84}
                                     />
                                     <YAxis
-                                      domain={[0, 100]}
+                                      domain={selectedOverviewBarYAxisDomain}
+                                      ticks={selectedOverviewBarTicks}
                                       tick={{
                                         fill: CHART_COLORS.text,
                                         fontSize: isMobileViewport ? 10 : 12,
                                       }}
-                                      tickFormatter={(value) => `${value}%`}
+                                      tickFormatter={selectedOverviewBarTickFormatter}
                                       width={isMobileViewport ? 30 : 40}
                                     />
                                     <Tooltip content={renderChartTooltip} />
                                     <Bar
-                                      dataKey="averageScore"
-                                      name="Average"
+                                      dataKey={selectedOverviewBarDataKey}
+                                      name={selectedOverviewBarDataName}
                                       fill={CHART_COLORS.bar}
                                       radius={[8, 8, 0, 0]}
                                     />
@@ -2047,7 +2207,7 @@ export default function ResultsHistory({
                     <p className="account-resultCard__levelBadge">
                       {session.levelLabel}
                     </p>
-                    <h3>{formatAssessmentTitle(session.topicLabel)}</h3>
+                    <h3>{formatAssessmentTitle(session)}</h3>
                     <p className="account-resultCard__subtopic">
                       Examination topic area: {session.subtopicLabel}
                     </p>

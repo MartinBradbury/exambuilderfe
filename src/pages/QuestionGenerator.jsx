@@ -22,6 +22,10 @@ const EXAM_BOARD_OPTIONS = ["AQA", "OCR", "EDEXCEL"];
 const GCSE_SUBJECT_OPTIONS = ["BIOLOGY", "CHEMISTRY", "PHYSICS", "COMBINED"];
 const GCSE_TIER_OPTIONS = ["FOUNDATION", "HIGHER"];
 const EDEXCEL_ALEVEL_SPECIFICATION_OPTIONS = ["Spec A", "Spec B"];
+const QUESTION_MODE_STANDARD = "standard";
+const QUESTION_MODE_ESSAY = "essay";
+const ESSAY_QUESTION_TYPE = "ESSAY_25_MARK";
+const ESSAY_TIMER_DURATION_SECONDS = 25 * 60;
 const SESSION_LEAVE_MESSAGE =
   "Are you sure you want to leave this page? Your current question session will be lost.";
 const SESSION_RESULTS_PENDING_LEAVE_MESSAGE =
@@ -31,6 +35,14 @@ const normalizeTopicName = (value) =>
   String(value || "")
     .trim()
     .toLowerCase();
+
+const formatCountdown = (totalSeconds) => {
+  const safeSeconds = Math.max(0, Number(totalSeconds) || 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+};
 
 export default function QuestionGenerator() {
   const {
@@ -54,6 +66,7 @@ export default function QuestionGenerator() {
   const [selectedSpecification, setSelectedSpecification] = useState("");
 
   const [examBoard, setExamBoard] = useState("OCR");
+  const [questionMode, setQuestionMode] = useState(QUESTION_MODE_STANDARD);
   const [numberOfQuestions, setNumberOfQuestions] = useState("3");
 
   const [loading, setLoading] = useState(false);
@@ -74,6 +87,10 @@ export default function QuestionGenerator() {
   const [maxSeenIndex, setMaxSeenIndex] = useState(0);
   const [allowNavigation, setAllowNavigation] = useState(false);
   const [resumeNotice, setResumeNotice] = useState("");
+  const [essayTimerSecondsLeft, setEssayTimerSecondsLeft] = useState(
+    ESSAY_TIMER_DURATION_SECONDS,
+  );
+  const [isEssayTimerRunning, setIsEssayTimerRunning] = useState(false);
 
   const [upgradeState, setUpgradeState] = useState(null);
 
@@ -82,6 +99,10 @@ export default function QuestionGenerator() {
   const isGcse = qualification === GCSE_QUALIFICATION;
   const requiresSpecification =
     qualification === ALEVEL_QUALIFICATION && examBoard === "EDEXCEL";
+  const isEssayModeAvailable =
+    qualification === ALEVEL_QUALIFICATION && examBoard === "AQA";
+  const isEssayMode =
+    isEssayModeAvailable && questionMode === QUESTION_MODE_ESSAY;
   const resumeSession = location.state?.resumeSession || null;
 
   const numericRemaining =
@@ -93,14 +114,24 @@ export default function QuestionGenerator() {
   const generationBlocked =
     !hasSelectedQualificationAccess && numericRemaining === 0;
   const questionCountOptions = useMemo(
-    () => (isFreePlan ? [1] : [1, 2, 3, 4, 5, 6]),
-    [isFreePlan],
+    () =>
+      isEssayMode ? [1] : isFreePlan ? [1] : [1, 2, 3, 4, 5, 6],
+    [isEssayMode, isFreePlan],
   );
   const hasMarkedButIncompleteSession =
     Boolean(questions?.length) &&
     typeof finalFeedback === "object" &&
     finalFeedback !== null &&
     !hasSubmitted;
+  const shouldShowEssayTimer = isEssayMode && Boolean(questions?.length);
+  const essayTimerProgressPercent = Math.max(
+    0,
+    Math.min(
+      100,
+      (essayTimerSecondsLeft / ESSAY_TIMER_DURATION_SECONDS) * 100,
+    ),
+  );
+  const isEssayTimerComplete = shouldShowEssayTimer && essayTimerSecondsLeft === 0;
   const hasActiveQuestionSession = Boolean(questions?.length) && !hasSubmitted;
   const shouldBlockNavigation = hasActiveQuestionSession && !allowNavigation;
   const sessionLeaveMessage = hasMarkedButIncompleteSession
@@ -204,6 +235,66 @@ export default function QuestionGenerator() {
   }, [isFreePlan, numberOfQuestions]);
 
   useEffect(() => {
+    if (!isEssayModeAvailable && questionMode !== QUESTION_MODE_STANDARD) {
+      setQuestionMode(QUESTION_MODE_STANDARD);
+    }
+  }, [isEssayModeAvailable, questionMode]);
+
+  useEffect(() => {
+    if (isEssayMode && numberOfQuestions !== "1") {
+      setNumberOfQuestions("1");
+    }
+  }, [isEssayMode, numberOfQuestions]);
+
+  useEffect(() => {
+    if (!shouldShowEssayTimer) {
+      setEssayTimerSecondsLeft(ESSAY_TIMER_DURATION_SECONDS);
+      setIsEssayTimerRunning(false);
+      return;
+    }
+
+    setEssayTimerSecondsLeft(ESSAY_TIMER_DURATION_SECONDS);
+    setIsEssayTimerRunning(false);
+  }, [sessionId, shouldShowEssayTimer]);
+
+  useEffect(() => {
+    if (!shouldShowEssayTimer || !isEssayTimerRunning) {
+      return undefined;
+    }
+
+    if (essayTimerSecondsLeft <= 0) {
+      setIsEssayTimerRunning(false);
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setEssayTimerSecondsLeft((currentSeconds) => {
+        if (currentSeconds <= 1) {
+          window.clearInterval(intervalId);
+          setIsEssayTimerRunning(false);
+          return 0;
+        }
+
+        return currentSeconds - 1;
+      });
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [essayTimerSecondsLeft, isEssayTimerRunning, shouldShowEssayTimer]);
+
+  useEffect(() => {
+    if (!isEssayMode) {
+      return;
+    }
+
+    setSelectedTopic("");
+    setSelectedSubtopic("");
+    setSelectedSubcategory("");
+  }, [isEssayMode]);
+
+  useEffect(() => {
     if (!resumeSession) {
       setResumeNotice("");
       return;
@@ -254,6 +345,15 @@ export default function QuestionGenerator() {
       setNumberOfQuestions(String(resumeSession.numberOfQuestions));
     }
 
+    if (
+      nextQualification === ALEVEL_QUALIFICATION &&
+      normalizedExamBoard === "AQA" &&
+      String(resumeSession.questionType || "").toUpperCase() ===
+        ESSAY_QUESTION_TYPE
+    ) {
+      setQuestionMode(QUESTION_MODE_ESSAY);
+    }
+
     setResumeNotice(
       `Loaded a similar setup from session #${resumeSession.sessionId}. Review the options below before generating a new set.`,
     );
@@ -283,6 +383,7 @@ export default function QuestionGenerator() {
   const handleQualificationChange = (nextQualification) => {
     setQualification(nextQualification);
     setHasSelectedQualification(true);
+    setQuestionMode(QUESTION_MODE_STANDARD);
     setError("");
     clearTopicSelections();
     setSelectedSubject("");
@@ -292,6 +393,7 @@ export default function QuestionGenerator() {
 
   const handleBackToQualificationChoice = () => {
     setHasSelectedQualification(false);
+    setQuestionMode(QUESTION_MODE_STANDARD);
     setError("");
     clearTopicSelections();
     setSelectedSubject("");
@@ -301,6 +403,9 @@ export default function QuestionGenerator() {
 
   const handleExamBoardChange = (nextExamBoard) => {
     setExamBoard(nextExamBoard);
+    if (nextExamBoard !== "AQA") {
+      setQuestionMode(QUESTION_MODE_STANDARD);
+    }
     setSelectedSpecification("");
     setError("");
     clearTopicSelections();
@@ -520,9 +625,13 @@ export default function QuestionGenerator() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const missingRequiredFields = isGcse
-      ? !examBoard || !selectedSubject || !selectedTier || !selectedTopic
-      : !examBoard || !selectedTopic || (requiresSpecification && !selectedSpecification);
+    const missingRequiredFields = isEssayMode
+      ? !examBoard || (requiresSpecification && !selectedSpecification)
+      : isGcse
+        ? !examBoard || !selectedSubject || !selectedTier || !selectedTopic
+        : !examBoard ||
+          !selectedTopic ||
+          (requiresSpecification && !selectedSpecification);
 
     if (generationBlocked) {
       setUpgradeState({
@@ -559,16 +668,22 @@ export default function QuestionGenerator() {
     setAllowNavigation(false);
 
     try {
+      const requestedQuestionCount = isEssayMode
+        ? 1
+        : parseInt(numberOfQuestions, 10);
       const payload = {
         qualification,
-        topic_id: Number(selectedTopic),
         exam_board: examBoard,
-        number_of_questions: parseInt(numberOfQuestions, 10),
+        number_of_questions: requestedQuestionCount,
+        ...(isEssayMode ? { question_type: ESSAY_QUESTION_TYPE } : {}),
+        ...(!isEssayMode ? { topic_id: Number(selectedTopic) } : {}),
         ...(requiresSpecification
           ? { specification: selectedSpecification }
           : {}),
-        ...(selectedSubtopic ? { subtopic_id: Number(selectedSubtopic) } : {}),
-        ...(selectedSubcategory
+        ...(!isEssayMode && selectedSubtopic
+          ? { subtopic_id: Number(selectedSubtopic) }
+          : {}),
+        ...(!isEssayMode && selectedSubcategory
           ? { subcategory_id: Number(selectedSubcategory) }
           : {}),
         ...(isGcse
@@ -630,17 +745,29 @@ export default function QuestionGenerator() {
     setIsBatchMarking(true);
 
     try {
-      const markingPayload = {
-        qualification,
-        exam_board: examBoard,
-        answers: answersToMark,
-        ...(isGcse
-          ? {
-              subject: selectedSubject,
-              tier: selectedTier,
-            }
-          : {}),
-      };
+      const markingPayload = isEssayMode
+        ? {
+            qualification,
+            exam_board: examBoard,
+            question_type: ESSAY_QUESTION_TYPE,
+            question: questions[0]?.question || "",
+            mark_scheme: questions[0]?.mark_scheme || [],
+            user_answer: userAnswers[0] || "",
+            ...(requiresSpecification
+              ? { specification: selectedSpecification }
+              : {}),
+          }
+        : {
+            qualification,
+            exam_board: examBoard,
+            answers: answersToMark,
+            ...(isGcse
+              ? {
+                  subject: selectedSubject,
+                  tier: selectedTier,
+                }
+              : {}),
+          };
 
       const { data: markingData } = await api.post(
         "/api/mark-answer/",
@@ -648,40 +775,60 @@ export default function QuestionGenerator() {
       );
 
       const nextFeedback = {};
-      const results = Array.isArray(markingData?.results)
-        ? markingData.results
-        : [];
+      if (isEssayMode) {
+        const essayResult = Array.isArray(markingData?.results)
+          ? markingData.results[0] || {}
+          : markingData || {};
 
-      results.forEach((result, resultIndex) => {
-        const candidateIndex = Number(result?.index);
-        const mappedIndex = Number.isInteger(candidateIndex)
-          ? Math.min(
-              questions.length - 1,
-              Math.max(
-                0,
-                candidateIndex > 0 ? candidateIndex - 1 : candidateIndex,
-              ),
-            )
-          : resultIndex;
-
-        nextFeedback[mappedIndex] = {
-          score: result?.score ?? 0,
-          out_of: result?.out_of ?? 0,
-          feedback: result?.feedback || "",
+        nextFeedback[0] = {
+          score: essayResult?.score ?? 0,
+          out_of: essayResult?.out_of ?? 0,
+          feedback: essayResult?.feedback || "",
         };
-      });
+      } else {
+        const results = Array.isArray(markingData?.results)
+          ? markingData.results
+          : [];
+
+        results.forEach((result, resultIndex) => {
+          const candidateIndex = Number(result?.index);
+          const mappedIndex = Number.isInteger(candidateIndex)
+            ? Math.min(
+                questions.length - 1,
+                Math.max(
+                  0,
+                  candidateIndex > 0 ? candidateIndex - 1 : candidateIndex,
+                ),
+              )
+            : resultIndex;
+
+          nextFeedback[mappedIndex] = {
+            score: result?.score ?? 0,
+            out_of: result?.out_of ?? 0,
+            feedback: result?.feedback || "",
+          };
+        });
+      }
 
       setFeedback(nextFeedback);
       setAnswered(
         Object.fromEntries(questions.map((_, index) => [index, true])),
       );
 
+      const summarySource =
+        isEssayMode && Array.isArray(markingData?.results)
+          ? markingData.results[0] || {}
+          : markingData || {};
       const summaryFeedback = {
         strengths: Array.isArray(markingData?.strengths)
           ? markingData.strengths
+          : Array.isArray(summarySource?.strengths)
+            ? summarySource.strengths
           : [],
         improvements: Array.isArray(markingData?.improvements)
           ? markingData.improvements
+          : Array.isArray(summarySource?.improvements)
+            ? summarySource.improvements
           : [],
       };
 
@@ -713,10 +860,17 @@ export default function QuestionGenerator() {
     setIsSubmittingAll(true);
 
     try {
+      const submissionFeedback = isEssayMode
+        ? {
+            ...finalFeedback,
+            question_type: ESSAY_QUESTION_TYPE,
+          }
+        : finalFeedback;
+
       await api.post("/api/submit-question-session/", {
         session_id: sessionId,
         answers: markedAnswers,
-        feedback: finalFeedback,
+        feedback: submissionFeedback,
       });
 
       setAllowNavigation(true);
@@ -761,9 +915,16 @@ export default function QuestionGenerator() {
   const generateDisabled =
     loading ||
     generationBlocked ||
-    !selectedTopic ||
+    (!isEssayMode && !selectedTopic) ||
     (requiresSpecification && !selectedSpecification) ||
     (isGcse && (!selectedSubject || !selectedTier));
+  const questionCountHelperText = isEssayMode
+    ? "Essay mode always generates exactly 1 question."
+    : isFreePlan
+      ? hasSelectedQualificationAccess
+        ? ""
+        : `${getQualificationLabel(qualification)} is currently on the free tier for this account, so this qualification is limited to 2 generated question per day until upgraded.`
+      : "";
 
   return (
     <div className="qg-root container">
@@ -912,91 +1073,129 @@ export default function QuestionGenerator() {
               </>
             )}
 
-            {/* Topic */}
-            <div className="qg-field">
-              <label className="qg-label">
-                {isGcse ? "Topic" : "Topic (Module)"}
-              </label>
-              <select
-                className="qg-input"
-                value={selectedTopic}
-                onChange={(e) => setSelectedTopic(e.target.value)}
-                disabled={
-                  isGcse
-                    ? !selectedSubject || !selectedTier || topics.length === 0
-                    : topics.length === 0
-                }
-                required
-              >
-                <option value="">{topicPlaceholder}</option>
-                {topics.map((topic) => (
-                  <option key={topic.id} value={topic.id}>
-                    {topic.topic}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Subtopics (optional) */}
-            {selectedTopic && subtopics.length > 0 && (
-              <div className="qg-field">
-                <label className="qg-label">SubTopic (Optional)</label>
-                <select
-                  className="qg-input"
-                  value={selectedSubtopic}
-                  onChange={(e) => setSelectedSubtopic(e.target.value)}
-                >
-                  <option value="">-- Optional --</option>
-                  {subtopics.map((st) => (
-                    <option key={st.id} value={st.id}>
-                      {st.title}
-                    </option>
-                  ))}
-                </select>
+            {isEssayModeAvailable && (
+              <div className="qg-field qg-field--mode">
+                <span className="qg-label">Question Mode</span>
+                <div className="qg-modeGrid" role="radiogroup" aria-label="Question mode">
+                  <button
+                    type="button"
+                    className={`qg-modeCard${
+                      questionMode === QUESTION_MODE_STANDARD
+                        ? " qg-modeCard--active"
+                        : ""
+                    }`}
+                    role="radio"
+                    aria-checked={questionMode === QUESTION_MODE_STANDARD}
+                    onClick={() => setQuestionMode(QUESTION_MODE_STANDARD)}
+                  >
+                    <strong>Standard Questions</strong>
+                    <span>Use the regular multi-question practice flow.</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`qg-modeCard${
+                      questionMode === QUESTION_MODE_ESSAY
+                        ? " qg-modeCard--active"
+                        : ""
+                    }`}
+                    role="radio"
+                    aria-checked={questionMode === QUESTION_MODE_ESSAY}
+                    onClick={() => setQuestionMode(QUESTION_MODE_ESSAY)}
+                  >
+                    <strong>25 Mark Essay</strong>
+                    <span>
+                      Generates one AQA A-level Biology 25-mark essay question.
+                    </span>
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* Subcategories (optional) */}
-            {selectedSubtopic && subcategories.length > 0 && (
-              <div className="qg-field">
-                <label className="qg-label">SubCategory (Optional)</label>
-                <select
-                  className="qg-input"
-                  value={selectedSubcategory}
-                  onChange={(e) => setSelectedSubcategory(e.target.value)}
-                >
-                  <option value="">-- Optional --</option>
-                  {subcategories.map((sc) => (
-                    <option key={sc.id} value={sc.id}>
-                      {sc.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            {!isEssayMode && (
+              <>
+                {/* Topic */}
+                <div className="qg-field">
+                  <label className="qg-label">
+                    {isGcse ? "Topic" : "Topic (Module)"}
+                  </label>
+                  <select
+                    className="qg-input"
+                    value={selectedTopic}
+                    onChange={(e) => setSelectedTopic(e.target.value)}
+                    disabled={
+                      isGcse
+                        ? !selectedSubject || !selectedTier || topics.length === 0
+                        : topics.length === 0
+                    }
+                    required
+                  >
+                    <option value="">{topicPlaceholder}</option>
+                    {topics.map((topic) => (
+                      <option key={topic.id} value={topic.id}>
+                        {topic.topic}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* Number of questions */}
-            <div className="qg-field">
-              <label className="qg-label">Number of Questions</label>
-              <select
-                className="qg-input"
-                value={numberOfQuestions}
-                onChange={(e) => setNumberOfQuestions(e.target.value)}
-              >
-                {questionCountOptions.map((count) => (
-                  <option key={count} value={count}>
-                    {count}
-                  </option>
-                ))}
-              </select>
-              {isFreePlan && (
-                <p className="qg-hint">
-                  {hasSelectedQualificationAccess
-                    ? ""
-                    : `${getQualificationLabel(qualification)} is currently on the free tier for this account, so this qualification is limited to 2 generated question per day until upgraded.`}
-                </p>
-              )}
-            </div>
+                {/* Subtopics (optional) */}
+                {selectedTopic && subtopics.length > 0 && (
+                  <div className="qg-field">
+                    <label className="qg-label">SubTopic (Optional)</label>
+                    <select
+                      className="qg-input"
+                      value={selectedSubtopic}
+                      onChange={(e) => setSelectedSubtopic(e.target.value)}
+                    >
+                      <option value="">-- Optional --</option>
+                      {subtopics.map((st) => (
+                        <option key={st.id} value={st.id}>
+                          {st.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Subcategories (optional) */}
+                {selectedSubtopic && subcategories.length > 0 && (
+                  <div className="qg-field">
+                    <label className="qg-label">SubCategory (Optional)</label>
+                    <select
+                      className="qg-input"
+                      value={selectedSubcategory}
+                      onChange={(e) => setSelectedSubcategory(e.target.value)}
+                    >
+                      <option value="">-- Optional --</option>
+                      {subcategories.map((sc) => (
+                        <option key={sc.id} value={sc.id}>
+                          {sc.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Number of questions */}
+                <div className="qg-field">
+                  <label className="qg-label">Number of Questions</label>
+                  <select
+                    className="qg-input"
+                    value={numberOfQuestions}
+                    onChange={(e) => setNumberOfQuestions(e.target.value)}
+                  >
+                    {questionCountOptions.map((count) => (
+                      <option key={count} value={count}>
+                        {count}
+                      </option>
+                    ))}
+                  </select>
+                  {questionCountHelperText && (
+                    <p className="qg-hint">{questionCountHelperText}</p>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           <button
@@ -1046,6 +1245,67 @@ export default function QuestionGenerator() {
               viewed
             </span>
           </div>
+
+          {shouldShowEssayTimer && (
+            <div
+              className={`qg-essayTimer${
+                isEssayTimerRunning ? " qg-essayTimer--running" : ""
+              }${isEssayTimerComplete ? " qg-essayTimer--complete" : ""}`}
+              aria-live="polite"
+            >
+              <div className="qg-essayTimer__main">
+                <div className="qg-essayTimer__header">
+                  <p className="qg-essayTimer__eyebrow">Essay timer</p>
+                  <span className="qg-essayTimer__status">
+                    {isEssayTimerComplete
+                      ? "Time elapsed"
+                      : isEssayTimerRunning
+                        ? "Running"
+                        : essayTimerSecondsLeft < ESSAY_TIMER_DURATION_SECONDS
+                          ? "Paused"
+                          : "Ready"}
+                  </span>
+                </div>
+                <strong className="qg-essayTimer__value">
+                  {formatCountdown(essayTimerSecondsLeft)}
+                </strong>
+                <p className="qg-essayTimer__hint">
+                  Use a 25-minute timed response for this AQA A-level Biology essay.
+                </p>
+                <div className="qg-essayTimer__track" aria-hidden="true">
+                  <div
+                    className="qg-essayTimer__fill"
+                    style={{ width: `${essayTimerProgressPercent}%` }}
+                  />
+                </div>
+              </div>
+              <div className="qg-essayTimer__actions">
+                <button
+                  type="button"
+                  className="btn btn--subtle"
+                  onClick={() =>
+                    setIsEssayTimerRunning((isRunning) => !isRunning)
+                  }
+                >
+                  {isEssayTimerRunning
+                    ? "Pause timer"
+                    : essayTimerSecondsLeft < ESSAY_TIMER_DURATION_SECONDS
+                      ? "Resume timer"
+                      : "Start 25-minute timer"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  onClick={() => {
+                    setEssayTimerSecondsLeft(ESSAY_TIMER_DURATION_SECONDS);
+                    setIsEssayTimerRunning(false);
+                  }}
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          )}
 
           {(() => {
             const q = questions[currentIndex];

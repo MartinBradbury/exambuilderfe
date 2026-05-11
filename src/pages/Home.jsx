@@ -109,7 +109,7 @@ export default function Home() {
     <div className="home-root">
       <div className="announcement" role="status" aria-live="polite">
         <span>
-          Updates: Just added, Edexcel A-Level Biology Spec A and Spec B.
+          Updates: 25 Mark AQA Essay questions now available, plus improved feedback and progress tracking.
         </span>
       </div>
 
