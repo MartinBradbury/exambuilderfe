@@ -1,5 +1,7 @@
 # Exam Builder Frontend
 
+![ExamBuilder Dashboard](/src/assets/home/Screenshot%202026-09-04%20at%2011.36.09.png)
+
 Exam Builder is a React and Vite frontend for an exam-practice platform focused on science revision. It allows students to generate exam-style questions, write answers, receive AI-assisted marking and feedback, and review performance over time.
 
 The application is designed around real revision workflows rather than generic quiz mechanics. Students can choose a qualification, exam board, and topic area, complete structured question sessions, and use saved results to identify strengths and weaknesses.
