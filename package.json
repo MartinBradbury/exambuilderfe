@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "validate:env": "node scripts/validate-env.mjs",
+    "prebuild": "npm run validate:env",
     "build": "vite build",
     "lint": "eslint .",
+    "test": "node --test src/lib/apiEnv.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

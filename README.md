@@ -174,7 +174,7 @@ Protected routes:
 
 ## Backend Integration
 
-The frontend communicates with a deployed API using Axios. The API base URL is configured through `VITE_API_BASE_URL` and falls back to:
+The frontend communicates with a deployed API using Axios. The API base URL is configured at build time through `VITE_APP_ENV` and `VITE_API_BASE_URL` (see [Environment Variables](#environment-variables)). With no variables set, it falls back to the production API:
 
 `https://exambuilder-efae14d59f03.herokuapp.com`
 
@@ -236,11 +236,29 @@ npm install
 
 ### Environment Variables
 
-Create a `.env` file if you need to override the default API URL:
+Both variables are read at build time, so rebuild after changing them.
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `VITE_APP_ENV` | `production` | `production` or `staging`. Any other value fails the build. |
+| `VITE_API_BASE_URL` | production API | Optional in production. **Required in staging** and must be exactly the staging backend over HTTPS. The production backend is rejected. |
+
+Production (no variables needed; the existing behaviour is unchanged):
 
 ```bash
-VITE_API_BASE_URL=https://your-api-base-url
+# VITE_APP_ENV and VITE_API_BASE_URL may both be unset
 ```
+
+Staging (Netlify staging site environment variables, or a local `.env.staging.local`-style file that is never committed):
+
+```bash
+VITE_APP_ENV=staging
+VITE_API_BASE_URL=https://exambuilder-staging-e3f9e4c51418.herokuapp.com
+```
+
+`npm run build` runs `npm run validate:env` first (`scripts/validate-env.mjs`), so an invalid staging configuration fails the build. Validation logic lives in `src/lib/apiEnv.js` and is also enforced when the app loads. Run the tests with `npm test`.
+
+The manual staging deployment workflow (`.github/workflows/deploy-staging.yml`) sets both variables explicitly and fails if `VITE_APP_ENV` is not `staging`.
 
 ### Run the Development Server
 

@@ -1,10 +1,21 @@
 import axios from "axios";
+import { resolveApiBaseUrl } from "./apiEnv";
+import { PRODUCTION_API_BASE_URL } from "./productionApi";
 
 export const AUTH_LOGOUT_EVENT = "auth:logout";
-export const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://exambuilder-efae14d59f03.herokuapp.com"
-).replace(/\/$/, "");
+// VITE_APP_ENV is replaced at build time, so the production-only branch (and
+// the production URL) is removed from staging bundles.
+export const API_BASE_URL =
+  import.meta.env.VITE_APP_ENV === "staging"
+    ? resolveApiBaseUrl({
+        appEnv: "staging",
+        apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
+      })
+    : resolveApiBaseUrl({
+        appEnv: import.meta.env.VITE_APP_ENV,
+        apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
+        productionApiBaseUrl: PRODUCTION_API_BASE_URL,
+      });
 
 const REFRESH_ENDPOINT = "/accounts/token/refresh/";
 
