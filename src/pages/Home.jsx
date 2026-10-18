@@ -520,14 +520,16 @@ export default function Home() {
             <h3>Teaching experience meets AI technology</h3>
 
             <p>
-              ExamBuilder was developed by a former secondary school science
-              teacher with nearly 20 years of classroom experience.
+              I'm Martin, the creator of ExamBuilder. After nearly 20 years
+              teaching secondary school science, I understand the challenges
+              students face when preparing for GCSE and A-level exams.
             </p>
 
             <p>
-              Combining educational experience with modern AI technology,
-              ExamBuilder helps students practise exam-style questions,
-              understand their mistakes and improve their exam technique.
+              I created ExamBuilder to combine my classroom experience with AI
+              technology, helping students practise exam-style questions,
+              understand where they lose marks and develop the exam technique
+              needed to improve their results.
             </p>
           </div>
         </div>
