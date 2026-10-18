@@ -1,13 +1,22 @@
 import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import EmailVerificationNotice from "../components/EmailVerificationNotice";
 import "../styles/Home.modern.css";
 import { UserContext } from "../context/UserContextObject";
+import {
+  buildAccountUpgradePath,
+  getMissingUpgradeQualifications,
+  getPreferredUpgradeQualification,
+} from "../lib/access";
 import founderPhoto from "../assets/home/me.jpeg";
 
 export default function Home() {
-  const { user, emailVerified } = useContext(UserContext);
-  const needsEmailVerification = Boolean(user) && !emailVerified;
+  const { user } = useContext(UserContext);
+  const missingUpgradeQualifications = getMissingUpgradeQualifications(user);
+  const showFreePlanCard =
+    Boolean(user) && missingUpgradeQualifications.length > 0;
+  const upgradePath = buildAccountUpgradePath(
+    getPreferredUpgradeQualification(missingUpgradeQualifications),
+  );
 
   const isMobileViewport =
     typeof window !== "undefined" &&
@@ -162,15 +171,22 @@ export default function Home() {
                   </>
                 )}
               </div>
-            </div>
 
-            {needsEmailVerification && (
-              <EmailVerificationNotice
-                className="home-verification-notice"
-                title="Verify your email when you can"
-                description="Your free account is active now. Verifying your email helps you receive account and support updates."
-              />
-            )}
+              {showFreePlanCard && (
+                <div className="home-freePlanCard">
+                  <p className="home-freePlanCard__title">
+                    You're using the free plan
+                  </p>
+                  <p className="home-freePlanCard__text">
+                    Enjoy 2 free question sets every day, or unlock unlimited
+                    access from £1.99 with a one-off payment.{" "}
+                    <Link to={upgradePath} className="home-freePlanCard__link">
+                      Unlock Access
+                    </Link>
+                  </p>
+                </div>
+              )}
+            </div>
 
             {/* Lightweight trust points reduce friction without competing with the primary CTA. */}
             <div
