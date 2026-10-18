@@ -3,20 +3,12 @@ import { Link } from "react-router-dom";
 import EmailVerificationNotice from "../components/EmailVerificationNotice";
 import "../styles/Home.modern.css";
 import { UserContext } from "../context/UserContextObject";
-import {
-  buildAccountUpgradePath,
-  getMissingUpgradeQualifications,
-  getPreferredUpgradeQualification,
-} from "../lib/access";
+import founderPhoto from "../assets/home/me.jpeg";
 
 export default function Home() {
-  const { user, hasFullAccess, emailVerified } = useContext(UserContext);
+  const { user, emailVerified } = useContext(UserContext);
   const needsEmailVerification = Boolean(user) && !emailVerified;
-  const missingUpgradeQualifications = getMissingUpgradeQualifications(user);
-  const canUpgrade = Boolean(user) && missingUpgradeQualifications.length > 0;
-  const accountUpgradePath = buildAccountUpgradePath(
-    getPreferredUpgradeQualification(missingUpgradeQualifications),
-  );
+
   const isMobileViewport =
     typeof window !== "undefined" &&
     window.matchMedia("(max-width: 800px)").matches;
@@ -109,7 +101,8 @@ export default function Home() {
     <div className="home-root">
       <div className="announcement" role="status" aria-live="polite">
         <span>
-          Updates: 25 Mark AQA Essay questions now available, plus improved feedback and progress tracking.
+          Updates: 25 Mark AQA Essay questions now available, plus improved
+          feedback and progress tracking.
         </span>
       </div>
 
@@ -118,21 +111,33 @@ export default function Home() {
         <div className="container heroV2__inner">
           <div className="heroV2__copy">
             {/* Hero messaging now prioritises the core student outcome and a single dominant CTA. */}
-            <p className="heroV2__eyebrow">Exam practice that improves marks</p>
+            <p className="heroV2__eyebrow">
+              GCSE & A-LEVEL SCIENCE EXAM PRACTICE
+            </p>
             <h1>
-              Practice real exam questions and get instant marks and feedback.
+              Practise exam questions. Get instant AI marking. Improve your
+              grades.
             </h1>
             <p className="lead">
-              Built for OCR and AQA students. Improve your exam performance with
-              targeted practice, mark schemes, and progress tracking.
+              Prepare for your OCR and AQA exams with AI-generated questions,
+              instant marking and personalised feedback. Track your progress and
+              focus on the topics that matter.
             </p>
 
             <div className="heroV2__ctaBlock">
               {!user && (
-                <p className="heroV2__ctaMessage">
-                  To get started, hit Start Practising to create an account and
-                  try Exam Builder.
-                </p>
+                <div className="heroV2__ctaMessage">
+                  <div className="heroV2__benefits">
+                    <span>✓ 2 free question sets daily</span>
+                    <span>✓ Free account to save and track progress</span>
+                    <span>✓ Unlimited access from £1.99 — no subscription</span>
+                  </div>
+                  <p className="heroV2__signupPrompt">
+                    <strong>Ready to improve your exam technique?</strong>
+                    <br />
+                    Create your free account and start practising today.
+                  </p>
+                </div>
               )}
 
               <div className="heroV2__ctaActions">
@@ -149,7 +154,7 @@ export default function Home() {
                       to="/register"
                       className="btn btn--primary btn--heroPrimary"
                     >
-                      Start Practising
+                      Start Practising Free
                     </Link>
                     <Link to="/login" className="btn btn--ghost btn--heroGhost">
                       Login
@@ -167,10 +172,6 @@ export default function Home() {
               />
             )}
 
-            <p className="heroV2__trustNote">
-              Designed to reflect real OCR and AQA exam expectations.
-            </p>
-
             {/* Lightweight trust points reduce friction without competing with the primary CTA. */}
             <div
               className="heroV2__trustRow row row-cols-1 row-cols-md-2 g-3"
@@ -178,8 +179,8 @@ export default function Home() {
             >
               <div className="col">
                 <div className="heroV2__trustItem">
-                  Instant AI marking designed to reflect real OCR and AQA exam
-                  expectations.
+                  Track your scores, identify weak topics and monitor your
+                  revision progress.
                 </div>
               </div>
               <div className="col">
@@ -210,7 +211,7 @@ export default function Home() {
                   <p className="heroPanel__question">
                     Explain how the structure and function of the alveoli
                     maximise the rate of gas exchange in the lungs.
-                    <hr></hr>
+                    <hr />
                     <span>[4 marks]</span>
                   </p>
                   <div className="heroPanel__attempt">
@@ -225,17 +226,51 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="heroPanel heroPanel--feedback">
+                <div className="heroPanel heroPanel--feedback heroPanel--feedbackCompact">
                   <div className="heroPanel__topline">
                     <span className="heroPanel__tag heroPanel__tag--soft">
-                      Feedback
+                      AI Marking
                     </span>
                     <span className="heroPanel__meta">
-                      Marked answer preview
+                      OCR Biology • 4 marks
                     </span>
                   </div>
+
                   <h2>Marked answer preview</h2>
-                  {feedbackPreviewContent}
+
+                  <div className="compactFeedback">
+                    <div className="compactFeedback__score">
+                      <strong>3 / 4</strong>
+                      <span>Marks awarded</span>
+                    </div>
+
+                    <div className="compactFeedback__feedback">
+                      <h3>Personalised feedback</h3>
+                      <p>
+                        Strong explanation of surface area and diffusion
+                        distance. To reach full marks, mention how ventilation
+                        helps maintain a steep concentration gradient.
+                      </p>
+                    </div>
+
+                    <div className="compactFeedback__summary">
+                      <div className="compactFeedback__summaryCard">
+                        <h3>✓ Strengths</h3>
+                        <p>
+                          Clear explanation of large surface area and thin
+                          walls.
+                        </p>
+                      </div>
+
+                      <div className="compactFeedback__summaryCard">
+                        <h3>↗ Improvements</h3>
+                        <p>
+                          Explain how ventilation maintains the concentration
+                          gradient.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </>
             ) : (
@@ -450,6 +485,37 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <section className="founderV2 container">
+        <div className="sectionHeading sectionHeading--centered">
+          <p className="sectionEyebrow">About ExamBuilder</p>
+          <h2>Created by an experienced science teacher</h2>
+        </div>
+
+        <div className="founderV2__card">
+          <div className="founderV2__image">
+            <img
+              src={founderPhoto}
+              alt="Founder of ExamBuilder, a former secondary school science teacher"
+              loading="lazy"
+            />
+          </div>
+
+          <div className="founderV2__content">
+            <h3>Teaching experience meets AI technology</h3>
+
+            <p>
+              ExamBuilder was developed by a former secondary school science
+              teacher with nearly 20 years of classroom experience.
+            </p>
+
+            <p>
+              Combining educational experience with modern AI technology,
+              ExamBuilder helps students practise exam-style questions,
+              understand their mistakes and improve their exam technique.
+            </p>
+          </div>
+        </div>
+      </section>
 
       <section
         className="specsTeaserV2 container"
@@ -472,48 +538,6 @@ export default function Home() {
           <Link to="/specification" className="btn btn--primary">
             Open Specification Page
           </Link>
-        </div>
-      </section>
-
-      <section className="closingCta">
-        <div className="container closingCta__inner">
-          <div>
-            <p className="sectionEyebrow">Start revising smarter</p>
-            <h2>
-              {canUpgrade
-                ? "Start with focused practice, then unlock the qualification access you need when you want more."
-                : hasFullAccess
-                  ? "GCSE and A-level access are already active on this account."
-                  : "Start practising now and build better exam performance one topic at a time."}
-            </h2>
-            <p className="closingCta__copy">
-              Practise exam-style questions, review feedback quickly, and use
-              saved progress to keep revision focused on what improves marks.
-            </p>
-          </div>
-          <div className="closingCta__actions">
-            {user ? (
-              <>
-                <Link to="/question-generator" className="btn btn--primary">
-                  Start Practising
-                </Link>
-                {!hasFullAccess && (
-                  <Link to={accountUpgradePath} className="btn btn--ghost">
-                    Unlock Early Access from £1.99
-                  </Link>
-                )}
-              </>
-            ) : (
-              <>
-                <Link to="/register" className="btn btn--primary">
-                  Start Practising
-                </Link>
-                <Link to="/login" className="btn btn--ghost">
-                  Log In
-                </Link>
-              </>
-            )}
-          </div>
         </div>
       </section>
 
