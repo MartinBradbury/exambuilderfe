@@ -187,25 +187,6 @@ const getExplicitGcseScienceRouteForSession = (session) => {
   return directRoute || null;
 };
 
-const getDerivedGcseScienceRouteForSession = (session) => {
-  const directRoute = getExplicitGcseScienceRouteForSession(session);
-
-  if (directRoute) {
-    return directRoute;
-  }
-
-  const metadataRoute = [
-    session?.subject,
-    session?.qualification,
-    session?.qualification_label,
-    session?.level,
-  ]
-    .map((value) => getGcseScienceRoute(value))
-    .find(Boolean);
-
-  return metadataRoute || null;
-};
-
 const getGcseSubjectsForRoute = (route) => {
   if (route === GCSE_ROUTE_COMBINED) {
     return ["COMBINED"];
