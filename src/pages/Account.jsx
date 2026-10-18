@@ -10,7 +10,6 @@ import {
   GCSE_QUALIFICATION,
   getCheckoutPrice,
   getAccessPlanLabel,
-  buildAccountUpgradePath,
   getMissingUpgradeQualifications,
   getPreferredUpgradeQualification,
   getQualificationLabel,
@@ -99,7 +98,6 @@ export default function Account() {
     authReady,
     refreshCurrentUser,
     logout,
-    planType,
     emailVerified,
     hasGcseAccess,
     hasALevelAccess,
@@ -117,7 +115,7 @@ export default function Account() {
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const [statusBanner, setStatusBanner] = useState("");
-  const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
+  const [, setIsRefreshingStatus] = useState(false);
   const [hasAcceptedPurchaseTerms, setHasAcceptedPurchaseTerms] =
     useState(false);
   const [selectedCheckoutQualification, setSelectedCheckoutQualification] =
