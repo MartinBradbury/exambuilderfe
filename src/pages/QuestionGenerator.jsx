@@ -17,6 +17,13 @@ import {
 } from "../lib/access";
 import aLevelCover from "../assets/home/Alevelcard.png";
 import gcseCover from "../assets/home/GCSEcard.png";
+import {
+  BIOLOGY_MODE_MISMATCH_MESSAGE,
+  BIOLOGY_MODE_UNAVAILABLE_MESSAGE,
+  buildBiologyCurriculumRequest,
+  fetchBiologyCurriculumMode,
+  isBiologyCurriculumModeError,
+} from "../lib/biologyCurriculum";
 
 const EXAM_BOARD_OPTIONS = ["AQA", "OCR", "EDEXCEL"];
 const GCSE_SUBJECT_OPTIONS = ["BIOLOGY", "CHEMISTRY", "PHYSICS", "COMBINED"];
@@ -64,7 +71,9 @@ export default function QuestionGenerator() {
   const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedTier, setSelectedTier] = useState("");
   const [selectedSpecification, setSelectedSpecification] = useState("");
-
+  const [biologyMode, setBiologyMode] = useState(null);
+  const [biologyModeStatus, setBiologyModeStatus] = useState("idle");
+  const [biologyModeRefreshKey, setBiologyModeRefreshKey] = useState(0);
   const [examBoard, setExamBoard] = useState("OCR");
   const [questionMode, setQuestionMode] = useState(QUESTION_MODE_STANDARD);
   const [numberOfQuestions, setNumberOfQuestions] = useState("3");
@@ -430,8 +439,51 @@ export default function QuestionGenerator() {
     clearTopicSelections();
   };
 
+  // Discover the backend's active Biology curriculum mode; never assume one.
+  useEffect(() => {
+    if (!authReady || !hasSelectedQualification || isGcse) {
+      return undefined;
+    }
+
+    let isCancelled = false;
+    setBiologyMode(null);
+    setBiologyModeStatus("loading");
+
+    fetchBiologyCurriculumMode(api)
+      .then((mode) => {
+        if (isCancelled) {
+          return;
+        }
+        setBiologyMode(mode);
+        setBiologyModeStatus("ready");
+      })
+      .catch((err) => {
+        if (isCancelled) {
+          return;
+        }
+        console.error("Failed to fetch Biology curriculum mode:", err);
+        setBiologyMode(null);
+        setBiologyModeStatus("error");
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [authReady, biologyModeRefreshKey, hasSelectedQualification, isGcse]);
+
+  // Selected IDs belong to one curriculum mode only.
+  useEffect(() => {
+    clearTopicSelections();
+  }, [biologyMode]);
+
+  const retryBiologyModeDiscovery = () => {
+    setError("");
+    setBiologyModeRefreshKey((key) => key + 1);
+  };
+
   // --- Fetch topics when examBoard changes (and pass ?exam_board=...)
   useEffect(() => {
+    let isCancelled = false;
     const fetchTopics = async () => {
       if (!authReady) {
         return;
@@ -451,32 +503,50 @@ export default function QuestionGenerator() {
         return;
       }
 
+      if (!isGcse && !biologyMode) {
+        return;
+      }
+
       try {
-        const endpoint = isGcse ? "/api/gcse-topics/" : "/api/biology-topics/";
-        const params = isGcse
+        const { endpoint, params } = isGcse
           ? {
-              exam_board: examBoard,
-              subject: selectedSubject,
-              tier: selectedTier,
+              endpoint: "/api/gcse-topics/",
+              params: {
+                exam_board: examBoard,
+                subject: selectedSubject,
+                tier: selectedTier,
+              },
             }
-          : {
-              exam_board: examBoard,
-              ...(requiresSpecification
-                ? { specification: selectedSpecification }
-                : {}),
-            };
+          : buildBiologyCurriculumRequest({
+              mode: biologyMode,
+              level: "topics",
+              examBoard,
+              specification: requiresSpecification
+                ? selectedSpecification
+                : undefined,
+            });
         const { data } = await api.get(endpoint, { params });
+        if (isCancelled) {
+          return;
+        }
         setTopics(data || []);
         setSelectedTopic("");
         clearSubtopicSelections();
       } catch (err) {
+        if (isCancelled) {
+          return;
+        }
         console.error("Failed to fetch topics:", err);
         clearTopicSelections();
       }
     };
     fetchTopics();
+    return () => {
+      isCancelled = true;
+    };
   }, [
     authReady,
+    biologyMode,
     examBoard,
     hasSelectedQualification,
     isGcse,
@@ -487,6 +557,7 @@ export default function QuestionGenerator() {
   ]);
 
   useEffect(() => {
+    let isCancelled = false;
     const run = async () => {
       if (!selectedTopic) {
         clearSubtopicSelections();
@@ -498,35 +569,52 @@ export default function QuestionGenerator() {
         return;
       }
 
+      if (!isGcse && !biologyMode) {
+        clearSubtopicSelections();
+        return;
+      }
+
       try {
-        const endpoint = isGcse
-          ? "/api/gcse-subtopics/"
-          : "/api/biology-subtopics/";
-        const params = isGcse
+        const { endpoint, params } = isGcse
           ? {
-              topic_id: selectedTopic,
-              exam_board: examBoard,
-              subject: selectedSubject,
-              tier: selectedTier,
+              endpoint: "/api/gcse-subtopics/",
+              params: {
+                topic_id: selectedTopic,
+                exam_board: examBoard,
+                subject: selectedSubject,
+                tier: selectedTier,
+              },
             }
-          : {
-              topic_id: selectedTopic,
-              exam_board: examBoard,
-              ...(requiresSpecification
-                ? { specification: selectedSpecification }
-                : {}),
-            };
+          : buildBiologyCurriculumRequest({
+              mode: biologyMode,
+              level: "subtopics",
+              examBoard,
+              specification: requiresSpecification
+                ? selectedSpecification
+                : undefined,
+              parentId: selectedTopic,
+            });
         const { data } = await api.get(endpoint, { params });
+        if (isCancelled) {
+          return;
+        }
         setSubtopics(data || []);
         setSelectedSubtopic("");
         clearSubcategorySelections();
       } catch (e) {
+        if (isCancelled) {
+          return;
+        }
         console.error("Failed to fetch subtopics:", e);
         clearSubtopicSelections();
       }
     };
     run();
+    return () => {
+      isCancelled = true;
+    };
   }, [
+    biologyMode,
     examBoard,
     isGcse,
     requiresSpecification,
@@ -537,6 +625,7 @@ export default function QuestionGenerator() {
   ]);
 
   useEffect(() => {
+    let isCancelled = false;
     const run = async () => {
       if (!selectedSubtopic) {
         clearSubcategorySelections();
@@ -548,34 +637,51 @@ export default function QuestionGenerator() {
         return;
       }
 
+      if (!isGcse && !biologyMode) {
+        clearSubcategorySelections();
+        return;
+      }
+
       try {
-        const endpoint = isGcse
-          ? "/api/gcse-subcategories/"
-          : "/api/biology-subcategories/";
-        const params = isGcse
+        const { endpoint, params } = isGcse
           ? {
-              subtopic_id: selectedSubtopic,
-              exam_board: examBoard,
-              subject: selectedSubject,
-              tier: selectedTier,
+              endpoint: "/api/gcse-subcategories/",
+              params: {
+                subtopic_id: selectedSubtopic,
+                exam_board: examBoard,
+                subject: selectedSubject,
+                tier: selectedTier,
+              },
             }
-          : {
-              subtopic_id: selectedSubtopic,
-              exam_board: examBoard,
-              ...(requiresSpecification
-                ? { specification: selectedSpecification }
-                : {}),
-            };
+          : buildBiologyCurriculumRequest({
+              mode: biologyMode,
+              level: "subcategories",
+              examBoard,
+              specification: requiresSpecification
+                ? selectedSpecification
+                : undefined,
+              parentId: selectedSubtopic,
+            });
         const { data } = await api.get(endpoint, { params });
+        if (isCancelled) {
+          return;
+        }
         setSubcategories(data || []);
         setSelectedSubcategory("");
       } catch (e) {
+        if (isCancelled) {
+          return;
+        }
         console.error("Failed to fetch subcategories:", e);
         clearSubcategorySelections();
       }
     };
     run();
+    return () => {
+      isCancelled = true;
+    };
   }, [
+    biologyMode,
     examBoard,
     isGcse,
     requiresSpecification,
@@ -652,6 +758,11 @@ export default function QuestionGenerator() {
       return;
     }
 
+    if (!isGcse && !isEssayMode && !biologyMode) {
+      setError(BIOLOGY_MODE_UNAVAILABLE_MESSAGE);
+      return;
+    }
+
     setLoading(true);
     setError("");
     setUpgradeState(null);
@@ -686,6 +797,7 @@ export default function QuestionGenerator() {
         ...(!isEssayMode && selectedSubcategory
           ? { subcategory_id: Number(selectedSubcategory) }
           : {}),
+        ...(!isGcse && !isEssayMode ? { curriculum_mode: biologyMode } : {}),
         ...(isGcse
           ? {
               subject: selectedSubject,
@@ -713,6 +825,12 @@ export default function QuestionGenerator() {
           questions_remaining_today:
             payload.questions_remaining_today ?? numericRemaining,
         });
+      } else if (isBiologyCurriculumModeError(err)) {
+        // Selected IDs may belong to the other curriculum: clear and rediscover.
+        clearTopicSelections();
+        setBiologyMode(null);
+        setBiologyModeRefreshKey((key) => key + 1);
+        setError(BIOLOGY_MODE_MISMATCH_MESSAGE);
       } else {
         setError(
           err.response?.data?.error ||
@@ -916,6 +1034,7 @@ export default function QuestionGenerator() {
     loading ||
     generationBlocked ||
     (!isEssayMode && !selectedTopic) ||
+    (!isGcse && !isEssayMode && !biologyMode) ||
     (requiresSpecification && !selectedSpecification) ||
     (isGcse && (!selectedSubject || !selectedTier));
   const questionCountHelperText = isEssayMode
@@ -1217,6 +1336,18 @@ export default function QuestionGenerator() {
             <p className="qg-error">{upgradeState.error}</p>
           )}
           {error && <p className="qg-error">{error}</p>}
+          {!isGcse && !isEssayMode && biologyModeStatus === "error" && (
+            <p className="qg-error">
+              {BIOLOGY_MODE_UNAVAILABLE_MESSAGE}{" "}
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={retryBiologyModeDiscovery}
+              >
+                Retry
+              </button>
+            </p>
+          )}
 
           {isFreePlan && (
             <p className="qg-hint">

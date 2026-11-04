@@ -19,6 +19,12 @@ import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
 import { buildAccountUpgradePath } from "../lib/access";
 import {
+  BIOLOGY_CURRICULUM_MODE_SHARED,
+  EDEXCEL_ALEVEL_SPECIFICATIONS,
+  buildBiologyCurriculumRequest,
+  fetchBiologyCurriculumMode,
+} from "../lib/biologyCurriculum";
+import {
   calculatePercentageScore,
   getSessionDateValue,
   getSessionLevel,
@@ -687,6 +693,7 @@ export default function ResultsHistory({
     OVERVIEW_ALL_TOPICS_VALUE,
   );
   const [overviewTopicCatalog, setOverviewTopicCatalog] = useState([]);
+  const [biologyMode, setBiologyMode] = useState(null);
   const [overviewSubtopicCatalog, setOverviewSubtopicCatalog] = useState([]);
   const [isMobileViewport, setIsMobileViewport] = useState(() => {
     if (typeof window === "undefined") {
@@ -1391,6 +1398,29 @@ export default function ResultsHistory({
   }, [overviewTopicCatalog, selectedOverviewMarksTopic]);
 
   useEffect(() => {
+    if (selectedOverviewSection?.levelKey !== "a-level") {
+      return undefined;
+    }
+
+    let isActive = true;
+    setBiologyMode(null);
+
+    fetchBiologyCurriculumMode(api)
+      .then((mode) => {
+        if (isActive) {
+          setBiologyMode(mode);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch Biology curriculum mode:", err);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [selectedOverviewSection?.levelKey]);
+
+  useEffect(() => {
     let isActive = true;
 
     const fetchOverviewTopicCatalog = async () => {
@@ -1400,11 +1430,27 @@ export default function ResultsHistory({
       }
 
       const examBoard = formatExamBoardHeading(selectedOverviewExamBoard);
-      const contexts = getOverviewCatalogContexts(
+      const isALevelSection = selectedOverviewSection.levelKey !== "gcse";
+
+      if (isALevelSection && !biologyMode) {
+        setOverviewTopicCatalog([]);
+        return;
+      }
+
+      const baseContexts = getOverviewCatalogContexts(
         selectedOverviewSection.levelKey,
         selectedOverviewSection.sessions,
         selectedOverviewGcseScienceRoute,
       );
+      // Shared endpoints require a specification for Edexcel, which this view doesn't track.
+      const contexts =
+        isALevelSection &&
+        biologyMode === BIOLOGY_CURRICULUM_MODE_SHARED &&
+        selectedOverviewExamBoard === "edexcel"
+          ? EDEXCEL_ALEVEL_SPECIFICATIONS.map((specification) => ({
+              specification,
+            }))
+          : baseContexts;
 
       if (!contexts.length) {
         setOverviewTopicCatalog([]);
@@ -1414,18 +1460,22 @@ export default function ResultsHistory({
       try {
         const responses = await Promise.all(
           contexts.map(async (context) => {
-            const endpoint =
-              selectedOverviewSection.levelKey === "gcse"
-                ? "/api/gcse-topics/"
-                : "/api/biology-topics/";
-            const params =
+            const { endpoint, params } =
               selectedOverviewSection.levelKey === "gcse"
                 ? {
-                    exam_board: examBoard,
-                    subject: context.subject,
-                    tier: context.tier,
+                    endpoint: "/api/gcse-topics/",
+                    params: {
+                      exam_board: examBoard,
+                      subject: context.subject,
+                      tier: context.tier,
+                    },
                   }
-                : { exam_board: examBoard };
+                : buildBiologyCurriculumRequest({
+                    mode: biologyMode,
+                    level: "topics",
+                    examBoard,
+                    specification: context.specification,
+                  });
             const response = await api.get(endpoint, { params });
 
             return {
@@ -1452,6 +1502,7 @@ export default function ResultsHistory({
               topicId: item.id,
               subject: context.subject,
               tier: context.tier,
+              specification: context.specification,
             };
 
             if (!map.has(key)) {
@@ -1480,6 +1531,7 @@ export default function ResultsHistory({
       isActive = false;
     };
   }, [
+    biologyMode,
     selectedOverviewExamBoard,
     selectedOverviewGcseScienceRoute,
     selectedOverviewSection,
@@ -1496,25 +1548,32 @@ export default function ResultsHistory({
 
       const examBoard = formatExamBoardHeading(selectedOverviewExamBoard);
 
+      if (selectedOverviewSection.levelKey !== "gcse" && !biologyMode) {
+        setOverviewSubtopicCatalog([]);
+        return;
+      }
+
       try {
         const responses = await Promise.all(
           selectedOverviewTopicCatalogEntry.requests.map(async (request) => {
-            const endpoint =
-              selectedOverviewSection.levelKey === "gcse"
-                ? "/api/gcse-subtopics/"
-                : "/api/biology-subtopics/";
-            const params =
+            const { endpoint, params } =
               selectedOverviewSection.levelKey === "gcse"
                 ? {
-                    topic_id: request.topicId,
-                    exam_board: examBoard,
-                    subject: request.subject,
-                    tier: request.tier,
+                    endpoint: "/api/gcse-subtopics/",
+                    params: {
+                      topic_id: request.topicId,
+                      exam_board: examBoard,
+                      subject: request.subject,
+                      tier: request.tier,
+                    },
                   }
-                : {
-                    topic_id: request.topicId,
-                    exam_board: examBoard,
-                  };
+                : buildBiologyCurriculumRequest({
+                    mode: biologyMode,
+                    level: "subtopics",
+                    examBoard,
+                    specification: request.specification,
+                    parentId: request.topicId,
+                  });
             const response = await api.get(endpoint, { params });
             return Array.isArray(response.data) ? response.data : [];
           }),
@@ -1555,6 +1614,7 @@ export default function ResultsHistory({
       isActive = false;
     };
   }, [
+    biologyMode,
     selectedOverviewExamBoard,
     selectedOverviewSection,
     selectedOverviewTopicCatalogEntry,
