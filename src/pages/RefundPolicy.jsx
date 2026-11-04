@@ -4,8 +4,8 @@ export default function RefundPolicy() {
   return (
     <LegalPageLayout
       title="Refund Policy"
-      intro="This policy explains the intended refund position for the paid qualification purchases, including GCSE early access at £2.99, A-level early access at £2.99, and the GCSE + A-level early access bundle at £3.99. It should be reviewed against the consumer law that applies to your customers."
-      lastUpdated="8 April 2026"
+      intro="This policy explains the intended refund position for the paid module purchases: GCSE Science, A-level Biology, A-level Chemistry and A-level Physics, each sold separately at £2.99 as a one-off payment. It should be reviewed against the consumer law that applies to your customers."
+      lastUpdated="4 November 2026"
     >
       <section>
         <h2>General position</h2>

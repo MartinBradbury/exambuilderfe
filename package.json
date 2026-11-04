@@ -9,7 +9,7 @@
     "prebuild": "npm run validate:env",
     "build": "vite build",
     "lint": "eslint .",
-    "test": "node --test src/lib/apiEnv.test.js src/lib/access.test.js src/lib/biologyCurriculum.test.js",
+    "test": "node --test src/lib/apiEnv.test.js src/lib/access.test.js src/lib/checkout.test.js src/lib/biologyCurriculum.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

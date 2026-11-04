@@ -1,6 +1,26 @@
 export const ALEVEL_QUALIFICATION = "ALEVEL_BIOLOGY";
 export const GCSE_QUALIFICATION = "GCSE_SCIENCE";
+export const ALEVEL_CHEMISTRY_QUALIFICATION = "ALEVEL_CHEMISTRY";
+export const ALEVEL_PHYSICS_QUALIFICATION = "ALEVEL_PHYSICS";
+// Historical combined purchase. Never offered for new checkout, but existing
+// BOTH purchases still resolve to GCSE Science + A-level Biology access.
 export const BOTH_QUALIFICATIONS = "BOTH";
+
+export const MODULE_PRICE = "£2.99";
+
+export const PURCHASABLE_QUALIFICATIONS = [
+  GCSE_QUALIFICATION,
+  ALEVEL_QUALIFICATION,
+  ALEVEL_CHEMISTRY_QUALIFICATION,
+  ALEVEL_PHYSICS_QUALIFICATION,
+];
+
+const QUALIFICATION_SUBJECT_CODES = {
+  [GCSE_QUALIFICATION]: "gcse_science",
+  [ALEVEL_QUALIFICATION]: "alevel_biology",
+  [ALEVEL_CHEMISTRY_QUALIFICATION]: "alevel_chemistry",
+  [ALEVEL_PHYSICS_QUALIFICATION]: "alevel_physics",
+};
 
 const GCSE_ACCESS_KEYS = [
   "has_gcse_access",
@@ -70,7 +90,27 @@ export const getQualificationLabel = (qualification) => {
     return "A-level Biology";
   }
 
+  if (qualification === ALEVEL_CHEMISTRY_QUALIFICATION) {
+    return "A-level Chemistry";
+  }
+
+  if (qualification === ALEVEL_PHYSICS_QUALIFICATION) {
+    return "A-level Physics";
+  }
+
   return "selected qualification";
+};
+
+export const getUnlockedSubjectCodes = (user) => {
+  const unlocked = user?.unlocked_subjects;
+
+  if (!Array.isArray(unlocked)) {
+    return [];
+  }
+
+  return unlocked
+    .filter((code) => typeof code === "string")
+    .map((code) => code.trim().toLowerCase());
 };
 
 export const getQualificationAccessState = (user) => {
@@ -90,20 +130,39 @@ export const getQualificationAccessState = (user) => {
       planType === "lifetime",
     );
 
+  // plan_type "free" is deliberately not consulted: Chemistry-only and
+  // Physics-only purchasers can still carry it, so ownership comes from
+  // unlocked_subjects. Lifetime and legacy flags never grant Chemistry/Physics.
+  const unlockedSubjects = getUnlockedSubjectCodes(user);
+
   const hasGcseAccess =
     isLifetime ||
     hasLegacyFullAccess ||
-    normalizeBoolean(readFirstDefined(user, GCSE_ACCESS_KEYS));
+    normalizeBoolean(readFirstDefined(user, GCSE_ACCESS_KEYS)) ||
+    unlockedSubjects.includes(QUALIFICATION_SUBJECT_CODES[GCSE_QUALIFICATION]);
   const hasALevelAccess =
     isLifetime ||
     hasLegacyFullAccess ||
-    normalizeBoolean(readFirstDefined(user, ALEVEL_ACCESS_KEYS));
-  const hasAnyPaidAccess = hasGcseAccess || hasALevelAccess;
-  const hasFullAccess = hasGcseAccess && hasALevelAccess;
+    normalizeBoolean(readFirstDefined(user, ALEVEL_ACCESS_KEYS)) ||
+    unlockedSubjects.includes(
+      QUALIFICATION_SUBJECT_CODES[ALEVEL_QUALIFICATION],
+    );
+  const hasChemistryAccess = unlockedSubjects.includes(
+    QUALIFICATION_SUBJECT_CODES[ALEVEL_CHEMISTRY_QUALIFICATION],
+  );
+  const hasPhysicsAccess = unlockedSubjects.includes(
+    QUALIFICATION_SUBJECT_CODES[ALEVEL_PHYSICS_QUALIFICATION],
+  );
+  const hasAnyPaidAccess =
+    hasGcseAccess || hasALevelAccess || hasChemistryAccess || hasPhysicsAccess;
+  const hasFullAccess =
+    hasGcseAccess && hasALevelAccess && hasChemistryAccess && hasPhysicsAccess;
 
   return {
     hasGcseAccess,
     hasALevelAccess,
+    hasChemistryAccess,
+    hasPhysicsAccess,
     hasAnyPaidAccess,
     hasFullAccess,
     isLifetime,
@@ -111,7 +170,8 @@ export const getQualificationAccessState = (user) => {
 };
 
 export const hasAccessToQualification = (user, qualification) => {
-  const { hasGcseAccess, hasALevelAccess } = getQualificationAccessState(user);
+  const { hasGcseAccess, hasALevelAccess, hasChemistryAccess, hasPhysicsAccess } =
+    getQualificationAccessState(user);
 
   if (qualification === BOTH_QUALIFICATIONS) {
     return hasGcseAccess && hasALevelAccess;
@@ -125,62 +185,66 @@ export const hasAccessToQualification = (user, qualification) => {
     return hasALevelAccess;
   }
 
+  if (qualification === ALEVEL_CHEMISTRY_QUALIFICATION) {
+    return hasChemistryAccess;
+  }
+
+  if (qualification === ALEVEL_PHYSICS_QUALIFICATION) {
+    return hasPhysicsAccess;
+  }
+
   return false;
 };
 
+export const getOwnedQualifications = (user) =>
+  PURCHASABLE_QUALIFICATIONS.filter((qualification) =>
+    hasAccessToQualification(user, qualification),
+  );
+
 export const getAccessPlanLabel = (user) => {
-  const { hasGcseAccess, hasALevelAccess, isLifetime } =
-    getQualificationAccessState(user);
+  const { isLifetime } = getQualificationAccessState(user);
+  const owned = getOwnedQualifications(user);
 
   if (isLifetime) {
     return "Lifetime plan";
   }
 
-  if (hasGcseAccess && hasALevelAccess) {
-    return "GCSE + A-level access";
+  if (owned.length === PURCHASABLE_QUALIFICATIONS.length) {
+    return "All modules unlocked";
   }
 
-  if (hasALevelAccess) {
-    return "A-level access";
+  if (owned.length > 1) {
+    const hasOnlyLegacyModules = owned.every(
+      (qualification) =>
+        qualification === GCSE_QUALIFICATION ||
+        qualification === ALEVEL_QUALIFICATION,
+    );
+
+    return hasOnlyLegacyModules
+      ? "GCSE + A-level access"
+      : `${owned.length} modules unlocked`;
   }
 
-  if (hasGcseAccess) {
-    return "GCSE access";
+  if (owned.length === 1) {
+    return owned[0] === ALEVEL_QUALIFICATION
+      ? "A-level access"
+      : `${getQualificationLabel(owned[0])} access`;
   }
 
   return "Free plan";
 };
 
-export const getMissingUpgradeQualifications = (user) => {
-  const { hasGcseAccess, hasALevelAccess } = getQualificationAccessState(user);
-  const missingQualifications = [];
-
-  if (!hasGcseAccess) {
-    missingQualifications.push(GCSE_QUALIFICATION);
-  }
-
-  if (!hasALevelAccess) {
-    missingQualifications.push(ALEVEL_QUALIFICATION);
-  }
-
-  return missingQualifications;
-};
+export const getMissingUpgradeQualifications = (user) =>
+  PURCHASABLE_QUALIFICATIONS.filter(
+    (qualification) => !hasAccessToQualification(user, qualification),
+  );
 
 export const getPreferredUpgradeQualification = (missingQualifications) => {
   const normalizedQualifications = Array.isArray(missingQualifications)
-    ? missingQualifications.filter(Boolean)
+    ? missingQualifications.filter((qualification) =>
+        PURCHASABLE_QUALIFICATIONS.includes(qualification),
+      )
     : [];
-
-  if (normalizedQualifications.length === 1) {
-    return normalizedQualifications[0];
-  }
-
-  if (
-    normalizedQualifications.includes(GCSE_QUALIFICATION) &&
-    normalizedQualifications.includes(ALEVEL_QUALIFICATION)
-  ) {
-    return BOTH_QUALIFICATIONS;
-  }
 
   return normalizedQualifications[0] || null;
 };
@@ -188,20 +252,15 @@ export const getPreferredUpgradeQualification = (missingQualifications) => {
 export const buildAccountUpgradePath = (preferredQualification = null) => {
   const params = new URLSearchParams({ section: "upgrade" });
 
-  if (preferredQualification) {
+  if (PURCHASABLE_QUALIFICATIONS.includes(preferredQualification)) {
     params.set("qualification", preferredQualification);
   }
 
   return `/account?${params.toString()}`;
 };
 
-export const getCheckoutPrice = (qualification) => {
-  if (qualification === BOTH_QUALIFICATIONS) {
-    return "£2.99";
-  }
-
-  return "£1.99";
-};
+export const getCheckoutPrice = (qualification) =>
+  PURCHASABLE_QUALIFICATIONS.includes(qualification) ? MODULE_PRICE : null;
 
 export const pickEntitlementUpdates = (payload) => {
   const nextEntitlement = {};

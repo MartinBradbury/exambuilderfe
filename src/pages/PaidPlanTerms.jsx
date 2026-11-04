@@ -4,8 +4,8 @@ export default function PaidPlanTerms() {
   return (
     <LegalPageLayout
       title="Paid Plan Terms"
-      intro="These terms apply to the early access qualification upgrades, including GCSE access at £2.99, A-level access at £2.99, and the GCSE + A-level bundle at £3.99, and explain what access the purchase gives, how long it lasts, and how service availability affects that access."
-      lastUpdated="8 April 2026"
+      intro="These terms apply to the early access module purchases: GCSE Science, A-level Biology, A-level Chemistry and A-level Physics, each sold separately at £2.99 as a one-off payment. They explain what access each purchase gives, how long it lasts, and how service availability affects that access."
+      lastUpdated="4 November 2026"
     >
       <section>
         <h2>What the paid plan includes</h2>
@@ -20,10 +20,12 @@ export default function PaidPlanTerms() {
       <section>
         <h2>Price and purchase</h2>
         <p>
-          The current early access price for GCSE is £2.99. The current early
-          access price for A-level is £2.99. The GCSE + A-level early access
-          bundle price is £3.99. The price shown at checkout is the amount
-          charged for the selected purchase.
+          Each module is a separate one-off purchase at the current early access
+          price of £2.99: GCSE Science, A-level Biology, A-level Chemistry and
+          A-level Physics. A purchase unlocks only the module you buy. Earlier
+          combined GCSE + A-level purchases remain valid for the access they
+          covered, but the combined bundle is no longer on sale. The price shown
+          at checkout is the amount charged for the selected purchase.
         </p>
       </section>
 

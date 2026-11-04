@@ -517,6 +517,23 @@
   background: rgba(73, 209, 125, 0.1);
 }
 
+.account-moduleOption {
+  align-items: center;
+  justify-content: space-between;
+  cursor: default;
+}
+
+.account-moduleOption__copy {
+  display: grid;
+  gap: 4px;
+}
+
+.account-moduleOption__status {
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .account-note {
   margin: 6px 0 0;
   color: var(--muted);

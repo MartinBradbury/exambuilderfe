@@ -139,7 +139,9 @@ export default function Home() {
                   <div className="heroV2__benefits">
                     <span>✓ 2 free question sets daily</span>
                     <span>✓ Free account to save and track progress</span>
-                    <span>✓ Unlimited access from £1.99 — no subscription</span>
+                    <span>
+                      ✓ Unlimited access from £2.99 per module — no subscription
+                    </span>
                   </div>
                   <p className="heroV2__signupPrompt">
                     <strong>Ready to improve your exam technique?</strong>
@@ -179,7 +181,7 @@ export default function Home() {
                   </p>
                   <p className="home-freePlanCard__text">
                     Enjoy 2 free question sets every day, or unlock unlimited
-                    access from £1.99 with a one-off payment.{" "}
+                    access to a module for £2.99 with a one-off payment.{" "}
                     <Link to={upgradePath} className="home-freePlanCard__link">
                       Unlock Access
                     </Link>

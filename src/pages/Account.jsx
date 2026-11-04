@@ -5,9 +5,11 @@ import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
 import { applyThemePreference, getPreferredTheme } from "../lib/theme";
 import {
+  ALEVEL_CHEMISTRY_QUALIFICATION,
+  ALEVEL_PHYSICS_QUALIFICATION,
   ALEVEL_QUALIFICATION,
-  BOTH_QUALIFICATIONS,
   GCSE_QUALIFICATION,
+  PURCHASABLE_QUALIFICATIONS,
   getCheckoutPrice,
   getAccessPlanLabel,
   getMissingUpgradeQualifications,
@@ -17,14 +19,29 @@ import {
   hasAccessToQualification,
 } from "../lib/access";
 import {
+  buildCheckoutRequest,
+  confirmCheckoutEntitlement,
+  resolvePurchasedQualification,
+} from "../lib/checkout";
+import {
   buildPerformanceSummary,
   getSessionLevel,
   isSessionOnOrAfterDate,
 } from "../lib/performance";
 import "../styles/Account.modern.css";
 
-const RETRY_DELAYS_MS = [1500, 3000];
 const PENDING_CHECKOUT_KEY = "pendingCheckoutQualification";
+
+const MODULE_DESCRIPTIONS = {
+  [GCSE_QUALIFICATION]:
+    "One-off payment for unlimited GCSE Science questions, AI marking and feedback.",
+  [ALEVEL_QUALIFICATION]:
+    "One-off payment for unlimited A-level Biology questions, AI marking and feedback.",
+  [ALEVEL_CHEMISTRY_QUALIFICATION]:
+    "One-off payment for unlimited A-level Chemistry questions, AI marking and feedback.",
+  [ALEVEL_PHYSICS_QUALIFICATION]:
+    "One-off payment for unlimited A-level Physics questions, AI marking and feedback.",
+};
 
 const formatTrackingDate = (value) => {
   const parsed = new Date(value);
@@ -75,17 +92,6 @@ const getOverviewLevelForQualification = (qualification) => {
   return null;
 };
 
-const getCheckoutOptions = (missingQualifications) => {
-  const missingGcse = missingQualifications.includes(GCSE_QUALIFICATION);
-  const missingALevel = missingQualifications.includes(ALEVEL_QUALIFICATION);
-
-  if (missingGcse && missingALevel) {
-    return [BOTH_QUALIFICATIONS, GCSE_QUALIFICATION, ALEVEL_QUALIFICATION];
-  }
-
-  return missingQualifications;
-};
-
 const SectionTitle = ({ title }) => (
   <div className="account-sectionTitle">
     <h2>{title}</h2>
@@ -112,14 +118,15 @@ export default function Account() {
   const retryTimeoutsRef = useRef([]);
   const upgradeCardRef = useRef(null);
 
-  const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+  const [creatingCheckoutFor, setCreatingCheckoutFor] = useState(null);
+  const isCreatingCheckout = creatingCheckoutFor !== null;
   const [checkoutError, setCheckoutError] = useState("");
   const [statusBanner, setStatusBanner] = useState("");
   const [, setIsRefreshingStatus] = useState(false);
   const [hasAcceptedPurchaseTerms, setHasAcceptedPurchaseTerms] =
     useState(false);
-  const [selectedCheckoutQualification, setSelectedCheckoutQualification] =
-    useState(ALEVEL_QUALIFICATION);
+  const [highlightedQualification, setHighlightedQualification] =
+    useState(null);
   const [performanceSessions, setPerformanceSessions] = useState([]);
   const [isLoadingPerformance, setIsLoadingPerformance] = useState(true);
   const [performanceError, setPerformanceError] = useState("");
@@ -144,19 +151,11 @@ export default function Account() {
     () => getMissingUpgradeQualifications(user),
     [user],
   );
-  const checkoutOptions = useMemo(
-    () => getCheckoutOptions(missingUpgradeQualifications),
-    [missingUpgradeQualifications],
-  );
   const canUpgrade = Boolean(user) && missingUpgradeQualifications.length > 0;
   const numericRemaining =
     questionsRemainingToday == null ? null : Number(questionsRemainingToday);
   const performanceTrackingStartDate =
     user?.performance_tracking_start_date || user?.stats_reset_at || null;
-  const selectedCheckoutLabel = getQualificationLabel(
-    selectedCheckoutQualification,
-  );
-  const selectedCheckoutPrice = getCheckoutPrice(selectedCheckoutQualification);
   const checkoutStatus = useMemo(
     () => getQualificationAccessState(user),
     [user],
@@ -168,31 +167,17 @@ export default function Account() {
   const trackingLocked = !hasAnyPaidAccess;
 
   useEffect(() => {
-    if (
-      checkoutOptions.length > 0 &&
-      !checkoutOptions.includes(selectedCheckoutQualification)
-    ) {
-      setSelectedCheckoutQualification(checkoutOptions[0]);
-    }
-  }, [checkoutOptions, selectedCheckoutQualification]);
-
-  useEffect(() => {
     if (upgradeSection !== "upgrade" || !authReady || !isLoggedIn) {
       return;
     }
 
-    const preferredQualification = checkoutOptions.includes(
+    const preferredQualification = missingUpgradeQualifications.includes(
       upgradeQualificationParam,
     )
       ? upgradeQualificationParam
-      : getPreferredUpgradeQualification(checkoutOptions);
+      : getPreferredUpgradeQualification(missingUpgradeQualifications);
 
-    if (
-      preferredQualification &&
-      checkoutOptions.includes(preferredQualification)
-    ) {
-      setSelectedCheckoutQualification(preferredQualification);
-    }
+    setHighlightedQualification(preferredQualification);
 
     upgradeCardRef.current?.scrollIntoView({
       behavior: "smooth",
@@ -200,8 +185,8 @@ export default function Account() {
     });
   }, [
     authReady,
-    checkoutOptions,
     isLoggedIn,
+    missingUpgradeQualifications,
     upgradeQualificationParam,
     upgradeSection,
   ]);
@@ -251,8 +236,17 @@ export default function Account() {
     }
 
     let isActive = true;
-    const pendingQualification =
-      window.sessionStorage.getItem(PENDING_CHECKOUT_KEY) || null;
+    const purchasedQualification = resolvePurchasedQualification(
+      upgradeQualificationParam,
+      window.sessionStorage.getItem(PENDING_CHECKOUT_KEY),
+    );
+    const waitAndTrack = (ms) =>
+      new Promise((resolve) => {
+        retryTimeoutsRef.current.push(window.setTimeout(resolve, ms));
+      });
+    const successMessage = purchasedQualification
+      ? `Payment received. ${getQualificationLabel(purchasedQualification)} access is now active.`
+      : "Payment received. Your access has been updated.";
 
     const checkStatus = async () => {
       if (!refreshCurrentUser) {
@@ -260,69 +254,36 @@ export default function Account() {
       }
 
       setIsRefreshingStatus(true);
-      try {
-        const refreshedUser = await refreshCurrentUser();
-        const accessActivated = pendingQualification
-          ? hasAccessToQualification(refreshedUser, pendingQualification)
-          : getQualificationAccessState(refreshedUser).hasAnyPaidAccess;
+      const outcome = await confirmCheckoutEntitlement({
+        refreshUser: refreshCurrentUser,
+        qualification: purchasedQualification,
+        wait: waitAndTrack,
+        isCancelled: () => !isActive,
+        onPending: (refreshFailed) => {
+          if (isActive) {
+            setStatusBanner(
+              refreshFailed
+                ? "We could not confirm your payment yet. Retrying..."
+                : "Your payment is still being processed. Please refresh in a moment if your plan has not updated yet.",
+            );
+          }
+        },
+      });
 
-        if (!isActive) {
-          return;
-        }
-
-        if (accessActivated) {
-          window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
-          setStatusBanner(
-            pendingQualification
-              ? `Payment received. ${getQualificationLabel(pendingQualification)} access is now active.`
-              : "Payment received. Your access has been updated.",
-          );
-          return;
-        }
-
-        setStatusBanner(
-          "Your payment is still being processed. Please refresh in a moment if your plan has not updated yet.",
-        );
-
-        RETRY_DELAYS_MS.forEach((delayMs) => {
-          const timeoutId = window.setTimeout(async () => {
-            if (!isActive || !refreshCurrentUser) {
-              return;
-            }
-
-            try {
-              const retriedUser = await refreshCurrentUser();
-              const accessActivatedAfterRetry = pendingQualification
-                ? hasAccessToQualification(retriedUser, pendingQualification)
-                : getQualificationAccessState(retriedUser).hasAnyPaidAccess;
-
-              if (accessActivatedAfterRetry && isActive) {
-                window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
-                setStatusBanner(
-                  pendingQualification
-                    ? `Payment received. ${getQualificationLabel(pendingQualification)} access is now active.`
-                    : "Payment received. Your access has been updated.",
-                );
-              }
-            } catch (error) {
-              console.error("Unable to refresh billing status", error);
-            }
-          }, delayMs);
-
-          retryTimeoutsRef.current.push(timeoutId);
-        });
-      } catch (error) {
-        console.error("Unable to refresh billing status", error);
-        if (isActive) {
-          setStatusBanner(
-            "We could not confirm your payment yet. Please refresh your account in a moment.",
-          );
-        }
-      } finally {
-        if (isActive) {
-          setIsRefreshingStatus(false);
-        }
+      if (!isActive) {
+        return;
       }
+
+      if (outcome === "confirmed") {
+        window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
+        setStatusBanner(successMessage);
+      } else if (outcome === "error") {
+        setStatusBanner(
+          "We could not confirm your payment yet. Please refresh your account in a moment.",
+        );
+      }
+
+      setIsRefreshingStatus(false);
     };
 
     checkStatus();
@@ -330,7 +291,13 @@ export default function Account() {
     return () => {
       isActive = false;
     };
-  }, [authReady, checkoutState, isLoggedIn, refreshCurrentUser]);
+  }, [
+    authReady,
+    checkoutState,
+    isLoggedIn,
+    refreshCurrentUser,
+    upgradeQualificationParam,
+  ]);
 
   useEffect(() => {
     if (!authReady || !isLoggedIn) {
@@ -522,14 +489,11 @@ export default function Account() {
   };
 
   const focusUpgradeOptions = (preferredQualification = null) => {
-    if (
-      preferredQualification &&
-      checkoutOptions.includes(preferredQualification)
-    ) {
-      setSelectedCheckoutQualification(preferredQualification);
-    } else if (checkoutOptions.length > 0) {
-      setSelectedCheckoutQualification(checkoutOptions[0]);
-    }
+    setHighlightedQualification(
+      missingUpgradeQualifications.includes(preferredQualification)
+        ? preferredQualification
+        : getPreferredUpgradeQualification(missingUpgradeQualifications),
+    );
 
     upgradeCardRef.current?.scrollIntoView({
       behavior: "smooth",
@@ -537,39 +501,31 @@ export default function Account() {
     });
   };
 
-  const handleUpgrade = async () => {
-    if (isCreatingCheckout || !canUpgrade || !hasAcceptedPurchaseTerms) {
-      if (!hasAcceptedPurchaseTerms) {
-        setCheckoutError(
-          "You must accept the purchase terms before continuing.",
-        );
-      } else if (!canUpgrade) {
-        setCheckoutError(
-          "This account already has access to both qualifications.",
-        );
-      }
+  const handleUpgrade = async (qualification) => {
+    if (isCreatingCheckout || !missingUpgradeQualifications.includes(qualification)) {
       return;
     }
 
-    setIsCreatingCheckout(true);
+    if (!hasAcceptedPurchaseTerms) {
+      setCheckoutError("You must accept the purchase terms before continuing.");
+      return;
+    }
+
+    const qualificationLabel = getQualificationLabel(qualification);
+
+    setCreatingCheckoutFor(qualification);
     setCheckoutError("");
 
-    const successUrl = `${window.location.origin}/account?checkout=success`;
-    const cancelUrl = `${window.location.origin}/account?checkout=cancelled`;
-
     try {
-      window.sessionStorage.setItem(
-        PENDING_CHECKOUT_KEY,
-        selectedCheckoutQualification,
+      const checkoutRequest = buildCheckoutRequest(
+        window.location.origin,
+        qualification,
       );
+      window.sessionStorage.setItem(PENDING_CHECKOUT_KEY, qualification);
 
       const { data } = await api.post(
         "/accounts/billing/create-checkout-session/",
-        {
-          qualification: selectedCheckoutQualification,
-          success_url: successUrl,
-          cancel_url: cancelUrl,
-        },
+        checkoutRequest,
       );
 
       if (!data?.checkout_url) {
@@ -583,7 +539,7 @@ export default function Account() {
         window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
         setCheckoutError(
           error.response?.data?.detail ||
-            `This account already has ${selectedCheckoutLabel.toLowerCase()} access.`,
+            `This account already has ${qualificationLabel} access.`,
         );
 
         try {
@@ -595,7 +551,7 @@ export default function Account() {
           );
         }
 
-        setIsCreatingCheckout(false);
+        setCreatingCheckoutFor(null);
         return;
       }
 
@@ -615,7 +571,7 @@ export default function Account() {
           );
         }
 
-        setIsCreatingCheckout(false);
+        setCreatingCheckoutFor(null);
         return;
       }
 
@@ -624,7 +580,7 @@ export default function Account() {
         error.response?.data?.detail ||
           "Unable to start payment setup right now. Please try again.",
       );
-      setIsCreatingCheckout(false);
+      setCreatingCheckoutFor(null);
     }
   };
 
@@ -766,11 +722,19 @@ export default function Account() {
                   <dd>{planLabel}</dd>
                 </div>
                 <div>
-                  <dt>A-level access</dt>
+                  <dt>A-level Biology access</dt>
                   <dd>{hasALevelAccess ? "Enabled" : "Not yet"}</dd>
                 </div>
                 <div>
-                  <dt>GCSE access</dt>
+                  <dt>A-level Chemistry access</dt>
+                  <dd>{checkoutStatus.hasChemistryAccess ? "Enabled" : "Not yet"}</dd>
+                </div>
+                <div>
+                  <dt>A-level Physics access</dt>
+                  <dd>{checkoutStatus.hasPhysicsAccess ? "Enabled" : "Not yet"}</dd>
+                </div>
+                <div>
+                  <dt>GCSE Science access</dt>
                   <dd>{hasGcseAccess ? "Enabled" : "Not yet"}</dd>
                 </div>
                 <div>
@@ -1014,133 +978,107 @@ export default function Account() {
               <SectionTitle title="Upgrade Plan" />
               <p className="account-muted">
                 {hasFullAccess
-                  ? "GCSE and A-level access are already active on this account."
-                  : "Secure checkout powered by Stripe. Early access pricing unlocks the premium study tools for the qualification access you choose."}
+                  ? "All four modules are already active on this account."
+                  : "Secure checkout powered by Stripe. Each module is a separate one-off payment of £2.99 with no subscription."}
               </p>
 
-              {!hasFullAccess ? (
-                <>
-                  <div className="account-upgradeHighlight">
-                    <p className="account-upgradeHighlight__eyebrow">
-                      Early access pricing
-                    </p>
-                    <p className="account-upgradeHighlight__title">
-                      Pay once to unlock unlimited premium revision tools.
-                    </p>
-                    <ul className="account-upgradeHighlight__list">
-                      <li>Unlimited questions</li>
-                      <li>Full AI marking</li>
-                      <li>Detailed feedback</li>
-                      <li>Performance tracking</li>
-                    </ul>
-                  </div>
-                  <p className="account-price">
-                    {selectedCheckoutQualification === BOTH_QUALIFICATIONS
-                      ? "GCSE + A-level early access: £2.99"
-                      : `${selectedCheckoutLabel} early access: £1.99`}
-                  </p>
-                  <div
-                    className="account-upgradeOptions"
-                    role="radiogroup"
-                    aria-label="Select qualification to unlock"
-                  >
-                    {checkoutOptions.map((option) => (
-                      <label
-                        key={option}
-                        className={`account-upgradeOption ${
-                          selectedCheckoutQualification === option
-                            ? "account-upgradeOption--active"
-                            : ""
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="checkoutQualification"
-                          value={option}
-                          checked={selectedCheckoutQualification === option}
-                          onChange={(event) => {
-                            setSelectedCheckoutQualification(
-                              event.target.value,
-                            );
-                            setCheckoutError("");
-                          }}
-                        />
-                        <span>
-                          <strong>{getQualificationLabel(option)}</strong>
-                          <small>
-                            {option === BOTH_QUALIFICATIONS
-                              ? "Early access for both qualifications with one payment and full premium features."
-                              : "Early access for this qualification with full premium features unlocked."}
-                          </small>
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                  <ul className="account-benefits">
-                    <li>
-                      {selectedCheckoutQualification === BOTH_QUALIFICATIONS
-                        ? "Unlimited questions across GCSE and A-level"
-                        : `Unlimited questions for ${selectedCheckoutLabel}`}
-                    </li>
-                  </ul>
-                  <p className="account-note">
-                    Early access price for {selectedCheckoutLabel}:{" "}
-                    {selectedCheckoutPrice}
-                  </p>
-                  {checkoutStatus.hasAnyPaidAccess &&
-                  !checkoutStatus.hasFullAccess ? (
-                    <p className="account-note">
-                      You already have {hasGcseAccess ? "GCSE" : "A-level"}{" "}
-                      access. Buy the other qualification here if you want both.
-                    </p>
-                  ) : null}
-                </>
-              ) : null}
+              <div className="account-upgradeHighlight">
+                <p className="account-upgradeHighlight__eyebrow">
+                  Early access pricing
+                </p>
+                <p className="account-upgradeHighlight__title">
+                  Pay once per module to unlock unlimited premium revision
+                  tools.
+                </p>
+                <ul className="account-upgradeHighlight__list">
+                  <li>Unlimited questions</li>
+                  <li>Full AI marking</li>
+                  <li>Detailed feedback</li>
+                  <li>Performance tracking</li>
+                </ul>
+              </div>
 
               {canUpgrade ? (
-                <>
-                  <label className="account-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={hasAcceptedPurchaseTerms}
-                      onChange={(event) => {
-                        setHasAcceptedPurchaseTerms(event.target.checked);
-                        if (event.target.checked) {
-                          setCheckoutError("");
-                        }
-                      }}
-                    />
-                    <span>
-                      I agree to the <Link to="/terms">Terms of Service</Link>,{" "}
-                      <Link to="/privacy-policy">Privacy Policy</Link>,{" "}
-                      <Link to="/paid-plan-terms">Paid Plan Terms</Link>, and{" "}
-                      <Link to="/refund-policy">Refund Policy</Link>.
-                    </span>
-                  </label>
+                <label className="account-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={hasAcceptedPurchaseTerms}
+                    onChange={(event) => {
+                      setHasAcceptedPurchaseTerms(event.target.checked);
+                      if (event.target.checked) {
+                        setCheckoutError("");
+                      }
+                    }}
+                  />
+                  <span>
+                    I agree to the <Link to="/terms">Terms of Service</Link>,{" "}
+                    <Link to="/privacy-policy">Privacy Policy</Link>,{" "}
+                    <Link to="/paid-plan-terms">Paid Plan Terms</Link>, and{" "}
+                    <Link to="/refund-policy">Refund Policy</Link>.
+                  </span>
+                </label>
+              ) : null}
 
-                  <div className="account-actions">
-                    <button
-                      type="button"
-                      className="btn btn--primary"
-                      onClick={handleUpgrade}
-                      disabled={isCreatingCheckout || !hasAcceptedPurchaseTerms}
+              <ul
+                className="account-upgradeOptions"
+                aria-label="Purchasable modules"
+              >
+                {PURCHASABLE_QUALIFICATIONS.map((qualification) => {
+                  const label = getQualificationLabel(qualification);
+                  const isOwned = !missingUpgradeQualifications.includes(
+                    qualification,
+                  );
+
+                  return (
+                    <li
+                      key={qualification}
+                      data-qualification={qualification}
+                      className={`account-upgradeOption account-moduleOption ${
+                        highlightedQualification === qualification
+                          ? "account-upgradeOption--active"
+                          : ""
+                      }`}
                     >
-                      {isCreatingCheckout
-                        ? "Redirecting..."
-                        : `Unlock ${selectedCheckoutLabel}`}
-                    </button>
-                  </div>
-                </>
-              ) : hasFullAccess ? (
-                <p className="account-note">
-                  No upgrade needed. Your plan already includes both
-                  qualifications.
-                </p>
-              ) : (
+                      <div className="account-moduleOption__copy">
+                        <strong>
+                          {label} - {getCheckoutPrice(qualification)}
+                        </strong>
+                        <small>{MODULE_DESCRIPTIONS[qualification]}</small>
+                      </div>
+                      {isOwned ? (
+                        <span className="account-moduleOption__status">
+                          Unlocked
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn btn--primary"
+                          onClick={() => handleUpgrade(qualification)}
+                          disabled={
+                            isCreatingCheckout || !hasAcceptedPurchaseTerms
+                          }
+                        >
+                          {creatingCheckoutFor === qualification
+                            ? "Redirecting..."
+                            : `Buy ${label}`}
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {!canUpgrade && !hasFullAccess ? (
                 <p className="account-note">
                   Refresh your account if your plan changed recently.
                 </p>
-              )}
+              ) : null}
+              {checkoutStatus.hasAnyPaidAccess && canUpgrade ? (
+                <p className="account-note">
+                  Modules you already own stay unlocked. Buy any other module
+                  separately.
+                </p>
+              ) : null}
             </article>
           </div>
 
