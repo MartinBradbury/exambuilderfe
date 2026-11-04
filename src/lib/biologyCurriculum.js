@@ -47,6 +47,7 @@ export const buildBiologyCurriculumRequest = ({
   examBoard,
   specification,
   parentId,
+  subjectCode = ALEVEL_BIOLOGY_SUBJECT_CODE,
 }) => {
   const endpoints = ENDPOINTS[mode];
 
@@ -65,7 +66,7 @@ export const buildBiologyCurriculumRequest = ({
   }
 
   if (mode === BIOLOGY_CURRICULUM_MODE_SHARED) {
-    params.subject = ALEVEL_BIOLOGY_SUBJECT_CODE;
+    params.subject = subjectCode;
   }
 
   params.exam_board = examBoard;

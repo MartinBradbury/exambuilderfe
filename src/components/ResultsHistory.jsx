@@ -17,13 +17,19 @@ import {
 } from "recharts";
 import { UserContext } from "../context/UserContextObject";
 import { api } from "../lib/api";
-import { buildAccountUpgradePath } from "../lib/access";
+import { ALEVEL_QUALIFICATION, buildAccountUpgradePath, getQualificationLabel } from "../lib/access";
 import {
   BIOLOGY_CURRICULUM_MODE_SHARED,
   EDEXCEL_ALEVEL_SPECIFICATIONS,
-  buildBiologyCurriculumRequest,
   fetchBiologyCurriculumMode,
 } from "../lib/biologyCurriculum";
+import {
+  buildALevelCurriculumRequest,
+  getQualificationForOverviewLevelKey,
+  getSessionOverviewLevelKey,
+  getSessionQualification,
+  isSharedOnlyALevelQualification,
+} from "../lib/qualifications";
 import {
   calculatePercentageScore,
   getSessionDateValue,
@@ -48,49 +54,29 @@ const normalizeText = (value) =>
     .trim()
     .toLowerCase();
 
-const getLevelKey = (value) => {
-  const normalizedValue = normalizeText(value);
-
-  if (normalizedValue.includes("gcse")) {
-    return "gcse";
-  }
-
-  if (
-    normalizedValue.includes("a level") ||
-    normalizedValue.includes("alevel") ||
-    normalizedValue.includes("as and a level")
-  ) {
-    return "a-level";
-  }
-
-  return "other";
-};
-
 const formatLevelHeading = (levelKey) => {
   if (levelKey === "gcse") {
     return "GCSE";
   }
 
-  if (levelKey === "a-level") {
-    return "A level";
+  const qualification = getQualificationForOverviewLevelKey(levelKey);
+
+  if (qualification) {
+    return getQualificationLabel(qualification);
   }
 
   return "Other";
 };
 
-const getQualificationForLevelKey = (levelKey) => {
-  if (levelKey === "gcse") {
-    return "GCSE_SCIENCE";
-  }
+const getQualificationForLevelKey = (levelKey) =>
+  getQualificationForOverviewLevelKey(levelKey);
 
-  if (levelKey === "a-level") {
-    return "ALEVEL_BIOLOGY";
-  }
-
-  return null;
-};
-
-const OVERVIEW_LEVEL_ORDER = ["gcse", "a-level"];
+const OVERVIEW_LEVEL_ORDER = [
+  "gcse",
+  "a-level",
+  "a-level-chemistry",
+  "a-level-physics",
+];
 const OVERVIEW_EXAM_BOARD_ORDER = ["ocr", "aqa", "edexcel"];
 const OVERVIEW_ALL_TOPICS_VALUE = "__overall__";
 const RESULTS_PAGE_SIZE = 5;
@@ -262,11 +248,6 @@ const isEssaySession = (session) => {
     return true;
   }
 
-  const qualificationValue = [
-    session?.qualification,
-    session?.qualification_label,
-    session?.level,
-  ].join(" ");
   const topicValue = session?.topicLabel || session?.topic_name || session?.topic;
   const normalizedTopicValue = normalizeText(topicValue);
   const questionCount = Number(
@@ -278,7 +259,7 @@ const isEssaySession = (session) => {
 
   return (
     getExamBoardKey(session?.exam_board) === "aqa" &&
-    getLevelKey(qualificationValue) === "a-level" &&
+    getSessionOverviewLevelKey(session) === "a-level" &&
     questionCount === 1 &&
     (!normalizedTopicValue || normalizedTopicValue === "untitled topic")
   );
@@ -864,7 +845,7 @@ export default function ResultsHistory({
 
   const overviewSections = useMemo(() => {
     const groupedSessions = sessionCards.reduce((groups, session) => {
-      const levelKey = getLevelKey(session.levelLabel);
+      const levelKey = getSessionOverviewLevelKey(session);
 
       if (levelKey === "other") {
         return groups;
@@ -895,7 +876,7 @@ export default function ResultsHistory({
 
   const latestSessionLevelKey = useMemo(() => {
     const latestSession = sessions.reduce((latest, session) => {
-      const sessionLevelKey = getLevelKey(getSessionLevel(session));
+      const sessionLevelKey = getSessionOverviewLevelKey(session);
 
       if (sessionLevelKey === "other") {
         return latest;
@@ -909,7 +890,7 @@ export default function ResultsHistory({
       return sessionTime > latestTime ? session : latest;
     }, null);
 
-    return latestSession ? getLevelKey(getSessionLevel(latestSession)) : null;
+    return latestSession ? getSessionOverviewLevelKey(latestSession) : null;
   }, [sessions]);
 
   const selectedOverviewSection = useMemo(
@@ -1397,6 +1378,18 @@ export default function ResultsHistory({
     );
   }, [overviewTopicCatalog, selectedOverviewMarksTopic]);
 
+  const overviewQualification = getQualificationForLevelKey(
+    selectedOverviewSection?.levelKey,
+  );
+  // Biology follows the discovered backend mode; Chemistry and Physics are
+  // always shared; GCSE has no curriculum mode.
+  const overviewCurriculumMode =
+    overviewQualification === ALEVEL_QUALIFICATION
+      ? biologyMode
+      : isSharedOnlyALevelQualification(overviewQualification)
+        ? BIOLOGY_CURRICULUM_MODE_SHARED
+        : null;
+
   useEffect(() => {
     if (selectedOverviewSection?.levelKey !== "a-level") {
       return undefined;
@@ -1432,7 +1425,7 @@ export default function ResultsHistory({
       const examBoard = formatExamBoardHeading(selectedOverviewExamBoard);
       const isALevelSection = selectedOverviewSection.levelKey !== "gcse";
 
-      if (isALevelSection && !biologyMode) {
+      if (isALevelSection && !overviewCurriculumMode) {
         setOverviewTopicCatalog([]);
         return;
       }
@@ -1445,7 +1438,7 @@ export default function ResultsHistory({
       // Shared endpoints require a specification for Edexcel, which this view doesn't track.
       const contexts =
         isALevelSection &&
-        biologyMode === BIOLOGY_CURRICULUM_MODE_SHARED &&
+        overviewCurriculumMode === BIOLOGY_CURRICULUM_MODE_SHARED &&
         selectedOverviewExamBoard === "edexcel"
           ? EDEXCEL_ALEVEL_SPECIFICATIONS.map((specification) => ({
               specification,
@@ -1470,8 +1463,9 @@ export default function ResultsHistory({
                       tier: context.tier,
                     },
                   }
-                : buildBiologyCurriculumRequest({
-                    mode: biologyMode,
+                : buildALevelCurriculumRequest({
+                    qualification: overviewQualification,
+                    mode: overviewCurriculumMode,
                     level: "topics",
                     examBoard,
                     specification: context.specification,
@@ -1531,7 +1525,8 @@ export default function ResultsHistory({
       isActive = false;
     };
   }, [
-    biologyMode,
+    overviewCurriculumMode,
+    overviewQualification,
     selectedOverviewExamBoard,
     selectedOverviewGcseScienceRoute,
     selectedOverviewSection,
@@ -1548,7 +1543,7 @@ export default function ResultsHistory({
 
       const examBoard = formatExamBoardHeading(selectedOverviewExamBoard);
 
-      if (selectedOverviewSection.levelKey !== "gcse" && !biologyMode) {
+      if (selectedOverviewSection.levelKey !== "gcse" && !overviewCurriculumMode) {
         setOverviewSubtopicCatalog([]);
         return;
       }
@@ -1567,8 +1562,9 @@ export default function ResultsHistory({
                       tier: request.tier,
                     },
                   }
-                : buildBiologyCurriculumRequest({
-                    mode: biologyMode,
+                : buildALevelCurriculumRequest({
+                    qualification: overviewQualification,
+                    mode: overviewCurriculumMode,
                     level: "subtopics",
                     examBoard,
                     specification: request.specification,
@@ -1614,7 +1610,8 @@ export default function ResultsHistory({
       isActive = false;
     };
   }, [
-    biologyMode,
+    overviewCurriculumMode,
+    overviewQualification,
     selectedOverviewExamBoard,
     selectedOverviewSection,
     selectedOverviewTopicCatalogEntry,
@@ -2347,7 +2344,8 @@ export default function ResultsHistory({
                               session.number_of_questions != null
                                 ? String(session.number_of_questions)
                                 : undefined,
-                            qualification: session.qualification,
+                            qualification: getSessionQualification(session),
+                            specification: session.specification,
                             subject: session.subject,
                             tier: session.tier,
                           },

@@ -18,12 +18,24 @@ import {
 import aLevelCover from "../assets/home/Alevelcard.png";
 import gcseCover from "../assets/home/GCSEcard.png";
 import {
+  BIOLOGY_CURRICULUM_MODE_SHARED,
   BIOLOGY_MODE_MISMATCH_MESSAGE,
   BIOLOGY_MODE_UNAVAILABLE_MESSAGE,
-  buildBiologyCurriculumRequest,
   fetchBiologyCurriculumMode,
   isBiologyCurriculumModeError,
 } from "../lib/biologyCurriculum";
+import {
+  buildALevelCurriculumRequest,
+  buildBatchMarkingPayload,
+  buildGenerationPayload,
+  GENERATION_QUALIFICATIONS,
+  getQualificationChoiceCopy,
+  isALevelQualification,
+  isEssayAvailableFor,
+  isSharedOnlyALevelQualification,
+  normalizeQualification,
+  requiresSpecificationFor,
+} from "../lib/qualifications";
 
 const EXAM_BOARD_OPTIONS = ["AQA", "OCR", "EDEXCEL"];
 const GCSE_SUBJECT_OPTIONS = ["BIOLOGY", "CHEMISTRY", "PHYSICS", "COMBINED"];
@@ -106,10 +118,19 @@ export default function QuestionGenerator() {
   const navigate = useNavigate();
   const location = useLocation();
   const isGcse = qualification === GCSE_QUALIFICATION;
-  const requiresSpecification =
-    qualification === ALEVEL_QUALIFICATION && examBoard === "EDEXCEL";
-  const isEssayModeAvailable =
-    qualification === ALEVEL_QUALIFICATION && examBoard === "AQA";
+  const isBiology = qualification === ALEVEL_QUALIFICATION;
+  // Biology follows the backend's discovered mode; Chemistry and Physics are
+  // always shared. GCSE has no curriculum mode.
+  const curriculumMode = isBiology
+    ? biologyMode
+    : isSharedOnlyALevelQualification(qualification)
+      ? BIOLOGY_CURRICULUM_MODE_SHARED
+      : null;
+  const requiresSpecification = requiresSpecificationFor(
+    qualification,
+    examBoard,
+  );
+  const isEssayModeAvailable = isEssayAvailableFor(qualification, examBoard);
   const isEssayMode =
     isEssayModeAvailable && questionMode === QUESTION_MODE_ESSAY;
   const resumeSession = location.state?.resumeSession || null;
@@ -230,7 +251,11 @@ export default function QuestionGenerator() {
       return;
     }
 
-    const nextEntitlement = pickEntitlementUpdates(payload);
+    const nextEntitlement = Object.fromEntries(
+      Object.entries(pickEntitlementUpdates(payload)).filter(
+        ([, value]) => value !== null && value !== undefined,
+      ),
+    );
 
     if (Object.keys(nextEntitlement).length > 0) {
       updateEntitlement(nextEntitlement);
@@ -309,11 +334,14 @@ export default function QuestionGenerator() {
       return;
     }
 
-    const nextQualification =
-      resumeSession.qualification === GCSE_QUALIFICATION ||
-      resumeSession.qualification === ALEVEL_QUALIFICATION
-        ? resumeSession.qualification
-        : null;
+    const resumedQualification = normalizeQualification(
+      resumeSession.qualification,
+    );
+    const nextQualification = GENERATION_QUALIFICATIONS.includes(
+      resumedQualification,
+    )
+      ? resumedQualification
+      : null;
 
     if (nextQualification) {
       setQualification(nextQualification);
@@ -328,7 +356,7 @@ export default function QuestionGenerator() {
 
     if (
       normalizedExamBoard === "EDEXCEL" &&
-      nextQualification === ALEVEL_QUALIFICATION &&
+      isALevelQualification(nextQualification) &&
       EDEXCEL_ALEVEL_SPECIFICATION_OPTIONS.includes(
         String(resumeSession.specification || ""),
       )
@@ -395,6 +423,8 @@ export default function QuestionGenerator() {
     setQuestionMode(QUESTION_MODE_STANDARD);
     setError("");
     clearTopicSelections();
+    setBiologyMode(null);
+    setBiologyModeStatus("idle");
     setSelectedSubject("");
     setSelectedTier("");
     setSelectedSpecification("");
@@ -405,6 +435,8 @@ export default function QuestionGenerator() {
     setQuestionMode(QUESTION_MODE_STANDARD);
     setError("");
     clearTopicSelections();
+    setBiologyMode(null);
+    setBiologyModeStatus("idle");
     setSelectedSubject("");
     setSelectedTier("");
     setSelectedSpecification("");
@@ -440,8 +472,9 @@ export default function QuestionGenerator() {
   };
 
   // Discover the backend's active Biology curriculum mode; never assume one.
+  // Chemistry and Physics always use the shared curriculum and skip discovery.
   useEffect(() => {
-    if (!authReady || !hasSelectedQualification || isGcse) {
+    if (!authReady || !hasSelectedQualification || !isBiology) {
       return undefined;
     }
 
@@ -469,7 +502,7 @@ export default function QuestionGenerator() {
     return () => {
       isCancelled = true;
     };
-  }, [authReady, biologyModeRefreshKey, hasSelectedQualification, isGcse]);
+  }, [authReady, biologyModeRefreshKey, hasSelectedQualification, isBiology]);
 
   // Selected IDs belong to one curriculum mode only.
   useEffect(() => {
@@ -503,7 +536,7 @@ export default function QuestionGenerator() {
         return;
       }
 
-      if (!isGcse && !biologyMode) {
+      if (!isGcse && !curriculumMode) {
         return;
       }
 
@@ -517,8 +550,9 @@ export default function QuestionGenerator() {
                 tier: selectedTier,
               },
             }
-          : buildBiologyCurriculumRequest({
-              mode: biologyMode,
+          : buildALevelCurriculumRequest({
+              qualification,
+              mode: curriculumMode,
               level: "topics",
               examBoard,
               specification: requiresSpecification
@@ -546,10 +580,11 @@ export default function QuestionGenerator() {
     };
   }, [
     authReady,
-    biologyMode,
+    curriculumMode,
     examBoard,
     hasSelectedQualification,
     isGcse,
+    qualification,
     requiresSpecification,
     selectedSpecification,
     selectedSubject,
@@ -569,7 +604,7 @@ export default function QuestionGenerator() {
         return;
       }
 
-      if (!isGcse && !biologyMode) {
+      if (!isGcse && !curriculumMode) {
         clearSubtopicSelections();
         return;
       }
@@ -585,8 +620,9 @@ export default function QuestionGenerator() {
                 tier: selectedTier,
               },
             }
-          : buildBiologyCurriculumRequest({
-              mode: biologyMode,
+          : buildALevelCurriculumRequest({
+              qualification,
+              mode: curriculumMode,
               level: "subtopics",
               examBoard,
               specification: requiresSpecification
@@ -614,9 +650,10 @@ export default function QuestionGenerator() {
       isCancelled = true;
     };
   }, [
-    biologyMode,
+    curriculumMode,
     examBoard,
     isGcse,
+    qualification,
     requiresSpecification,
     selectedSpecification,
     selectedSubject,
@@ -637,7 +674,7 @@ export default function QuestionGenerator() {
         return;
       }
 
-      if (!isGcse && !biologyMode) {
+      if (!isGcse && !curriculumMode) {
         clearSubcategorySelections();
         return;
       }
@@ -653,8 +690,9 @@ export default function QuestionGenerator() {
                 tier: selectedTier,
               },
             }
-          : buildBiologyCurriculumRequest({
-              mode: biologyMode,
+          : buildALevelCurriculumRequest({
+              qualification,
+              mode: curriculumMode,
               level: "subcategories",
               examBoard,
               specification: requiresSpecification
@@ -681,9 +719,10 @@ export default function QuestionGenerator() {
       isCancelled = true;
     };
   }, [
-    biologyMode,
+    curriculumMode,
     examBoard,
     isGcse,
+    qualification,
     requiresSpecification,
     selectedSpecification,
     selectedSubject,
@@ -758,7 +797,7 @@ export default function QuestionGenerator() {
       return;
     }
 
-    if (!isGcse && !isEssayMode && !biologyMode) {
+    if (!isGcse && !isEssayMode && !curriculumMode) {
       setError(BIOLOGY_MODE_UNAVAILABLE_MESSAGE);
       return;
     }
@@ -782,29 +821,19 @@ export default function QuestionGenerator() {
       const requestedQuestionCount = isEssayMode
         ? 1
         : parseInt(numberOfQuestions, 10);
-      const payload = {
+      const payload = buildGenerationPayload({
         qualification,
-        exam_board: examBoard,
-        number_of_questions: requestedQuestionCount,
-        ...(isEssayMode ? { question_type: ESSAY_QUESTION_TYPE } : {}),
-        ...(!isEssayMode ? { topic_id: Number(selectedTopic) } : {}),
-        ...(requiresSpecification
-          ? { specification: selectedSpecification }
-          : {}),
-        ...(!isEssayMode && selectedSubtopic
-          ? { subtopic_id: Number(selectedSubtopic) }
-          : {}),
-        ...(!isEssayMode && selectedSubcategory
-          ? { subcategory_id: Number(selectedSubcategory) }
-          : {}),
-        ...(!isGcse && !isEssayMode ? { curriculum_mode: biologyMode } : {}),
-        ...(isGcse
-          ? {
-              subject: selectedSubject,
-              tier: selectedTier,
-            }
-          : {}),
-      };
+        examBoard,
+        numberOfQuestions: requestedQuestionCount,
+        isEssayMode,
+        topicId: selectedTopic,
+        subtopicId: selectedSubtopic,
+        subcategoryId: selectedSubcategory,
+        specification: selectedSpecification,
+        curriculumMode,
+        gcseSubject: selectedSubject,
+        gcseTier: selectedTier,
+      });
 
       const { data } = await api.post("/api/generate-questions/", payload);
 
@@ -825,7 +854,7 @@ export default function QuestionGenerator() {
           questions_remaining_today:
             payload.questions_remaining_today ?? numericRemaining,
         });
-      } else if (isBiologyCurriculumModeError(err)) {
+      } else if (isBiology && isBiologyCurriculumModeError(err)) {
         // Selected IDs may belong to the other curriculum: clear and rediscover.
         clearTopicSelections();
         setBiologyMode(null);
@@ -875,17 +904,14 @@ export default function QuestionGenerator() {
               ? { specification: selectedSpecification }
               : {}),
           }
-        : {
+        : buildBatchMarkingPayload({
             qualification,
-            exam_board: examBoard,
+            examBoard,
             answers: answersToMark,
-            ...(isGcse
-              ? {
-                  subject: selectedSubject,
-                  tier: selectedTier,
-                }
-              : {}),
-          };
+            specification: selectedSpecification,
+            gcseSubject: selectedSubject,
+            gcseTier: selectedTier,
+          });
 
       const { data: markingData } = await api.post(
         "/api/mark-answer/",
@@ -1034,7 +1060,7 @@ export default function QuestionGenerator() {
     loading ||
     generationBlocked ||
     (!isEssayMode && !selectedTopic) ||
-    (!isGcse && !isEssayMode && !biologyMode) ||
+    (!isGcse && !isEssayMode && !curriculumMode) ||
     (requiresSpecification && !selectedSpecification) ||
     (isGcse && (!selectedSubject || !selectedTier));
   const questionCountHelperText = isEssayMode
@@ -1059,37 +1085,27 @@ export default function QuestionGenerator() {
           </div>
 
           <div className="qg-choice-grid">
-            <button
-              type="button"
-              className="qg-choice-tile"
-              onClick={() => handleQualificationChange(ALEVEL_QUALIFICATION)}
-            >
-              <img
-                src={aLevelCover}
-                alt="A-level Biology"
-                className="qg-choice-image"
-              />
-              <span className="qg-choice-copy">
-                <strong>A-level</strong>
-                <span>Biology question generation</span>
-              </span>
-            </button>
-
-            <button
-              type="button"
-              className="qg-choice-tile"
-              onClick={() => handleQualificationChange(GCSE_QUALIFICATION)}
-            >
-              <img
-                src={gcseCover}
-                alt="GCSE Science"
-                className="qg-choice-image"
-              />
-              <span className="qg-choice-copy">
-                <strong>GCSE</strong>
-                <span>Biology, Chemistry, Physics, and Combined Science</span>
-              </span>
-            </button>
+            {GENERATION_QUALIFICATIONS.map((choice) => {
+              const copy = getQualificationChoiceCopy(choice);
+              return (
+                <button
+                  key={choice}
+                  type="button"
+                  className="qg-choice-tile"
+                  onClick={() => handleQualificationChange(choice)}
+                >
+                  <img
+                    src={choice === GCSE_QUALIFICATION ? gcseCover : aLevelCover}
+                    alt={getQualificationLabel(choice)}
+                    className="qg-choice-image"
+                  />
+                  <span className="qg-choice-copy">
+                    <strong>{copy.title}</strong>
+                    <span>{copy.description}</span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </section>
       )}
@@ -1104,7 +1120,7 @@ export default function QuestionGenerator() {
           <div className="qg-form-topbar">
             <div>
               <p className="qg-form-eyebrow">Selected qualification</p>
-              <h2>{isGcse ? "GCSE Science" : "A-level Biology"}</h2>
+              <h2>{getQualificationLabel(qualification)}</h2>
             </div>
             <button
               type="button"
@@ -1336,7 +1352,7 @@ export default function QuestionGenerator() {
             <p className="qg-error">{upgradeState.error}</p>
           )}
           {error && <p className="qg-error">{error}</p>}
-          {!isGcse && !isEssayMode && biologyModeStatus === "error" && (
+          {isBiology && !isEssayMode && biologyModeStatus === "error" && (
             <p className="qg-error">
               {BIOLOGY_MODE_UNAVAILABLE_MESSAGE}{" "}
               <button

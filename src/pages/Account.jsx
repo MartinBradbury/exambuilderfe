@@ -27,9 +27,12 @@ import {
 } from "../lib/checkout";
 import {
   buildPerformanceSummary,
-  getSessionLevel,
   isSessionOnOrAfterDate,
 } from "../lib/performance";
+import {
+  getOverviewLevelKeyForQualification,
+  getSessionQualification,
+} from "../lib/qualifications";
 import "../styles/Account.modern.css";
 
 const PENDING_CHECKOUT_KEY = "pendingCheckoutQualification";
@@ -62,37 +65,7 @@ const formatTrackingDate = (value) => {
 const formatMetricValue = (value, suffix = "") =>
   value == null ? "--" : `${value}${suffix}`;
 
-const getSessionQualification = (session) => {
-  const normalizedLevel = String(getSessionLevel(session) || "")
-    .trim()
-    .toLowerCase();
-
-  if (normalizedLevel.includes("gcse")) {
-    return GCSE_QUALIFICATION;
-  }
-
-  if (
-    normalizedLevel.includes("a level") ||
-    normalizedLevel.includes("alevel") ||
-    normalizedLevel.includes("as and a level")
-  ) {
-    return ALEVEL_QUALIFICATION;
-  }
-
-  return null;
-};
-
-const getOverviewLevelForQualification = (qualification) => {
-  if (qualification === GCSE_QUALIFICATION) {
-    return "gcse";
-  }
-
-  if (qualification === ALEVEL_QUALIFICATION) {
-    return "a-level";
-  }
-
-  return null;
-};
+const getOverviewLevelForQualification = getOverviewLevelKeyForQualification;
 
 const SectionTitle = ({ title }) => (
   <div className="account-sectionTitle">
@@ -202,14 +175,14 @@ export default function Account() {
       return;
     }
 
-    if (hasALevelAccess && !hasGcseAccess) {
-      setActiveSummaryQualification(ALEVEL_QUALIFICATION);
-    } else {
-      setActiveSummaryQualification(GCSE_QUALIFICATION);
-    }
+    const firstOwned = PURCHASABLE_QUALIFICATIONS.find((qualification) =>
+      hasAccessToQualification(user, qualification),
+    );
+
+    setActiveSummaryQualification(firstOwned || GCSE_QUALIFICATION);
 
     setHasInitializedSummaryQualification(true);
-  }, [hasALevelAccess, hasGcseAccess, hasInitializedSummaryQualification]);
+  }, [hasInitializedSummaryQualification, user]);
 
   useEffect(() => {
     return () => {
@@ -371,25 +344,22 @@ export default function Account() {
         groups[qualification].push(session);
         return groups;
       },
-      {
-        [GCSE_QUALIFICATION]: [],
-        [ALEVEL_QUALIFICATION]: [],
-      },
+      Object.fromEntries(
+        PURCHASABLE_QUALIFICATIONS.map((qualification) => [qualification, []]),
+      ),
     );
 
-    return {
-      [GCSE_QUALIFICATION]: buildPerformanceSummary(
-        groupedSessions[GCSE_QUALIFICATION],
-      ),
-      [ALEVEL_QUALIFICATION]: buildPerformanceSummary(
-        groupedSessions[ALEVEL_QUALIFICATION],
-      ),
-    };
+    return Object.fromEntries(
+      PURCHASABLE_QUALIFICATIONS.map((qualification) => [
+        qualification,
+        buildPerformanceSummary(groupedSessions[qualification]),
+      ]),
+    );
   }, [trackedPerformanceSessions]);
 
   const summaryCards = useMemo(
     () =>
-      [GCSE_QUALIFICATION, ALEVEL_QUALIFICATION].map((qualification) => {
+      PURCHASABLE_QUALIFICATIONS.map((qualification) => {
         const summary = performanceSummaryByQualification[qualification];
 
         return {
