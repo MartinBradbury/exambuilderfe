@@ -520,18 +520,47 @@
 .account-moduleOption {
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   cursor: default;
 }
 
 .account-moduleOption__copy {
   display: grid;
   gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
 }
 
-.account-moduleOption__status {
+.account-moduleOption__buy,
+.account-moduleOption .account-moduleOption__status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 128px;
+  min-height: 44px;
+  padding: 0 16px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.account-moduleOption .account-moduleOption__status {
   color: var(--muted);
   font-weight: 600;
-  white-space: nowrap;
+}
+
+@media (max-width: 575px) {
+  .account-moduleOption {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .account-moduleOption__buy,
+  .account-moduleOption .account-moduleOption__status {
+    width: 100%;
+  }
 }
 
 .account-note {

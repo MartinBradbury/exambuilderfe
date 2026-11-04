@@ -21,6 +21,8 @@ import {
 import {
   buildCheckoutRequest,
   confirmCheckoutEntitlement,
+  getPurchaseAriaLabel,
+  getPurchaseButtonText,
   resolvePurchasedQualification,
 } from "../lib/checkout";
 import {
@@ -1052,15 +1054,16 @@ export default function Account() {
                       ) : (
                         <button
                           type="button"
-                          className="btn btn--primary"
+                          className="btn btn--primary account-moduleOption__buy"
+                          aria-label={getPurchaseAriaLabel(qualification)}
                           onClick={() => handleUpgrade(qualification)}
                           disabled={
                             isCreatingCheckout || !hasAcceptedPurchaseTerms
                           }
                         >
-                          {creatingCheckoutFor === qualification
-                            ? "Redirecting..."
-                            : `Buy ${label}`}
+                          {getPurchaseButtonText(
+                            creatingCheckoutFor === qualification,
+                          )}
                         </button>
                       )}
                     </li>

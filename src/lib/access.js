@@ -214,21 +214,11 @@ export const getAccessPlanLabel = (user) => {
   }
 
   if (owned.length > 1) {
-    const hasOnlyLegacyModules = owned.every(
-      (qualification) =>
-        qualification === GCSE_QUALIFICATION ||
-        qualification === ALEVEL_QUALIFICATION,
-    );
-
-    return hasOnlyLegacyModules
-      ? "GCSE + A-level access"
-      : `${owned.length} modules unlocked`;
+    return `${owned.length} modules unlocked`;
   }
 
   if (owned.length === 1) {
-    return owned[0] === ALEVEL_QUALIFICATION
-      ? "A-level access"
-      : `${getQualificationLabel(owned[0])} access`;
+    return getQualificationLabel(owned[0]);
   }
 
   return "Free plan";

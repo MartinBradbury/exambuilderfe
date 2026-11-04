@@ -273,7 +273,7 @@ describe("four-module pricing and ownership", () => {
     assert.equal(hasAccessToQualification(user, GCSE_QUALIFICATION), false);
     assert.equal(hasAccessToQualification(user, ALEVEL_QUALIFICATION), false);
     assert.equal(getQualificationAccessState(user).hasAnyPaidAccess, true);
-    assert.equal(getAccessPlanLabel(user), "A-level Chemistry access");
+    assert.equal(getAccessPlanLabel(user), "A-level Chemistry");
     assert.deepEqual(getMissingUpgradeQualifications(user), [
       GCSE_QUALIFICATION,
       ALEVEL_QUALIFICATION,
@@ -292,7 +292,7 @@ describe("four-module pricing and ownership", () => {
     assert.equal(hasAccessToQualification(user, ALEVEL_PHYSICS_QUALIFICATION), true);
     assert.equal(hasAccessToQualification(user, ALEVEL_CHEMISTRY_QUALIFICATION), false);
     assert.equal(getQualificationAccessState(user).hasAnyPaidAccess, true);
-    assert.equal(getAccessPlanLabel(user), "A-level Physics access");
+    assert.equal(getAccessPlanLabel(user), "A-level Physics");
     assert.equal(
       getMissingUpgradeQualifications(user).includes(ALEVEL_PHYSICS_QUALIFICATION),
       false,
@@ -310,7 +310,7 @@ describe("four-module pricing and ownership", () => {
     assert.equal(hasAccessToQualification(user, GCSE_QUALIFICATION), true);
     assert.equal(hasAccessToQualification(user, ALEVEL_QUALIFICATION), false);
     assert.equal(hasAccessToQualification(user, ALEVEL_CHEMISTRY_QUALIFICATION), false);
-    assert.equal(getAccessPlanLabel(user), "GCSE Science access");
+    assert.equal(getAccessPlanLabel(user), "GCSE Science");
   });
 
   it("accepts explicit GCSE and Biology rows in unlocked_subjects", () => {
@@ -355,11 +355,30 @@ describe("four-module pricing and ownership", () => {
     };
 
     assert.equal(hasAccessToQualification(user, BOTH_QUALIFICATIONS), true);
-    assert.equal(getAccessPlanLabel(user), "GCSE + A-level access");
+    assert.equal(getAccessPlanLabel(user), "2 modules unlocked");
     assert.deepEqual(getMissingUpgradeQualifications(user), [
       ALEVEL_CHEMISTRY_QUALIFICATION,
       ALEVEL_PHYSICS_QUALIFICATION,
     ]);
+  });
+
+  it("labels Biology-only ownership as A-level Biology, never generic A-level", () => {
+    for (const user of [
+      { has_alevel_paid_access: true },
+      { plan_type: "free", unlocked_subjects: ["alevel_biology"] },
+    ]) {
+      assert.equal(getAccessPlanLabel(user), "A-level Biology");
+    }
+  });
+
+  it("counts three owned modules accurately", () => {
+    const user = {
+      has_gcse_paid_access: true,
+      has_alevel_paid_access: true,
+      unlocked_subjects: ["alevel_physics"],
+    };
+
+    assert.equal(getAccessPlanLabel(user), "3 modules unlocked");
   });
 
   it("reports full access only when all four modules are owned", () => {

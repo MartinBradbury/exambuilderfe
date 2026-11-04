@@ -11,10 +11,26 @@ import {
 import {
   buildCheckoutRequest,
   confirmCheckoutEntitlement,
+  getPurchaseAriaLabel,
+  getPurchaseButtonText,
   resolvePurchasedQualification,
 } from "./checkout.js";
 
 const ORIGIN = "https://staging.example.test";
+
+describe("purchase button text", () => {
+  it("uses 'Buy now' while keeping a subject-specific accessible label", () => {
+    assert.equal(getPurchaseButtonText(), "Buy now");
+    assert.equal(getPurchaseButtonText(false), "Buy now");
+    assert.equal(getPurchaseButtonText(true), "Redirecting...");
+    assert.deepEqual(PURCHASABLE_QUALIFICATIONS.map(getPurchaseAriaLabel), [
+      "Buy GCSE Science",
+      "Buy A-level Biology",
+      "Buy A-level Chemistry",
+      "Buy A-level Physics",
+    ]);
+  });
+});
 
 describe("checkout requests", () => {
   it("sends the matching qualification identifier for every module", () => {

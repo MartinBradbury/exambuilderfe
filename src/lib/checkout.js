@@ -1,8 +1,17 @@
 import {
   PURCHASABLE_QUALIFICATIONS,
   getQualificationAccessState,
+  getQualificationLabel,
   hasAccessToQualification,
 } from "./access.js";
+
+export const PURCHASE_BUTTON_TEXT = "Buy now";
+
+export const getPurchaseButtonText = (isRedirecting = false) =>
+  isRedirecting ? "Redirecting..." : PURCHASE_BUTTON_TEXT;
+
+export const getPurchaseAriaLabel = (qualification) =>
+  `Buy ${getQualificationLabel(qualification)}`;
 
 export const CHECKOUT_RETRY_DELAYS_MS = [1500, 3000, 5000, 8000];
 
