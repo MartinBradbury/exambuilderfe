@@ -19,7 +19,10 @@ import {
   getSessionOverviewLevelKey,
   getSessionQualification,
   isEssayAvailableFor,
+  getExamBoardsFor,
+  isExamBoardAvailableFor,
   normalizeQualification,
+  requiresSpecificationFor,
 } from "./qualifications.js";
 
 test("offers all four modules", () => {
@@ -141,29 +144,46 @@ test("generation payloads send curriculum_mode for Biology only", () => {
   assert.equal("curriculum_mode" in physics, false);
 });
 
-test("Edexcel generation includes the specification for every A-level subject", () => {
-  for (const qualification of [
-    ALEVEL_QUALIFICATION,
-    ALEVEL_CHEMISTRY_QUALIFICATION,
-    ALEVEL_PHYSICS_QUALIFICATION,
-  ]) {
-    const payload = buildGenerationPayload({
-      qualification,
-      examBoard: "EDEXCEL",
-      numberOfQuestions: 1,
-      topicId: 1,
-      specification: "Spec A",
-      curriculumMode: "shared",
-    });
-    assert.equal(payload.specification, "Spec A");
-  }
+test("exam boards depend on the subject; Edexcel is Biology only", () => {
+  assert.deepEqual(getExamBoardsFor(ALEVEL_QUALIFICATION), ["AQA", "OCR", "EDEXCEL"]);
+  assert.deepEqual(getExamBoardsFor(ALEVEL_CHEMISTRY_QUALIFICATION), ["AQA", "OCR"]);
+  assert.deepEqual(getExamBoardsFor(ALEVEL_PHYSICS_QUALIFICATION), ["AQA", "OCR"]);
+  assert.equal(isExamBoardAvailableFor(ALEVEL_QUALIFICATION, "edexcel"), true);
+  assert.equal(isExamBoardAvailableFor(ALEVEL_CHEMISTRY_QUALIFICATION, "EDEXCEL"), false);
+  assert.equal(isExamBoardAvailableFor(ALEVEL_PHYSICS_QUALIFICATION, "EDEXCEL"), false);
+  assert.equal(isExamBoardAvailableFor(GCSE_QUALIFICATION, "EDEXCEL"), true);
+});
 
-  const aqa = buildGenerationPayload({
-    qualification: ALEVEL_CHEMISTRY_QUALIFICATION,
-    examBoard: "AQA",
+test("Edexcel specification applies to Biology only", () => {
+  const base = {
+    examBoard: "EDEXCEL",
     numberOfQuestions: 1,
     topicId: 1,
     specification: "Spec A",
+    curriculumMode: "shared",
+  };
+
+  assert.equal(
+    buildGenerationPayload({ ...base, qualification: ALEVEL_QUALIFICATION })
+      .specification,
+    "Spec A",
+  );
+
+  for (const qualification of [
+    ALEVEL_CHEMISTRY_QUALIFICATION,
+    ALEVEL_PHYSICS_QUALIFICATION,
+  ]) {
+    assert.equal(requiresSpecificationFor(qualification, "EDEXCEL"), false);
+    assert.equal(
+      "specification" in buildGenerationPayload({ ...base, qualification }),
+      false,
+    );
+  }
+
+  const aqa = buildGenerationPayload({
+    ...base,
+    qualification: ALEVEL_QUALIFICATION,
+    examBoard: "AQA",
   });
   assert.equal("specification" in aqa, false);
 });
@@ -219,16 +239,10 @@ test("marking payloads qualify each subject correctly", () => {
   assert.deepEqual(
     buildBatchMarkingPayload({
       qualification: ALEVEL_PHYSICS_QUALIFICATION,
-      examBoard: "EDEXCEL",
+      examBoard: "OCR",
       answers,
-      specification: "Spec B",
     }),
-    {
-      qualification: "ALEVEL_PHYSICS",
-      exam_board: "EDEXCEL",
-      answers,
-      specification: "Spec B",
-    },
+    { qualification: "ALEVEL_PHYSICS", exam_board: "OCR", answers },
   );
 
   assert.equal(

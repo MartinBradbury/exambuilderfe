@@ -32,12 +32,14 @@ import {
   getQualificationChoiceCopy,
   isALevelQualification,
   isEssayAvailableFor,
+  getExamBoardsFor,
+  isExamBoardAvailableFor,
   isSharedOnlyALevelQualification,
   normalizeQualification,
   requiresSpecificationFor,
 } from "../lib/qualifications";
 
-const EXAM_BOARD_OPTIONS = ["AQA", "OCR", "EDEXCEL"];
+const DEFAULT_EXAM_BOARD = "OCR";
 const GCSE_SUBJECT_OPTIONS = ["BIOLOGY", "CHEMISTRY", "PHYSICS", "COMBINED"];
 const GCSE_TIER_OPTIONS = ["FOUNDATION", "HIGHER"];
 const EDEXCEL_ALEVEL_SPECIFICATION_OPTIONS = ["Spec A", "Spec B"];
@@ -86,7 +88,7 @@ export default function QuestionGenerator() {
   const [biologyMode, setBiologyMode] = useState(null);
   const [biologyModeStatus, setBiologyModeStatus] = useState("idle");
   const [biologyModeRefreshKey, setBiologyModeRefreshKey] = useState(0);
-  const [examBoard, setExamBoard] = useState("OCR");
+  const [examBoard, setExamBoard] = useState(DEFAULT_EXAM_BOARD);
   const [questionMode, setQuestionMode] = useState(QUESTION_MODE_STANDARD);
   const [numberOfQuestions, setNumberOfQuestions] = useState("3");
 
@@ -126,6 +128,8 @@ export default function QuestionGenerator() {
     : isSharedOnlyALevelQualification(qualification)
       ? BIOLOGY_CURRICULUM_MODE_SHARED
       : null;
+  const availableExamBoards = getExamBoardsFor(qualification);
+  const isExamBoardSupported = isExamBoardAvailableFor(qualification, examBoard);
   const requiresSpecification = requiresSpecificationFor(
     qualification,
     examBoard,
@@ -350,7 +354,10 @@ export default function QuestionGenerator() {
 
     const normalizedExamBoard = String(resumeSession.examBoard || "").toUpperCase();
 
-    if (EXAM_BOARD_OPTIONS.includes(normalizedExamBoard)) {
+    if (
+      nextQualification &&
+      isExamBoardAvailableFor(nextQualification, normalizedExamBoard)
+    ) {
       setExamBoard(normalizedExamBoard);
     }
 
@@ -428,6 +435,10 @@ export default function QuestionGenerator() {
     setSelectedSubject("");
     setSelectedTier("");
     setSelectedSpecification("");
+    // Clear a board the new qualification doesn't offer (e.g. Edexcel).
+    if (!isExamBoardAvailableFor(nextQualification, examBoard)) {
+      setExamBoard(DEFAULT_EXAM_BOARD);
+    }
   };
 
   const handleBackToQualificationChoice = () => {
@@ -790,6 +801,11 @@ export default function QuestionGenerator() {
       return;
     }
 
+    if (!isExamBoardSupported) {
+      setError(`${examBoard} is not available for ${getQualificationLabel(qualification)}.`);
+      return;
+    }
+
     if (missingRequiredFields) {
       setError(
         "Please complete all required fields before generating questions.",
@@ -1059,6 +1075,7 @@ export default function QuestionGenerator() {
   const generateDisabled =
     loading ||
     generationBlocked ||
+    !isExamBoardSupported ||
     (!isEssayMode && !selectedTopic) ||
     (!isGcse && !isEssayMode && !curriculumMode) ||
     (requiresSpecification && !selectedSpecification) ||
@@ -1141,7 +1158,7 @@ export default function QuestionGenerator() {
                 value={examBoard}
                 onChange={(e) => handleExamBoardChange(e.target.value)}
               >
-                {EXAM_BOARD_OPTIONS.map((board) => (
+                {availableExamBoards.map((board) => (
                   <option key={board} value={board}>
                     {board}
                   </option>

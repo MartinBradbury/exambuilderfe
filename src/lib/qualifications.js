@@ -38,8 +38,18 @@ export const isSharedOnlyALevelQualification = (qualification) =>
   qualification === ALEVEL_CHEMISTRY_QUALIFICATION ||
   qualification === ALEVEL_PHYSICS_QUALIFICATION;
 
+// Edexcel is offered for A-level Biology only.
+export const getExamBoardsFor = (qualification) =>
+  qualification === ALEVEL_CHEMISTRY_QUALIFICATION ||
+  qualification === ALEVEL_PHYSICS_QUALIFICATION
+    ? [AQA_BOARD, "OCR"]
+    : [AQA_BOARD, "OCR", EDEXCEL_BOARD];
+
+export const isExamBoardAvailableFor = (qualification, examBoard) =>
+  getExamBoardsFor(qualification).includes(String(examBoard || "").toUpperCase());
+
 export const requiresSpecificationFor = (qualification, examBoard) =>
-  isALevelQualification(qualification) &&
+  qualification === ALEVEL_QUALIFICATION &&
   String(examBoard || "").toUpperCase() === EDEXCEL_BOARD;
 
 // Essay questions exist for AQA A-level Biology only.

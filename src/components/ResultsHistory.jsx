@@ -28,6 +28,7 @@ import {
   getQualificationForOverviewLevelKey,
   getSessionOverviewLevelKey,
   getSessionQualification,
+  isExamBoardAvailableFor,
   isSharedOnlyALevelQualification,
 } from "../lib/qualifications";
 import {
@@ -1381,6 +1382,18 @@ export default function ResultsHistory({
   const overviewQualification = getQualificationForLevelKey(
     selectedOverviewSection?.levelKey,
   );
+  const overviewExamBoardKeys = OVERVIEW_EXAM_BOARD_ORDER.filter(
+    (boardKey) =>
+      !overviewQualification ||
+      isExamBoardAvailableFor(overviewQualification, boardKey),
+  );
+
+  // Keep the selected board valid when switching to a subject without Edexcel.
+  useEffect(() => {
+    if (!overviewExamBoardKeys.includes(selectedOverviewExamBoard)) {
+      setSelectedOverviewExamBoard(overviewExamBoardKeys[0]);
+    }
+  }, [overviewExamBoardKeys, selectedOverviewExamBoard]);
   // Biology follows the discovered backend mode; Chemistry and Physics are
   // always shared; GCSE has no curriculum mode.
   const overviewCurriculumMode =
@@ -1768,7 +1781,7 @@ export default function ResultsHistory({
                       role="radiogroup"
                       aria-label="Overview exam board"
                     >
-                      {OVERVIEW_EXAM_BOARD_ORDER.map((examBoardKey) => {
+                      {overviewExamBoardKeys.map((examBoardKey) => {
                         const isSelected =
                           selectedOverviewExamBoard === examBoardKey;
 
